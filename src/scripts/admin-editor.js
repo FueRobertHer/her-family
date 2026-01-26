@@ -354,7 +354,7 @@ function updateServiceOnPage(serviceIndex, serviceData) {
     return `${displayHour}:${minutes} ${ampm}`;
   };
   
-  if (serviceData.type) {
+  if (serviceData.type !== undefined) {
     const typeEl = serviceCard.querySelector(`[data-service-type="${serviceIndex}"]`);
     if (typeEl) typeEl.textContent = serviceData.type;
   }
@@ -396,12 +396,12 @@ function updateServiceOnPage(serviceIndex, serviceData) {
   }
   
   if (serviceData.location) {
-    if (serviceData.location.name) {
+    if (serviceData.location.name !== undefined) {
       const nameEl = serviceCard.querySelector(`[data-service-location-name="${serviceIndex}"]`);
       if (nameEl) nameEl.textContent = serviceData.location.name;
     }
     
-    if (serviceData.location.address) {
+    if (serviceData.location.address !== undefined) {
       const addressEl = serviceCard.querySelector(`[data-service-location-address="${serviceIndex}"]`);
       if (addressEl) addressEl.textContent = serviceData.location.address;
     }
@@ -496,21 +496,21 @@ function updateReceptionSection(updates) {
     toggleSectionVisibility(receptionSection, updates.visible, true);
   }
   
-  if (updates.location) {
+  if (updates.location !== undefined) {
     const locationEl = receptionSection.querySelector('[data-reception-location]');
     if (locationEl) locationEl.textContent = updates.location;
   }
   
-  if (updates.time) {
+  if (updates.time !== undefined) {
     const timeEl = receptionSection.querySelector('[data-reception-time]');
     if (timeEl) timeEl.textContent = updates.time;
   }
   
-  if (updates.description) {
+  if (updates.description !== undefined) {
     const descEl = receptionSection.querySelector('[data-reception-description]');
     if (descEl) {
       descEl.textContent = updates.description;
-    } else {
+    } else if (updates.description) {
       const container = receptionSection.querySelector('[data-reception-content]');
       if (container) {
         const newDesc = document.createElement('p');
@@ -1180,15 +1180,15 @@ async function saveAllModalContent() {
       if (field) {
         const value = input.value.trim();
         if (field.includes('.')) {
+          // Handle nested fields (e.g., location.name, location.address, etc.)
           const [parent, child] = field.split('.');
           if (!serviceData[parent]) serviceData[parent] = {};
-          if (value || field === 'location.name' || field === 'location.address') {
-            serviceData[parent][child] = value;
-          }
+          // Always include the field, even if empty (allows clearing optional fields)
+          serviceData[parent][child] = value;
         } else {
-          if (value || field === 'date' || field === 'time' || field === 'type') {
-            serviceData[field] = value;
-          }
+          // Handle top-level fields (e.g., date, time, type, etc.)
+          // Always include the field, even if empty (allows clearing optional fields)
+          serviceData[field] = value;
         }
       }
     });
