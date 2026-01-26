@@ -12,9 +12,33 @@ let draggedItem = null; // For gallery reordering
 
 // --- Helper Functions ---
 
+function updateNavLinkVisibility(href, isVisible) {
+  const link = document.querySelector(`nav a[href="${href}"]`);
+  if (!link) return;
+  
+  const isHidden = isVisible === false || isVisible === 'false';
+  
+  if (isHidden) {
+    link.classList.add('is-hidden-section');
+    // If edit mode is OFF (preview mode), hide the link
+    if (document.body.classList.contains('hide-edit-buttons')) {
+      link.style.display = 'none';
+    } else {
+      // In edit mode, show it but with opacity to indicate it's hidden public-side
+      link.style.display = '';
+      link.classList.add('opacity-50');
+    }
+  } else {
+    link.classList.remove('is-hidden-section');
+    link.classList.remove('opacity-50');
+    link.style.display = '';
+  }
+}
+
 function toggleEditButtons(show) {
   const body = document.body;
   const sections = document.querySelectorAll('[class*="border-dashed"]');
+  const hiddenLinks = document.querySelectorAll('.is-hidden-section');
   
   if (show) {
     body.classList.remove('hide-edit-buttons');
@@ -25,6 +49,13 @@ function toggleEditButtons(show) {
       const badge = section.querySelector('.hidden-badge');
       if (badge) badge.style.display = 'block';
     });
+    
+    // Show hidden links with opacity
+    hiddenLinks.forEach(link => {
+        link.style.display = '';
+        link.classList.add('opacity-50');
+    });
+    
     console.log('✅ Edit mode: ON - showing buttons and hidden sections');
   } else {
     body.classList.add('hide-edit-buttons');
@@ -37,6 +68,12 @@ function toggleEditButtons(show) {
          section.style.display = 'none';
       }
     });
+    
+    // Hide hidden links completely
+    hiddenLinks.forEach(link => {
+        link.style.display = 'none';
+    });
+    
     console.log('❌ Edit mode: OFF - hiding buttons and hidden sections');
   }
 }
@@ -58,6 +95,10 @@ function loadMemorialData() {
       memorialData = JSON.parse(memorialDataScript.textContent);
       memorialDataLoaded = true;
       console.log('Memorial data loaded:', memorialData);
+      
+      // Initialize nav links visibility based on loaded data
+      initNavLinksVisibility();
+      
       return true;
     } else {
       console.error('Memorial data script not found');
@@ -67,6 +108,26 @@ function loadMemorialData() {
     console.error('Failed to parse memorial data:', e);
     return false;
   }
+}
+
+function initNavLinksVisibility() {
+    if (!memorialData) return;
+    
+    // Map of section hrefs to their visibility property in memorialData
+    const links = [
+        { href: '#biography', visible: memorialData.biographyVisible },
+        { href: '#funeral-info', visible: memorialData.funeralInfo?.visible },
+        { href: '#gallery', visible: memorialData.galleryVisible },
+        { href: '#video', visible: memorialData.videoVisible },
+        { href: '#memories', visible: memorialData.commentsVisible },
+        { href: '#donations', visible: memorialData.donations?.visible }
+    ];
+    
+    links.forEach(item => {
+        if (item.visible !== undefined) {
+            updateNavLinkVisibility(item.href, item.visible);
+        }
+    });
 }
 
 function showToast(message, type) {
@@ -141,6 +202,7 @@ function updateBiographySection(updates) {
   
   if (updates.visible !== undefined) {
     toggleSectionVisibility(bioSection, updates.visible);
+    updateNavLinkVisibility('#biography', updates.visible);
   }
   
   if (updates.title) {
@@ -188,6 +250,7 @@ function updateVideoSection(updates) {
   
   if (updates.visible !== undefined) {
     toggleSectionVisibility(videoSection, updates.visible);
+    updateNavLinkVisibility('#video', updates.visible);
   }
   
   if (updates.sectionTitle) {
@@ -229,6 +292,7 @@ function updateDonationsSection(updates) {
   
   if (updates.visible !== undefined) {
     toggleSectionVisibility(donationsSection, updates.visible);
+    updateNavLinkVisibility('#donations', updates.visible);
   }
   
   if (updates.sectionTitle) {
@@ -441,6 +505,7 @@ function updateGallerySection(updates) {
   
   if (updates.visible !== undefined) {
     toggleSectionVisibility(gallerySection, updates.visible);
+    updateNavLinkVisibility('#gallery', updates.visible);
   }
   
   if (updates.sectionTitle) {
@@ -456,6 +521,7 @@ function updateCommentsSection(updates) {
   
   if (updates.visible !== undefined) {
     toggleSectionVisibility(commentsSection, updates.visible);
+    updateNavLinkVisibility('#memories', updates.visible);
   }
   
   if (updates.sectionTitle) {
