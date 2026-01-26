@@ -1,4 +1,4 @@
-import { d as db, C as Comments, M as MemorialContent } from '../../chunks/_astro_db_a7MZ13nD.mjs';
+import { d as db, C as Comments, M as MemorialContent } from '../../chunks/_astro_db_B6fpZxRe.mjs';
 import { and, eq } from '@astrojs/db/dist/runtime/virtual.js';
 export { renderers } from '../../renderers.mjs';
 
