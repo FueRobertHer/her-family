@@ -100,6 +100,8 @@ try {
     commentsAutoApprove: organizedContent.comments?.autoApprove === 'true',
 
     footerVisible: organizedContent.footer?.visible !== 'false',
+    footerQuote: getContent('footer', 'quote', '"Those we love don\'t go away, they walk beside us every day. Unseen, unheard, but always near, still loved, still missed, and very dear."'),
+    footerCredit: getContent('footer', 'credit', 'Created with love by the Family • 2024'),
 
   funeralInfo: {
     // Load services from database if they exist, otherwise use defaults
@@ -455,11 +457,11 @@ try {
             </p>
           </div>
           <p class="text-warm-gray-400 max-w-2xl mx-auto" data-footer-quote>
-            "Those we love don't go away, they walk beside us every day. Unseen, unheard, but always near, still loved, still missed, and very dear."
+            {memorialData.footerQuote}
           </p>
           <div class="mt-8 pt-8 border-t border-warm-gray-700">
             <p class="text-sm text-warm-gray-500" data-footer-credit>
-              Created with love by the Family • 2024
+              {memorialData.footerCredit}
             </p>
           </div>
         </div>
