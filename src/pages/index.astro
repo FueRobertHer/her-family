@@ -280,12 +280,24 @@ try {
     <nav class="sticky top-0 z-40 bg-white/95 backdrop-blur-sm border-b border-warm-gray-200">
       <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-center space-x-4 py-4 flex-wrap">
-          <a href="#biography" class="text-warm-gray-600 hover:text-warm-gray-900 font-medium transition-colors">Life Story</a>
-          <a href="#funeral-info" class="text-warm-gray-600 hover:text-warm-gray-900 font-medium transition-colors">Services</a>
-          <a href="#gallery" class="text-warm-gray-600 hover:text-warm-gray-900 font-medium transition-colors">Gallery</a>
-          <a href="#video" class="text-warm-gray-600 hover:text-warm-gray-900 font-medium transition-colors">Video</a>
-          <a href="#memories" class="text-warm-gray-600 hover:text-warm-gray-900 font-medium transition-colors">Memories</a>
-          <a href="#donations" class="text-warm-gray-600 hover:text-warm-gray-900 font-medium transition-colors">Support</a>
+          {(memorialData.biographyVisible || isAdmin) && (
+            <a href="#biography" class="text-warm-gray-600 hover:text-warm-gray-900 font-medium transition-colors">Life Story</a>
+          )}
+          {(memorialData.funeralInfo.visible || isAdmin) && (
+            <a href="#funeral-info" class="text-warm-gray-600 hover:text-warm-gray-900 font-medium transition-colors">Services</a>
+          )}
+          {(memorialData.galleryVisible || isAdmin) && (
+            <a href="#gallery" class="text-warm-gray-600 hover:text-warm-gray-900 font-medium transition-colors">Gallery</a>
+          )}
+          {(memorialData.videoVisible || isAdmin) && (
+            <a href="#video" class="text-warm-gray-600 hover:text-warm-gray-900 font-medium transition-colors">Video</a>
+          )}
+          {(memorialData.commentsVisible || isAdmin) && (
+            <a href="#memories" class="text-warm-gray-600 hover:text-warm-gray-900 font-medium transition-colors">Memories</a>
+          )}
+          {(memorialData.donations.visible || isAdmin) && (
+            <a href="#donations" class="text-warm-gray-600 hover:text-warm-gray-900 font-medium transition-colors">Support</a>
+          )}
         </div>
       </div>
     </nav>
