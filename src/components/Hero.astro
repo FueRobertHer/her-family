@@ -45,24 +45,39 @@ const bgImage = backgroundImage || mainImage;
       {name}
     </h1>
     
-    <div class="flex items-center justify-center space-x-4 text-xl sm:text-2xl text-warm-gray-50 font-semibold mb-6 drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]" data-hero-dates>
+    <div class="flex items-center justify-center space-x-4 text-xl sm:text-2xl text-warm-gray-50 font-semibold mb-6 drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)]" data-hero-dates>
       <time datetime={birthDate}>{new Date(birthDate).getFullYear()}</time>
       <span class="w-8 h-1 bg-warm-gray-50 rounded-full shadow-sm"></span>
       <time datetime={deathDate}>{new Date(deathDate).getFullYear()}</time>
     </div>
     
     {subtitle && (
-      <p class="text-2xl sm:text-3xl text-warm-gray-50 italic max-w-2xl mx-auto mb-8 drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]" data-hero-subtitle>
+      <p class="text-2xl sm:text-3xl text-warm-gray-50 italic max-w-2xl mx-auto mb-8 drop-shadow-[0_4px_10px_rgba(0,0,0,0.95)]" data-hero-subtitle>
         {subtitle}
       </p>
     )}
   </div>
   
   <!-- Scroll Indicator - positioned relative to the entire hero section -->
-  <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20 animate-bounce">
+  <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20">
     <button 
-      onclick="document.querySelector('#biography').scrollIntoView({ behavior: 'smooth' })"
-      class="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors duration-300 backdrop-blur-sm"
+      onclick="
+        const sections = ['#biography', '#funeral-info', '#gallery', '#video', '#memories', '#donations', 'footer'];
+        let target = null;
+        for (const selector of sections) {
+          const el = document.querySelector(selector);
+          if (el && el.offsetParent !== null) { // check if visible
+            target = el;
+            break;
+          }
+        }
+        if(target) { 
+          target.scrollIntoView({ behavior: 'smooth' }); 
+        } else { 
+          window.scrollBy({ top: window.innerHeight, behavior: 'smooth' }); 
+        }
+      "
+      class="animate-bounce p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors duration-300 backdrop-blur-sm"
       aria-label="Scroll to content"
     >
       <svg class="w-6 h-6 text-warm-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
