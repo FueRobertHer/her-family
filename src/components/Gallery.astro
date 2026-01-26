@@ -1,0 +1,198 @@
+---
+export interface Props {
+  images: Array<{
+    src: string;
+    alt: string;
+    caption?: string;
+  }>;
+  isAdmin?: boolean;
+  title?: string;
+}
+
+const { images, isAdmin = false, title = "Treasured Moments" } = Astro.props;
+---
+
+<section id="gallery" class="py-16 sm:py-24 bg-warm-gray-50">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-12">
+      <h2 class="font-display text-3xl sm:text-4xl font-bold text-warm-gray-900 mb-4" data-gallery-title>
+        {title}
+      </h2>
+      <div class="w-24 h-1 bg-warm-gray-300 mx-auto"></div>
+    </div>
+    
+    <!-- Admin Upload Button -->
+    {isAdmin && (
+      <div class="mb-6 text-center flex gap-4 justify-center">
+        <button
+          id="uploadImageBtn"
+          class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-md transition-colors edit-button"
+        >
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+          </svg>
+          Upload New Image
+        </button>
+        <input 
+          type="file" 
+          id="galleryImageInput" 
+          accept="image/*" 
+          class="hidden"
+        />
+      </div>
+    )}
+    
+    <!-- Carousel Container -->
+    <div class="relative">
+      <!-- Previous Arrow -->
+      <button 
+        id="carouselPrev"
+        class="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white text-warm-gray-800 p-3 rounded-full shadow-lg transition-all hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
+        aria-label="Previous image"
+      >
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+        </svg>
+      </button>
+      
+      <!-- Next Arrow -->
+      <button 
+        id="carouselNext"
+        class="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white text-warm-gray-800 p-3 rounded-full shadow-lg transition-all hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
+        aria-label="Next image"
+      >
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+        </svg>
+      </button>
+      
+      <!-- Carousel Track -->
+      <div id="carouselContainer" class="overflow-hidden px-12">
+        <div id="carouselTrack" class="flex transition-transform duration-500 ease-out gap-6">
+          {images.map((image, index) => (
+            <div 
+              class="carousel-item flex-shrink-0 w-full sm:w-1/2 lg:w-1/3 xl:w-1/4"
+              data-index={index}
+              data-image-url={image.src}
+            >
+              <div class="group relative">
+                <div class="aspect-square overflow-hidden rounded-lg bg-warm-gray-200 shadow-md transition-all duration-300 hover:shadow-xl cursor-pointer">
+                  <img 
+                    src={image.src} 
+                    alt={image.alt}
+                    class="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
+                    loading="lazy"
+                  />
+                </div>
+                {image.caption && (
+                  <p class="mt-2 text-sm text-warm-gray-600 text-center">{image.caption}</p>
+                )}
+                {isAdmin && (
+                  <button 
+                    class="delete-gallery-image edit-button absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                    data-image-url={image.src}
+                    aria-label="Delete image"
+                  >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      
+      <!-- Dots Indicator -->
+      <div id="carouselDots" class="flex justify-center gap-2 mt-6">
+        {images.map((_, index) => (
+          <button 
+            class="carousel-dot w-2 h-2 rounded-full bg-warm-gray-300 hover:bg-warm-gray-500 transition-colors"
+            data-index={index}
+            aria-label={`Go to image ${index + 1}`}
+          ></button>
+        ))}
+      </div>
+    </div>
+  </div>
+  
+  <!-- Lightbox Modal -->
+  <div id="lightbox" class="fixed inset-0 bg-black bg-opacity-95 z-[100] hidden items-center justify-center p-4">
+    <button 
+      id="closeLightbox" 
+      class="absolute top-4 right-4 text-white hover:text-warm-gray-300 transition-colors p-2 z-[101] bg-black/50 rounded-full hover:bg-black/70"
+      aria-label="Close lightbox"
+    >
+      <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+      </svg>
+    </button>
+    
+    <div class="relative max-w-5xl max-h-[90vh] flex flex-col items-center">
+      <img 
+        id="lightboxImage" 
+        src="" 
+        alt="" 
+        class="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
+      />
+      
+      <div id="lightboxCaption" class="text-white text-center mt-4 text-lg font-medium drop-shadow-md"></div>
+      
+      <!-- Navigation Arrows -->
+      <button 
+        id="prevImage" 
+        class="absolute -left-12 top-1/2 transform -translate-y-1/2 text-white hover:text-warm-gray-300 transition-colors p-2 hidden sm:block"
+        aria-label="Previous image"
+      >
+        <svg class="w-10 h-10 drop-shadow-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+        </svg>
+      </button>
+      
+      <button 
+        id="nextImage" 
+        class="absolute -right-12 top-1/2 transform -translate-y-1/2 text-white hover:text-warm-gray-300 transition-colors p-2 hidden sm:block"
+        aria-label="Next image"
+      >
+        <svg class="w-10 h-10 drop-shadow-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+  
+  <!-- Caption Modal for Image Upload -->
+  {isAdmin && (
+    <div id="captionModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+        <h3 class="text-xl font-semibold text-gray-900 mb-4">Add Image Caption</h3>
+        <p class="text-sm text-gray-600 mb-4">Enter a caption for the image (optional)</p>
+        <input
+          type="text"
+          id="captionInput"
+          placeholder="Enter caption..."
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 mb-4"
+        />
+        <div class="flex gap-3 justify-end">
+          <button
+            id="cancelCaptionBtn"
+            class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            id="confirmCaptionBtn"
+            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+          >
+            Upload
+          </button>
+        </div>
+      </div>
+    </div>
+  )}
+</section>
+
+<script>
+  import "../scripts/gallery.js";
+</script>

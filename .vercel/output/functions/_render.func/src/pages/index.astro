@@ -1,0 +1,505 @@
+---
+export const prerender = false;
+
+import Layout from '../layouts/Layout.astro';
+import Hero from '../components/Hero.astro';
+import Biography from '../components/Biography.astro';
+import FuneralInfo from '../components/FuneralInfo.astro';
+import Gallery from '../components/Gallery.astro';
+import VideoPlayer from '../components/VideoPlayer.astro';
+import Donations from '../components/Donations.astro';
+import Comments from '../components/Comments.astro';
+import { db, MemorialContent, GalleryImages } from 'astro:db';
+
+// Check for authentication
+const cookies = Astro.cookies;
+const isAdmin = cookies.get('admin_auth')?.value === 'true';
+
+// Fetch dynamic content from database
+let memorialData: any = {};
+
+try {
+  const content = await db.select().from(MemorialContent);
+  const allGalleryImages = await db.select().from(GalleryImages);
+  
+  // Filter active images in JavaScript to avoid SQLite boolean binding issues
+  const galleryImages = allGalleryImages.filter(img => img.isActive);
+  
+  // Organize content by section
+  const organizedContent = content.reduce((acc, item) => {
+    if (!acc[item.section]) {
+      acc[item.section] = {};
+    }
+    acc[item.section][item.key] = item.value;
+    return acc;
+  }, {} as any);
+
+  console.log('Server-side organizedContent:', JSON.stringify(organizedContent, null, 2));
+
+  // Process gallery images
+  const processedImages = galleryImages
+    .sort((a, b) => a.displayOrder - b.displayOrder)
+    .map(img => ({
+      src: img.imagePath, // Support both local (/images/...) and Cloudinary URLs
+      alt: img.caption || "Memorial photo",
+      caption: img.caption
+    }));
+
+  // Helper to safely get content with fallback, allowing empty strings
+  const getContent = (section: string, key: string, defaultVal: string) => {
+    const val = organizedContent[section]?.[key];
+    return val !== undefined ? val : defaultVal;
+  };
+
+  // Build memorial data structure from database content
+  memorialData = {
+    name: getContent('hero', 'name', "Memorial Name"),
+    birthDate: getContent('hero', 'birthDate', "1900-01-01"),
+    deathDate: getContent('hero', 'deathDate', "2024-01-01"),
+    mainImage: getContent('hero', 'mainImage', "/images/portrait.jpg"),
+    backgroundImage: getContent('hero', 'backgroundImage', ""),
+    subtitle: getContent('hero', 'subtitle', "In loving memory"),
+    
+    biography: getContent('biography', 'content', "Biography content will appear here."),
+    biographyTitle: getContent('biography', 'title', "Remembering a Beautiful Life"),
+    biographyVisible: organizedContent.biography?.visible !== 'false',
+    
+    highlights: organizedContent.biography?.highlights ? 
+      JSON.parse(organizedContent.biography.highlights) : 
+      ["Life highlights will appear here"],
+    highlightsVisible: organizedContent.highlights?.visible !== 'false',
+
+    images: processedImages.length > 0 ? processedImages : [
+      { src: "/images/placeholder.jpg", alt: "Memorial photo", caption: "Add photos in admin" }
+    ],
+    galleryVisible: organizedContent.gallery?.visible !== 'false',
+    galleryTitle: getContent('gallery', 'sectionTitle', "Treasured Moments"),
+
+    videoUrl: getContent('video', 'videoUrl', "/videos/memorial-video.mp4"),
+    posterImage: getContent('video', 'posterImage', "/images/video-poster.jpg"),
+    videoSectionTitle: getContent('video', 'sectionTitle', "In Their Own Words"),
+    videoDescription: getContent('video', 'description', "A tribute video"),
+    videoVisible: organizedContent.video?.visible !== 'false',
+
+    donations: {
+      sectionTitle: getContent('donations', 'sectionTitle', "Honor Their Memory"),
+      venmoUsername: getContent('donations', 'venmoUsername', ""),
+      venmoImage: getContent('donations', 'venmoImage', ""),
+      cashappUsername: getContent('donations', 'cashappUsername', ""),
+      cashappImage: getContent('donations', 'cashappImage', ""),
+      zelleEmail: getContent('donations', 'zelleEmail', ""),
+      zelleImage: getContent('donations', 'zelleImage', ""),
+      subtitle: getContent('donations', 'subtitle', "Support the family during this difficult time"),
+      customMessage: getContent('donations', 'customMessage', "Thank you for your support."),
+      visible: organizedContent.donations?.visible !== 'false'
+    },
+    
+    commentsTitle: getContent('comments', 'sectionTitle', "Share Your Memories"),
+    commentsSubtitle: getContent('comments', 'subtitle', "Leave a message to honor their memory and share how they touched your life"),
+    commentsVisible: organizedContent.comments?.visible !== 'false',
+    commentsAutoApprove: organizedContent.comments?.autoApprove === 'true',
+
+    footerVisible: organizedContent.footer?.visible !== 'false',
+
+  funeralInfo: {
+    // Load services from database if they exist, otherwise use defaults
+    sectionTitle: getContent('funeral', 'sectionTitle', "Service Information"),
+    visible: organizedContent.funeral?.visible !== 'false',
+    specialInstructionsVisible: organizedContent.funeral?.specialInstructionsVisible !== 'false',
+    flowersInfoVisible: organizedContent.funeral?.flowersInfoVisible !== 'false',
+    services: (() => {
+      const defaultServices = [
+        {
+          type: "Funeral Service",
+          date: "2024-01-15",
+          time: "14:00",
+          location: {
+            name: "Funeral Home",
+            address: "123 Memorial Drive, Springfield, IL 62701",
+            phone: "(217) 555-0123",
+            website: "https://peacefulrest.com"
+          },
+          description: "Family and friends are invited to pay their respects and share memories.",
+          dresscode: "Formal attire preferred"
+        },
+        {
+          type: "Burial",
+          date: "2024-01-16",
+          time: "11:00",
+          location: {
+            name: "Cemetery",
+            address: "456 Church Street, Springfield, IL 62701",
+            phone: "(217) 555-0456",
+            website: "https://stmaryscathedral.org"
+          },
+          description: "A celebration of life with readings, music, and remembrances.",
+          dresscode: "Formal attire preferred"
+        }
+      ];
+      
+      // Check if we have saved services in the database
+      const loadedServices = [];
+      for (let i = 0; i < 10; i++) { // Check up to 10 services
+        const serviceKey = `service${i}`;
+        if (organizedContent.funeral?.[serviceKey]) {
+          try {
+            const serviceData = JSON.parse(organizedContent.funeral[serviceKey]);
+            loadedServices.push(serviceData);
+          } catch (e) {
+            console.error(`Error parsing service ${i}:`, e);
+          }
+        }
+      }
+      
+      // If we have saved services, use them; otherwise use defaults
+      return loadedServices.length > 0 ? loadedServices : defaultServices;
+    })(),
+    receptionInfo: {
+      location: "Home of the Family",
+      time: "Following the burial (approximately 12:30 PM)",
+      description: "Light refreshments will be served. All are welcome to join us for fellowship and to continue sharing memories."
+    },
+    receptionVisible: organizedContent.reception?.visible !== 'false',
+    subtitle: getContent('funeral', 'subtitle', "Please join us as we celebrate their life and honor their memory"),
+    specialInstructions: getContent('funeral', 'specialInstructions', "Please arrive 15 minutes early for seating. The funeral service will be livestreamed for those unable to attend in person. A link will be provided to family members."),
+    flowersInfo: getContent('funeral', 'flowersInfo', "In lieu of flowers, the family requests donations be made to a charity of your choice.")
+  }
+};
+} catch (error) {
+  console.error('Error loading memorial content:', error);
+  // Fallback to default content if database fails
+  memorialData = {
+    name: "Memorial Page",
+    birthDate: "1900-01-01", 
+    deathDate: "2024-01-01",
+    mainImage: "/images/portrait.jpg",
+    backgroundImage: "",
+    subtitle: "Please initialize content in admin",
+    biography: "Please set up memorial content in the admin panel.",
+    biographyTitle: "Memorial",
+    highlights: ["Please add content in admin"],
+    images: [{ src: "/images/placeholder.jpg", alt: "Placeholder", caption: "Add images in admin" }],
+    videoUrl: "/videos/memorial-video.mp4",
+    posterImage: "/images/video-poster.jpg", 
+    videoSectionTitle: "In Their Own Words",
+    videoDescription: "Video description",
+    donations: {
+      venmoUsername: "",
+      venmoImage: "",
+      cashappUsername: "",
+      cashappImage: "",
+      zelleEmail: "",
+      zelleImage: "",
+      subtitle: "Support the family during this difficult time",
+      customMessage: "Thank you for your support."
+    },
+    funeralInfo: {
+      services: [],
+      receptionInfo: null,
+      subtitle: "Please set up funeral information in admin",
+      specialInstructions: "Please set up funeral information in admin",
+      flowersInfo: "Please configure in admin"
+    }
+  };
+}
+---
+
+<style is:global>
+  /* Hide ALL edit buttons when edit mode is toggled off */
+  body.hide-edit-buttons .edit-button {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+  
+  /* Ensure buttons are visible when edit mode is on */
+  body:not(.hide-edit-buttons) .edit-button {
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
+  
+  /* Specific fixes for different button types */
+  body:not(.hide-edit-buttons) button.edit-button[class*="inline-flex"] {
+    display: inline-flex !important;
+  }
+  
+  body:not(.hide-edit-buttons) button.edit-button[class*="absolute"] {
+    display: block !important;
+  }
+</style>
+
+<Layout title={`${memorialData.name} - Memorial Page`} description={`A memorial page celebrating the life of ${memorialData.name}, ${memorialData.subtitle}`}>
+  <!-- Pass memorial data to client-side JavaScript -->
+  <script id="memorial-data" type="application/json" is:inline set:html={JSON.stringify(memorialData)} />
+  
+  <main>
+    <!-- Admin Toolbar (only visible when logged in) -->
+    {isAdmin && (
+      <div class="fixed top-0 left-0 z-50 m-4">
+        <div class="bg-indigo-600 text-white px-4 py-3 rounded-lg shadow-lg flex items-center space-x-4">
+          <span class="text-sm font-medium">✏️ Edit Mode</span>
+          
+          <!-- Toggle Switch -->
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="editModeToggle" class="sr-only peer" checked>
+            <div class="w-11 h-6 bg-indigo-800 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-white rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+            <span class="ml-2 text-xs font-medium" id="editModeLabel">ON</span>
+          </label>
+          
+          <div class="h-6 w-px bg-white/30"></div>
+          
+          <a href="/admin" class="text-xs bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded transition-colors">
+            Admin Panel
+          </a>
+        </div>
+      </div>
+    )}
+
+    <!-- Hero Section -->
+    <div id="hero-section" class="relative">
+      <Hero 
+        name={memorialData.name}
+        birthDate={memorialData.birthDate}
+        deathDate={memorialData.deathDate}
+        mainImage={memorialData.mainImage}
+        backgroundImage={memorialData.backgroundImage}
+        subtitle={memorialData.subtitle}
+      />
+      {isAdmin && (
+        <button 
+          onclick="openEditModal('hero')"
+          class="absolute top-4 right-4 bg-white/90 hover:bg-white text-indigo-600 px-3 py-2 rounded-lg shadow-md text-sm font-medium transition-all edit-button"
+        >
+          ✏️ Edit Hero
+        </button>
+      )}
+    </div>
+    
+    <!-- Navigation -->
+    <nav class="sticky top-0 z-40 bg-white/95 backdrop-blur-sm border-b border-warm-gray-200">
+      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-center space-x-4 py-4 flex-wrap">
+          <a href="#biography" class="text-warm-gray-600 hover:text-warm-gray-900 font-medium transition-colors">Life Story</a>
+          <a href="#funeral-info" class="text-warm-gray-600 hover:text-warm-gray-900 font-medium transition-colors">Services</a>
+          <a href="#gallery" class="text-warm-gray-600 hover:text-warm-gray-900 font-medium transition-colors">Gallery</a>
+          <a href="#video" class="text-warm-gray-600 hover:text-warm-gray-900 font-medium transition-colors">Video</a>
+          <a href="#memories" class="text-warm-gray-600 hover:text-warm-gray-900 font-medium transition-colors">Memories</a>
+          <a href="#donations" class="text-warm-gray-600 hover:text-warm-gray-900 font-medium transition-colors">Support</a>
+        </div>
+      </div>
+    </nav>
+    
+    <!-- Biography Section -->
+    {(memorialData.biographyVisible || isAdmin) && (
+      <div id="biography-section" class={`relative ${!memorialData.biographyVisible && isAdmin ? 'opacity-70 border-2 border-dashed border-gray-300' : ''}`}>
+        {isAdmin && !memorialData.biographyVisible && (
+          <div class="absolute top-0 left-0 bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-br z-20">Hidden from public</div>
+        )}
+        <Biography 
+          title={memorialData.biographyTitle}
+          content={memorialData.biography}
+          highlights={memorialData.highlights}
+          isAdmin={isAdmin}
+        />
+        {isAdmin && (
+          <button 
+            onclick="openEditModal('biography')"
+            class="absolute top-8 right-8 bg-white/90 hover:bg-white text-indigo-600 px-3 py-2 rounded-lg shadow-md text-sm font-medium transition-all edit-button"
+          >
+            ✏️ Edit Biography
+          </button>
+        )}
+      </div>
+    )}
+    
+    <!-- Funeral Information Section -->
+    {(memorialData.funeralInfo.visible || isAdmin) && (
+      <div id="funeral-section" class={`relative ${!memorialData.funeralInfo.visible && isAdmin ? 'opacity-70 border-2 border-dashed border-gray-300' : ''}`}>
+        {isAdmin && !memorialData.funeralInfo.visible && (
+          <div class="absolute top-0 left-0 bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-br z-20">Hidden from public</div>
+        )}
+        <FuneralInfo 
+          title={memorialData.funeralInfo.sectionTitle}
+          services={memorialData.funeralInfo.services}
+          receptionInfo={memorialData.funeralInfo.receptionInfo}
+          subtitle={memorialData.funeralInfo.subtitle}
+          specialInstructions={memorialData.funeralInfo.specialInstructions}
+          flowersInfo={memorialData.funeralInfo.flowersInfo}
+          isAdmin={isAdmin}
+          specialInstructionsVisible={memorialData.funeralInfo.specialInstructionsVisible}
+          flowersInfoVisible={memorialData.funeralInfo.flowersInfoVisible}
+          receptionVisible={memorialData.receptionVisible}
+        />
+        {isAdmin && (
+          <button 
+            onclick="openEditModal('funeral')"
+            class="absolute top-8 right-8 bg-white/90 hover:bg-white text-indigo-600 px-3 py-2 rounded-lg shadow-md text-sm font-medium transition-all edit-button"
+          >
+            ✏️ Edit Funeral Info
+          </button>
+        )}
+      </div>
+    )}
+    
+    <!-- Gallery Section -->
+    {(memorialData.galleryVisible || isAdmin) && (
+      <div id="gallery-section" class={`relative ${!memorialData.galleryVisible && isAdmin ? 'opacity-70 border-2 border-dashed border-gray-300' : ''}`}>
+        {isAdmin && !memorialData.galleryVisible && (
+          <div class="absolute top-0 left-0 bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-br z-20">Hidden from public</div>
+        )}
+        <Gallery images={memorialData.images} isAdmin={isAdmin} title={memorialData.galleryTitle} />
+        {isAdmin && (
+          <button 
+            onclick="openEditModal('gallery')"
+            class="absolute top-8 right-8 bg-white/90 hover:bg-white text-indigo-600 px-3 py-2 rounded-lg shadow-md text-sm font-medium transition-all edit-button"
+          >
+            ✏️ Edit Gallery
+          </button>
+        )}
+      </div>
+    )}
+    
+    <!-- Video Section -->
+    {(memorialData.videoVisible || isAdmin) && (
+      <div id="video-section" class={`relative ${!memorialData.videoVisible && isAdmin ? 'opacity-70 border-2 border-dashed border-gray-300' : ''}`}>
+        {isAdmin && !memorialData.videoVisible && (
+          <div class="absolute top-0 left-0 bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-br z-20">Hidden from public</div>
+        )}
+        <VideoPlayer 
+          videoUrl={memorialData.videoUrl}
+          posterImage={memorialData.posterImage}
+          title={memorialData.videoSectionTitle}
+          description={memorialData.videoDescription}
+        />
+        {isAdmin && (
+          <button 
+            onclick="openEditModal('video')"
+            class="absolute top-8 right-8 bg-white/90 hover:bg-white text-indigo-600 px-3 py-2 rounded-lg shadow-md text-sm font-medium transition-all edit-button"
+          >
+            ✏️ Edit Video
+          </button>
+        )}
+      </div>
+    )}
+    
+    <!-- Comments Section -->
+    {(memorialData.commentsVisible || isAdmin) && (
+      <div id="comments-section" class={`relative ${!memorialData.commentsVisible && isAdmin ? 'opacity-70 border-2 border-dashed border-gray-300' : ''}`}>
+        {isAdmin && !memorialData.commentsVisible && (
+          <div class="absolute top-0 left-0 bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-br z-20">Hidden from public</div>
+        )}
+        <Comments title={memorialData.commentsTitle} subtitle={memorialData.commentsSubtitle} />
+        {isAdmin && (
+          <button 
+            onclick="openEditModal('comments')"
+            class="absolute top-8 right-8 bg-white/90 hover:bg-white text-indigo-600 px-3 py-2 rounded-lg shadow-md text-sm font-medium transition-all edit-button"
+          >
+            ✏️ Edit Memories
+          </button>
+        )}
+      </div>
+    )}
+    
+    <!-- Donations Section -->
+    {(memorialData.donations.visible || isAdmin) && (
+      <div id="donations-section" class={`relative ${!memorialData.donations.visible && isAdmin ? 'opacity-70 border-2 border-dashed border-gray-300' : ''}`}>
+        {isAdmin && !memorialData.donations.visible && (
+          <div class="absolute top-0 left-0 bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-br z-20">Hidden from public</div>
+        )}
+        <Donations 
+          title={memorialData.donations.sectionTitle}
+          venmoUsername={memorialData.donations.venmoUsername}
+          venmoImage={memorialData.donations.venmoImage}
+          cashappUsername={memorialData.donations.cashappUsername}
+          cashappImage={memorialData.donations.cashappImage}
+          zelleEmail={memorialData.donations.zelleEmail}
+          zelleImage={memorialData.donations.zelleImage}
+          subtitle={memorialData.donations.subtitle}
+          customMessage={memorialData.donations.customMessage}
+        />
+        {isAdmin && (
+          <button 
+            onclick="openEditModal('donations')"
+            class="absolute top-8 right-8 bg-white/90 hover:bg-white text-indigo-600 px-3 py-2 rounded-lg shadow-md text-sm font-medium transition-all edit-button"
+          >
+            ✏️ Edit Donations
+          </button>
+        )}
+      </div>
+    )}
+    
+    <!-- Footer -->
+    {(memorialData.footerVisible || isAdmin) && (
+      <footer class={`bg-warm-gray-800 text-warm-gray-300 py-12 relative ${!memorialData.footerVisible && isAdmin ? 'opacity-70 border-t-2 border-dashed border-gray-500' : ''}`}>
+        {isAdmin && !memorialData.footerVisible && (
+          <div class="absolute top-0 left-0 bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-br z-20">Hidden from public</div>
+        )}
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div class="mb-6">
+            <h3 class="font-display text-2xl font-semibold text-white mb-2" data-footer-name>{memorialData.name}</h3>
+            <p class="text-warm-gray-400" data-footer-dates>
+              {new Date(memorialData.birthDate).getFullYear()} - {new Date(memorialData.deathDate).getFullYear()}
+            </p>
+          </div>
+          <p class="text-warm-gray-400 max-w-2xl mx-auto" data-footer-quote>
+            "Those we love don't go away, they walk beside us every day. Unseen, unheard, but always near, still loved, still missed, and very dear."
+          </p>
+          <div class="mt-8 pt-8 border-t border-warm-gray-700">
+            <p class="text-sm text-warm-gray-500" data-footer-credit>
+              Created with love by the Family • 2024
+            </p>
+          </div>
+        </div>
+        {isAdmin && (
+          <button 
+            onclick="openEditModal('footer')"
+            class="absolute top-4 right-4 bg-white/90 hover:bg-white text-indigo-600 px-3 py-2 rounded-lg shadow-md text-sm font-medium transition-all edit-button"
+          >
+            ✏️ Edit Footer
+          </button>
+        )}
+      </footer>
+    )}
+  </main>
+
+  <!-- Edit Modal (only rendered for admins) -->
+  {isAdmin && (
+    <div id="editModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+          <h2 id="modalTitle" class="text-xl font-semibold text-gray-900">Edit Content</h2>
+          <button 
+            onclick="closeEditModal()"
+            class="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+          >
+            &times;
+          </button>
+        </div>
+        
+        <div id="modalContent" class="p-6 space-y-4">
+          <!-- Content will be dynamically loaded here -->
+        </div>
+
+        <div class="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-4 flex justify-end space-x-3">
+          <button 
+            onclick="closeEditModal()"
+            class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+          <button 
+            onclick="saveAllModalContent()"
+            class="px-4 py-2 text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
+          >
+            Save Changes
+          </button>
+        </div>
+      </div>
+    </div>
+  )}
+
+  <script>
+    import "../scripts/admin-editor.js";
+  </script>
+</Layout>
