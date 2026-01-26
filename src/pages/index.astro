@@ -155,9 +155,9 @@ try {
       return loadedServices.length > 0 ? loadedServices : defaultServices;
     })(),
     receptionInfo: {
-      location: "Home of the Family",
-      time: "Following the burial (approximately 12:30 PM)",
-      description: "Light refreshments will be served. All are welcome to join us for fellowship and to continue sharing memories."
+      location: getContent('reception', 'location', "Home of the Family"),
+      time: getContent('reception', 'time', "Following the burial (approximately 12:30 PM)"),
+      description: getContent('reception', 'description', "Light refreshments will be served. All are welcome to join us for fellowship and to continue sharing memories.")
     },
     receptionVisible: organizedContent.reception?.visible !== 'false',
     subtitle: getContent('funeral', 'subtitle', "Please join us as we celebrate their life and honor their memory"),
