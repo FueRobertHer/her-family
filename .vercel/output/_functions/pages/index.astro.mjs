@@ -3,7 +3,7 @@ import { e as createComponent, g as addAttribute, l as renderHead, n as renderSl
 import 'piccolore';
 import 'clsx';
 /* empty css                                 */
-import { d as db, M as MemorialContent, G as GalleryImages } from '../chunks/_astro_db_a7MZ13nD.mjs';
+import { d as db, M as MemorialContent, G as GalleryImages } from '../chunks/_astro_db_B6fpZxRe.mjs';
 export { renderers } from '../renderers.mjs';
 
 const $$Astro$8 = createAstro();

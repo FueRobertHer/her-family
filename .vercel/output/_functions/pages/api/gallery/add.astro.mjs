@@ -1,4 +1,4 @@
-import { d as db, G as GalleryImages } from '../../../chunks/_astro_db_a7MZ13nD.mjs';
+import { d as db, G as GalleryImages } from '../../../chunks/_astro_db_B6fpZxRe.mjs';
 export { renderers } from '../../../renderers.mjs';
 
 const prerender = false;
