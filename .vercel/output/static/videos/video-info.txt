@@ -1,0 +1,22 @@
+VIDEO PLACEHOLDER:
+
+Please add your memorial video to this directory:
+
+1. memorial-video.mp4 - Main memorial video
+
+Video recommendations:
+- MP4 format (most compatible)
+- Resolution: 1080p (1920x1080) or 720p (1280x720)
+- Keep file size reasonable (under 100MB if possible)
+- Consider creating a WebM version for better compression
+- Duration: Any length, but 2-10 minutes is typically ideal for web
+
+The video player includes:
+- Custom controls
+- Poster image support
+- Responsive design
+- Fallback for unsupported browsers
+
+If you have multiple video formats, you can add:
+- memorial-video.webm (for better compression)
+- memorial-video.mov (will be converted to MP4)

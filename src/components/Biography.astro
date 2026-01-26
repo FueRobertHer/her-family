@@ -1,0 +1,53 @@
+---
+export interface Props {
+  content: string;
+  title?: string;
+  highlights?: string[];
+  isAdmin?: boolean;
+}
+
+const { content, title = "Remembering a Beautiful Life", highlights = [], isAdmin = false } = Astro.props;
+---
+
+<section id="biography" class="py-16 sm:py-24 bg-white">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-12">
+      <h2 class="font-display text-3xl sm:text-4xl font-bold text-warm-gray-900 mb-4" data-bio-title>
+        {title}
+      </h2>
+      <div class="w-24 h-1 bg-warm-gray-300 mx-auto"></div>
+    </div>
+    
+    <div class="prose prose-lg prose-warm-gray max-w-none">
+      <div class="text-warm-gray-700 leading-relaxed text-lg" data-bio-content>
+        {content.split('\n\n').map(paragraph => (
+          <p class="mb-6">{paragraph}</p>
+        ))}
+      </div>
+    </div>
+    
+    {highlights.length > 0 && (
+      <div class="mt-12 bg-warm-gray-50 rounded-lg p-8 relative">
+        <h3 class="font-display text-2xl font-semibold text-warm-gray-900 mb-6 text-center">
+          Cherished Memories
+        </h3>
+        <div class="grid md:grid-cols-2 gap-6" data-bio-highlights>
+          {highlights.map(highlight => (
+            <div class="flex items-start space-x-3">
+              <div class="flex-shrink-0 w-2 h-2 bg-warm-gray-400 rounded-full mt-3"></div>
+              <p class="text-warm-gray-700">{highlight}</p>
+            </div>
+          ))}
+        </div>
+        {isAdmin && (
+          <button 
+            onclick="openEditModal('highlights')"
+            class="absolute top-4 right-4 bg-white hover:bg-warm-gray-100 text-indigo-600 px-3 py-2 rounded-lg shadow-md text-sm font-medium transition-all edit-button"
+          >
+            ✏️ Edit
+          </button>
+        )}
+      </div>
+    )}
+  </div>
+</section>

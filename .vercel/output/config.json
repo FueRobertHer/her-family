@@ -1,0 +1,71 @@
+{
+	"version": 3,
+	"routes": [
+		{
+			"handle": "filesystem"
+		},
+		{
+			"src": "^/_astro/(.*)$",
+			"headers": {
+				"cache-control": "public, max-age=31536000, immutable"
+			},
+			"continue": true
+		},
+		{
+			"src": "^/_server-islands/([^/]+?)/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/_image/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/admin/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/api/admin/comments/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/api/admin/content/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/api/admin/login/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/api/admin/status/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/api/comments/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/api/delete-image/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/api/gallery/add/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/api/gallery/delete/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/api/gallery/update-order/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/api/upload-image/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/$",
+			"dest": "_render"
+		}
+	]
+}
