@@ -789,6 +789,7 @@ function closeEditModal() {
 }
 
 function renderModalContent(section) {
+  // ... (keep existing implementation)
   const modalContent = document.getElementById('modalContent');
   const sectionData = contentData[section] || {};
   
@@ -1129,6 +1130,7 @@ function renderModalContent(section) {
 }
 
 async function uploadImageForField(inputId) {
+  // ... (keep existing implementation)
   const fileInputId = `${inputId}-file`;
   const fileInput = document.getElementById(fileInputId);
   const textInput = document.getElementById(inputId);
@@ -1176,6 +1178,7 @@ async function uploadImageForField(inputId) {
 }
 
 async function uploadVideoForField(inputId) {
+  // ... (keep existing implementation)
   const fileInputId = `${inputId}-file`;
   const fileInput = document.getElementById(fileInputId);
   const textInput = document.getElementById(inputId);
@@ -1231,6 +1234,7 @@ async function uploadVideoForField(inputId) {
 }
 
 async function saveAllModalContent() {
+  // ... (keep existing implementation)
   if (!currentSection) return;
   
   // Handle individual service editing
@@ -1400,7 +1404,6 @@ window.addEventListener('load', function() {
   console.log('=== Window loaded, initializing toggle ===');
   
   const editModeToggle = document.getElementById('editModeToggle');
-  const editModeLabel = document.getElementById('editModeLabel');
   
   // Try to load immediately
   loadMemorialData();
@@ -1412,7 +1415,6 @@ window.addEventListener('load', function() {
     setTimeout(() => toggleEditButtons(false), 100); 
     
     if (editModeToggle) editModeToggle.checked = false;
-    if (editModeLabel) editModeLabel.textContent = 'OFF';
   }
   
   if (editModeToggle) {
@@ -1426,9 +1428,101 @@ window.addEventListener('load', function() {
          toggleEditButtons(false);
       }
       
-      if (editModeLabel) editModeLabel.textContent = isEnabled ? 'ON' : 'OFF';
       localStorage.setItem('editModeEnabled', isEnabled);
     });
+  }
+
+  // --- Admin Toolbar Drag & Minimize Logic ---
+  const adminToolbar = document.getElementById('adminToolbar');
+  const minimizeBtn = document.getElementById('minimizeToolbarBtn');
+  const toolbarContent = document.getElementById('adminToolbarContent');
+  const toolbarControls = document.getElementById('adminToolbarControls');
+  
+  if (adminToolbar) {
+    let isDragging = false;
+    let currentX;
+    let currentY;
+    let initialX;
+    let initialY;
+    let xOffset = 0;
+    let yOffset = 0;
+
+    adminToolbar.addEventListener("mousedown", dragStart);
+    document.addEventListener("mouseup", dragEnd);
+    document.addEventListener("mousemove", drag);
+
+    function dragStart(e) {
+      if (e.target.closest('button') || e.target.closest('input') || e.target.closest('a')) {
+        return; // Don't drag if clicking controls
+      }
+      
+      initialX = e.clientX - xOffset;
+      initialY = e.clientY - yOffset;
+
+      if (e.target.closest('#adminToolbar')) {
+        isDragging = true;
+      }
+    }
+
+    function dragEnd(e) {
+      initialX = currentX;
+      initialY = currentY;
+      isDragging = false;
+    }
+
+    function drag(e) {
+      if (isDragging) {
+        e.preventDefault();
+        currentX = e.clientX - initialX;
+        currentY = e.clientY - initialY;
+
+        xOffset = currentX;
+        yOffset = currentY;
+
+        setTranslate(currentX, currentY, adminToolbar);
+      }
+    }
+
+    function setTranslate(xPos, yPos, el) {
+      el.style.transform = `translate3d(${xPos}px, ${yPos}px, 0)`;
+    }
+    
+    // Minimize logic
+    if (minimizeBtn && toolbarControls) {
+      let isMinimized = localStorage.getItem('adminToolbarMinimized') === 'true';
+      
+      function updateMinimizeState() {
+        if (isMinimized) {
+          toolbarControls.style.maxWidth = '0px';
+          toolbarControls.style.paddingRight = '0px';
+          toolbarControls.style.opacity = '0';
+          minimizeBtn.innerHTML = `
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+          `; // Right chevron (Expand)
+        } else {
+          toolbarControls.style.maxWidth = '300px'; // Approximate max width
+          toolbarControls.style.paddingRight = '1rem';
+          toolbarControls.style.opacity = '1';
+          minimizeBtn.innerHTML = `
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+          `; // Left chevron (Collapse)
+        }
+        localStorage.setItem('adminToolbarMinimized', isMinimized);
+      }
+      
+      // Initialize state
+      updateMinimizeState();
+      
+      minimizeBtn.addEventListener('click', (e) => {
+        e.stopPropagation(); // Prevent drag start
+        isMinimized = !isMinimized;
+        updateMinimizeState();
+      });
+    }
   }
 });
 

@@ -194,5 +194,11 @@ const { images, isAdmin = false, title = "Treasured Moments" } = Astro.props;
 </section>
 
 <script>
-  import "../scripts/gallery.js";
+  import "../scripts/gallery-carousel.js";
 </script>
+
+{isAdmin && (
+  <script>
+    import "../scripts/gallery-admin.js";
+  </script>
+)}
