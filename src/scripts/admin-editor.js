@@ -986,11 +986,11 @@ async function openEditModal(section) {
       renderModalContent(section);
       modal.classList.remove("hidden");
     } else {
-      alert("Error loading content: " + result.error);
+      showToast("Error loading content: " + result.error, "error");
     }
   } catch (error) {
     console.error("Error loading content:", error);
-    alert("Error loading content. Please try again.");
+    showToast("Error loading content. Please try again.", "error");
   }
 }
 
@@ -1552,20 +1552,15 @@ async function uploadImageForField(inputId) {
 
       if (result.success) {
         textInput.value = result.url;
-        alert(
-          '✅ Image uploaded successfully!\n\nThe URL has been set. Click "Save Changes" to apply it.',
-        );
+        showToast('Image uploaded successfully! Click "Save Changes" to apply it.', 'success');
       } else {
-        alert(
-          "❌ Upload failed: " +
-            result.error +
-            (result.details ? "\n\n" + result.details : ""),
-        );
+        const errorMsg = result.error + (result.details ? ": " + result.details : "");
+        showToast("Upload failed: " + errorMsg, "error");
         textInput.value = originalValue;
       }
     } catch (error) {
       console.error("Upload error:", error);
-      alert("❌ Failed to upload image: " + error.message);
+      showToast("Failed to upload image: " + error.message, "error");
       textInput.value = originalValue;
     } finally {
       textInput.disabled = false;
@@ -1618,9 +1613,7 @@ async function uploadVideoForField(inputId) {
 
       if (result.success) {
         textInput.value = result.url;
-        alert(
-          '✅ Video uploaded successfully!\n\nThe URL has been set. Click "Save Changes" to apply it.',
-        );
+        showToast('Video uploaded successfully! Click "Save Changes" to apply it.', 'success');
       } else {
         alert(
           "❌ Upload failed: " +
@@ -1838,7 +1831,7 @@ async function uploadAgendaForField(inputId) {
 
       if (result.success) {
         textInput.value = result.url;
-        alert("✅ Agenda uploaded successfully!");
+        showToast("Agenda uploaded successfully!", "success");
       } else {
         throw new Error(result.error || "Upload failed");
       }

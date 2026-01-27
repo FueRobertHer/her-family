@@ -1,5 +1,6 @@
 ---
 import Analytics from '@vercel/analytics/astro';
+import Toast from '../components/Toast.astro';
 
 export interface Props {
   title: string;
@@ -34,6 +35,7 @@ const { title, description = "A memorial page to honor and remember a beloved li
   </head>
   <body class="bg-warm-gray-50 text-warm-gray-900 antialiased">
     <slot />
+    <Toast />
     
     <!-- Smooth scroll behavior -->
     <script>

@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { checkRateLimit, resetRateLimit, getClientIdentifier } from '../../../lib/rate-limiter';
 
 const ADMIN_PASSWORD = import.meta.env.ADMIN_PASSWORD;
 
@@ -11,6 +12,24 @@ export const prerender = false;
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
+    // Rate limiting - 5 attempts per 15 minutes per IP
+    const clientId = getClientIdentifier(request);
+    const rateLimit = checkRateLimit(clientId, 5, 15 * 60 * 1000);
+    
+    if (!rateLimit.allowed) {
+      const minutesUntilReset = Math.ceil((rateLimit.resetTime - Date.now()) / 60000);
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: `Too many login attempts. Please try again in ${minutesUntilReset} minute${minutesUntilReset > 1 ? 's' : ''}.` 
+      }), {
+        status: 429,
+        headers: {
+          'Content-Type': 'application/json',
+          'Retry-After': String(Math.ceil((rateLimit.resetTime - Date.now()) / 1000))
+        },
+      });
+    }
+    
     // Check if request has a body
     const contentType = request.headers.get('content-type');
     if (!contentType || !contentType.includes('application/json')) {
@@ -54,6 +73,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     }
 
     if (password === ADMIN_PASSWORD) {
+      // Reset rate limit on successful login
+      resetRateLimit(clientId);
+      
       // Set cookie with secure settings
       cookies.set('admin_auth', 'true', {
         httpOnly: true, // Prevent JavaScript access (XSS protection)

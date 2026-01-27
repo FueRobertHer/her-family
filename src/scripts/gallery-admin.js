@@ -76,17 +76,17 @@ confirmCaptionBtn?.addEventListener("click", async () => {
       });
 
       if (dbResponse.ok) {
-        alert("Image uploaded successfully! Refreshing page...");
-        window.location.reload();
+        showToast("Image uploaded successfully! Refreshing page...", "success");
+        setTimeout(() => window.location.reload(), 1000);
       } else {
-        alert("Image uploaded but failed to add to database");
+        showToast("Image uploaded but failed to add to database", "error");
       }
     } else {
-      alert("Upload failed: " + result.error);
+      showToast("Upload failed: " + result.error, "error");
     }
   } catch (error) {
     console.error("Upload error:", error);
-    alert("Failed to upload image");
+    showToast("Failed to upload image", "error");
   } finally {
     uploadBtn.textContent = originalText || "Upload New Image";
     uploadBtn.removeAttribute("disabled");
@@ -227,13 +227,13 @@ saveEditCaptionBtn?.addEventListener("click", async () => {
       }
       
       // Show success message
-      alert('Caption updated successfully!');
+      showToast('Caption updated successfully!', 'success');
     } else {
-      alert('Failed to update caption: ' + (result.error || 'Unknown error'));
+      showToast('Failed to update caption: ' + (result.error || 'Unknown error'), 'error');
     }
   } catch (error) {
     console.error("Error updating caption:", error);
-    alert("Failed to update caption");
+    showToast("Failed to update caption", 'error');
   } finally {
     saveEditCaptionBtn.textContent = originalText || "Save";
     saveEditCaptionBtn.removeAttribute("disabled");
@@ -285,14 +285,14 @@ document.addEventListener("click", async (e) => {
       });
 
       if (dbResponse.ok) {
-        alert("Image deleted successfully! Refreshing page...");
-        window.location.reload();
+        showToast("Image deleted successfully! Refreshing page...", "success");
+        setTimeout(() => window.location.reload(), 1000);
       } else {
-        alert("Failed to delete image from database");
+        showToast("Failed to delete image from database", "error");
       }
     } catch (error) {
       console.error("Delete error:", error);
-      alert("Failed to delete image");
+      showToast("Failed to delete image", "error");
     }
   }
 });
