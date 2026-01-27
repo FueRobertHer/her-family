@@ -64,6 +64,13 @@ CLOUDINARY_CLOUD_NAME=your_cloud_name
 CLOUDINARY_API_KEY=your_api_key
 CLOUDINARY_API_SECRET=your_api_secret
 
+TURSO_DATABASE_URL=your_database_url
+TURSO_AUTH_TOKEN=your_auth_token
+
+# These are the same as the TURSO_DATABASE_URL and auth token, but it is used by the Astro DB integration
+ASTRO_DB_REMOTE_URL=your_remote_url
+ASTRO_DB_APP_TOKEN=your_app_token
+
 # Admin Configuration
 ADMIN_PASSWORD=yourpassword
 ```
@@ -78,7 +85,7 @@ You can also place images manually in `public/images/` and reference them in the
 
 ### Admin Interface
 
-Log in at `/admin` (default password: `memorial2024` or what you set in `.env`).
+Log in at `/admin` (default password: what you set in `.env`).
 
 #### Inline Editing
 
@@ -99,7 +106,7 @@ Visit `/admin` to approve or reject memories shared by visitors.
 
 ## Deployment
 
-### Vercel (Recommended)
+### Vercel
 
 1. Push your code to GitHub.
 2. Import the project in Vercel.
@@ -115,7 +122,7 @@ Run `npm run build` to generate the `dist/` folder and upload it to any static h
 
 - **Framework**: Astro.js
 - **Styling**: Tailwind CSS
-- **Database**: Astro DB (LibSQL/SQLite)
+- **Database**: Astro DB (LibSQL/SQLite) via Turso
 - **Image CDN**: Cloudinary
 - **Deployment**: Vercel (Server output)
 
