@@ -37,11 +37,12 @@ const { title, description = "A memorial page to honor and remember a beloved li
     
     <!-- Smooth scroll behavior -->
     <script>
-      // Add smooth scrolling for anchor links
-      document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
-        anchor.addEventListener('click', function (e: Event) {
+      // Use event delegation for smooth scrolling on anchor links
+      document.addEventListener('click', function (e: Event) {
+        const anchor = (e.target as HTMLElement).closest('a[href^="#"]');
+        if (anchor) {
           e.preventDefault();
-          const href = (e.currentTarget as HTMLAnchorElement).getAttribute('href');
+          const href = (anchor as HTMLAnchorElement).getAttribute('href');
           const target = href ? document.querySelector(href) : null;
           if (target) {
             target.scrollIntoView({
@@ -49,7 +50,7 @@ const { title, description = "A memorial page to honor and remember a beloved li
               block: 'start'
             });
           }
-        });
+        }
       });
     </script>
     

@@ -78,13 +78,21 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       });
     }
 
-    // Check if content already exists
-    const existingContent = await db.select().from(MemorialContent);
-    const existing = existingContent.find(c => c.section === section && c.key === key);
+    // Check if content already exists (optimized query)
+    const existing = await db
+      .select()
+      .from(MemorialContent)
+      .where(
+        and(
+          eq(MemorialContent.section, section),
+          eq(MemorialContent.key, key)
+        )
+      )
+      .limit(1);
 
-    console.log('Existing content found:', existing !== undefined);
+    console.log('Existing content found:', existing.length > 0);
 
-    if (existing) {
+    if (existing.length > 0) {
       // Update existing content using proper SQL update
       await db.update(MemorialContent)
         .set({
@@ -93,7 +101,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
           updatedAt: new Date().toISOString()
         })
         .where(
-          eq(MemorialContent.id, existing.id)
+          eq(MemorialContent.id, existing[0].id)
         );
     } else {
       // Insert new content
