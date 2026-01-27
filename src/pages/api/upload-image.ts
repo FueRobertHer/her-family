@@ -80,8 +80,24 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const buffer = Buffer.from(arrayBuffer);
     const base64File = `data:${file.type};base64,${buffer.toString("base64")}`;
 
-    // Upload to Cloudinary
-    const uploadOptions: any = {
+    // Upload to Cloudinary with proper types
+    interface CloudinaryUploadOptions {
+      folder: string;
+      resource_type: "raw" | "video" | "image" | "auto";
+      type?: string;
+      access_mode?: string;
+      use_filename?: boolean;
+      unique_filename?: boolean;
+      transformation?: Array<{
+        width?: number;
+        height?: number;
+        crop?: string;
+        quality?: string;
+        fetch_format?: string;
+      }>;
+    }
+
+    const uploadOptions: CloudinaryUploadOptions = {
       folder: folder,
       resource_type: "auto",
     };

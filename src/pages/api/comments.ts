@@ -54,9 +54,11 @@ export const POST: APIRoute = async ({ request }) => {
           )
         );
       
+      // Only approve automatically if the setting explicitly exists and is set to 'true'
       if (settings.length > 0 && settings[0].value === 'true') {
         status = 'approved';
       }
+      // If setting doesn't exist or is 'false', default to 'pending' (safer approach)
     } catch (settingsError) {
       console.error('Error checking auto-approve setting:', settingsError);
       // Default to pending on error - safer approach

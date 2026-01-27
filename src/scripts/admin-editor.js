@@ -1348,7 +1348,8 @@ function renderModalContent(section) {
       }
 
       if (field.type === "checkbox" && !actualSectionData[field.key]) {
-        value = "true";
+        // Default to true for most visibility toggles, but false for autoApprove
+        value = (section === "comments" && field.key === "autoApprove") ? "false" : "true";
       }
 
       const inputId = `modal-${section}-${field.key}`;

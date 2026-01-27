@@ -49,6 +49,7 @@ This legacy lives on through the many people inspired, the family loved deeply, 
     // Comments Section
     { section: 'comments', key: 'sectionTitle', value: 'Share Your Memories', type: 'text', updatedAt: now },
     { section: 'comments', key: 'subtitle', value: 'Leave a message to honor their memory and share how they touched your life', type: 'text', updatedAt: now },
+    { section: 'comments', key: 'autoApprove', value: 'false', type: 'boolean', updatedAt: now },
     
     // Funeral Section
     { section: 'funeral', key: 'subtitle', value: 'Please join us as we celebrate their life and honor their memory', type: 'text', updatedAt: now },

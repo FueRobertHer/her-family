@@ -73,56 +73,65 @@ if (Astro.url.searchParams.get('logout') === 'true') {
 
       <script>
         // Handle login form submission
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
-          e.preventDefault();
-          
-          const password = document.getElementById('password').value;
-          const loginButton = document.getElementById('loginButton');
-          const loginError = document.getElementById('loginError');
-          
-          // Reset error state
-          loginError.classList.add('hidden');
-          loginButton.disabled = true;
-          loginButton.textContent = 'Signing in...';
-          
-          try {
-            const response = await fetch('/api/admin/login', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ password })
-            });
+        const loginForm = document.getElementById('loginForm');
+        if (loginForm) {
+          loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
             
-            const result = await response.json();
+            const passwordInput = document.getElementById('password') as HTMLInputElement | null;
+            const loginButton = document.getElementById('loginButton') as HTMLButtonElement | null;
+            const loginError = document.getElementById('loginError');
             
-            if (result.success) {
-              // Show success message briefly before redirect
-              loginError.textContent = 'Login successful! Checking authentication...';
-              loginError.classList.remove('hidden');
-              loginError.classList.remove('text-red-600');
-              loginError.classList.add('text-green-600');
+            if (!passwordInput || !loginButton || !loginError) return;
+            
+            const password = passwordInput.value;
+            
+            // Reset error state
+            loginError.classList.add('hidden');
+            loginButton.disabled = true;
+            loginButton.textContent = 'Signing in...';
+            
+            try {
+              const response = await fetch('/api/admin/login', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ password })
+              });
               
-              // Redirect after a brief delay
-              setTimeout(() => {
-                window.location.reload(); // Use reload instead of href to ensure fresh page load
-              }, 1500);
-            } else {
-              loginError.textContent = result.error || 'Login failed';
+              const result = await response.json();
+              
+              if (result.success) {
+                // Show success message briefly before redirect
+                loginError.textContent = 'Login successful! Checking authentication...';
+                loginError.classList.remove('hidden');
+                loginError.classList.remove('text-red-600');
+                loginError.classList.add('text-green-600');
+                
+                // Redirect after a brief delay
+                setTimeout(() => {
+                  window.location.reload(); // Use reload instead of href to ensure fresh page load
+                }, 1500);
+              } else {
+                loginError.textContent = result.error || 'Login failed';
+                loginError.classList.remove('hidden');
+              }
+            } catch (error) {
+              console.error('Login error:', error);
+              loginError.textContent = 'Login failed. Please try again.';
               loginError.classList.remove('hidden');
+            } finally {
+              loginButton.disabled = false;
+              loginButton.textContent = 'Sign in';
             }
-          } catch (error) {
-            console.error('Login error:', error);
-            loginError.textContent = 'Login failed. Please try again.';
-            loginError.classList.remove('hidden');
-          } finally {
-            loginButton.disabled = false;
-            loginButton.textContent = 'Sign in';
-          }
-        });
+          });
+        }
 
         // Debug button to check authentication status
-        document.getElementById('checkAuthButton').addEventListener('click', async () => {
+        const checkAuthButton = document.getElementById('checkAuthButton');
+        if (checkAuthButton) {
+          checkAuthButton.addEventListener('click', async () => {
           try {
             const response = await fetch('/api/admin/status');
             const result = await response.json();
@@ -137,6 +146,7 @@ if (Astro.url.searchParams.get('logout') === 'true') {
             alert('Error checking authentication status. Check console.');
           }
         });
+      }
       </script>
     </div>
   </div>
@@ -218,11 +228,37 @@ if (Astro.url.searchParams.get('logout') === 'true') {
 )}
 
 <script>
+  // Global type declarations
+  declare global {
+    interface Window {
+      moderateComment: (id: number, action: string) => Promise<void>;
+    }
+  }
+
   // Admin dashboard functionality
   if (document.querySelector('.tab-button')) {
+    interface Comment {
+      id: number;
+      name: string;
+      email?: string;
+      relationship?: string;
+      message: string;
+      imageUrl?: string;
+      status: string;
+      createdAt: string;
+      updatedAt: string;
+    }
+
+    interface Counts {
+      pending: number;
+      approved: number;
+      rejected: number;
+      total: number;
+    }
+
     let currentTab = 'pending';
-    let comments = [];
-    let counts = { pending: 0, approved: 0, total: 0 };
+    let comments: Comment[] = [];
+    let counts: Counts = { pending: 0, approved: 0, rejected: 0, total: 0 };
 
     // DOM elements
     const tabButtons = document.querySelectorAll('.tab-button');
@@ -234,7 +270,7 @@ if (Astro.url.searchParams.get('logout') === 'true') {
     const totalCount = document.getElementById('totalCount');
 
     // Load comments
-    async function loadComments(status = 'pending') {
+    async function loadComments(status: string = 'pending') {
       try {
         const response = await fetch(`/api/admin/comments?status=${status}`);
         const result = await response.json();
@@ -244,19 +280,19 @@ if (Astro.url.searchParams.get('logout') === 'true') {
           counts = result.data.counts;
           
           // Update counts
-          pendingCount.textContent = counts.pending;
-          approvedCount.textContent = counts.approved;
-          rejectedCount.textContent = counts.rejected;
-          totalCount.textContent = counts.total;
+          if (pendingCount) pendingCount.textContent = String(counts.pending);
+          if (approvedCount) approvedCount.textContent = String(counts.approved);
+          if (rejectedCount) rejectedCount.textContent = String(counts.rejected);
+          if (totalCount) totalCount.textContent = String(counts.total);
           
           // Update section title
-          const titles = {
+          const titles: { [key: string]: string } = {
             pending: `Pending Review (${counts.pending})`,
             approved: `Approved Comments (${counts.approved})`,
             rejected: `Rejected Comments (${counts.rejected})`,
             all: `All Comments (${counts.total})`
           };
-          sectionTitle.textContent = titles[status] || 'Comments';
+          if (sectionTitle) sectionTitle.textContent = titles[status] || 'Comments';
           
           // Render comments
           renderComments();
@@ -265,16 +301,20 @@ if (Astro.url.searchParams.get('logout') === 'true') {
         }
       } catch (error) {
         console.error('Error loading comments:', error);
-        commentsContainer.innerHTML = `
-          <div class="p-6 text-center text-red-600">
-            <p>Error loading comments. Please refresh the page.</p>
-          </div>
-        `;
+        if (commentsContainer) {
+          commentsContainer.innerHTML = `
+            <div class="p-6 text-center text-red-600">
+              <p>Error loading comments. Please refresh the page.</p>
+            </div>
+          `;
+        }
       }
     }
 
     // Render comments
     function renderComments() {
+      if (!commentsContainer) return;
+      
       if (comments.length === 0) {
         commentsContainer.innerHTML = `
           <div class="p-6 text-center text-gray-500">
@@ -348,11 +388,13 @@ if (Astro.url.searchParams.get('logout') === 'true') {
         </div>
       `).join('');
 
-      commentsContainer.innerHTML = commentsHtml;
+      if (commentsContainer) {
+        commentsContainer.innerHTML = commentsHtml;
+      }
     }
 
     // Moderate comment
-    window.moderateComment = async function(id, action) {
+    window.moderateComment = async function(id: number, action: string) {
       // Only confirm for reject action, not for approve
       if (action === 'reject') {
         if (!confirm('Are you sure you want to reject this comment?')) {
@@ -396,7 +438,7 @@ if (Astro.url.searchParams.get('logout') === 'true') {
     // Tab switching
     tabButtons.forEach(button => {
       button.addEventListener('click', () => {
-        const tab = button.dataset.tab;
+        const tab = (button as HTMLElement).dataset.tab;
         
         // Update active tab
         tabButtons.forEach(btn => {
@@ -406,19 +448,19 @@ if (Astro.url.searchParams.get('logout') === 'true') {
         button.classList.remove('border-transparent', 'text-gray-500');
         button.classList.add('border-indigo-500', 'text-indigo-600');
         
-        currentTab = tab;
-        loadComments(tab);
+        currentTab = tab || 'pending';
+        loadComments(tab || 'pending');
       });
     });
 
     // Utility functions
-    function escapeHtml(text) {
+    function escapeHtml(text: string) {
       const div = document.createElement('div');
       div.textContent = text;
       return div.innerHTML;
     }
 
-    function formatDate(dateString) {
+    function formatDate(dateString: string) {
       return new Date(dateString).toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'short',
@@ -432,7 +474,10 @@ if (Astro.url.searchParams.get('logout') === 'true') {
     loadComments('pending');
     
     // Set initial active tab
-    document.querySelector('[data-tab="pending"]').click();
+    const initialTab = document.querySelector('[data-tab="pending"]');
+    if (initialTab) {
+      (initialTab as HTMLElement).click();
+    }
   }
 </script>
 
