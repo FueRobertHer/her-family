@@ -185,8 +185,20 @@ const {
 <script>
   // Client-side JavaScript for comment functionality
   
+  interface Comment {
+    id: number;
+    name: string;
+    email?: string;
+    relationship?: string;
+    message: string;
+    imageUrl?: string;
+    status: string;
+    createdAt: string;
+    updatedAt: string;
+  }
+  
   // State
-  let allComments: any[] = [];
+  let allComments: Comment[] = [];
   let carouselIndex = 0;
   let offset = 0;
   const limit = 10;
@@ -267,7 +279,7 @@ const {
     }
   }
 
-  function renderNewComments(comments: any[]) {
+  function renderNewComments(comments: Comment[]) {
     const fragment = document.createDocumentFragment();
     
     comments.forEach(comment => {
@@ -437,8 +449,14 @@ const {
     const formData = new FormData(form);
     const imageFile = commentImageInput?.files?.[0];
     
-    const data: any = {
-      name: formData.get('name')?.toString().trim(),
+    const data: {
+      name: string;
+      email?: string;
+      relationship?: string;
+      message: string;
+      imageUrl?: string;
+    } = {
+      name: formData.get('name')?.toString().trim() || '',
       email: formData.get('email')?.toString().trim(),
       relationship: formData.get('relationship')?.toString().trim(),
       message: formData.get('message')?.toString().trim()
@@ -531,7 +549,14 @@ const {
   const commentLightboxCaption = document.getElementById('commentLightboxCaption');
   const closeCommentLightbox = document.getElementById('closeCommentLightbox');
 
-  (window as any).openCommentLightbox = (url: string, caption: string) => {
+  // Expose openCommentLightbox globally with proper typing
+  declare global {
+    interface Window {
+      openCommentLightbox: (url: string, caption: string) => void;
+    }
+  }
+  
+  window.openCommentLightbox = (url: string, caption: string) => {
     if (commentLightboxImage) commentLightboxImage.src = url;
     if (commentLightboxCaption) commentLightboxCaption.textContent = caption || '';
     if (commentLightbox) {

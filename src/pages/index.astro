@@ -69,9 +69,28 @@ interface MemorialData {
     serviceLocation: string;
     additionalInfo: string;
   };
+  funeralInfo: {
+    visible: boolean;
+    sectionTitle: string;
+    subtitle: string;
+    specialInstructionsVisible: boolean;
+    flowersInfoVisible: boolean;
+    services: any[];
+    receptionInfo: {
+      location: string;
+      time: string;
+      description?: string;
+    } | undefined;
+    receptionVisible: boolean;
+    specialInstructions: string;
+    flowersInfo: string;
+  };
+  footerVisible: boolean;
+  footerQuote: string;
+  footerCredit: string;
 }
 
-let memorialData: MemorialData | Record<string, never> = {};
+let memorialData: MemorialData;
 
 try {
   const content = await db.select().from(MemorialContent);
@@ -95,7 +114,7 @@ try {
     .map(img => ({
       src: img.imagePath, // Support both local (/images/...) and Cloudinary URLs
       alt: img.caption || "Memorial photo",
-      caption: img.caption
+      caption: img.caption || undefined
     }));
 
   // Helper to safely get content with fallback, allowing empty strings
@@ -157,9 +176,9 @@ try {
     footerCredit: getContent('footer', 'credit', 'Created with love by the Family • 2024'),
 
   funeralInfo: {
-    // Load services from database if they exist, otherwise use defaults
-    sectionTitle: getContent('funeral', 'sectionTitle', "Service Information"),
     visible: organizedContent.funeral?.visible !== 'false',
+    sectionTitle: getContent('funeral', 'sectionTitle', "Service Information"),
+    subtitle: getContent('funeral', 'subtitle', "Please join us as we celebrate their life and honor their memory"),
     specialInstructionsVisible: organizedContent.funeral?.specialInstructionsVisible !== 'false',
     flowersInfoVisible: organizedContent.funeral?.flowersInfoVisible !== 'false',
     services: (() => {
@@ -213,11 +232,21 @@ try {
       location: getContent('reception', 'location', "Home of the Family"),
       time: getContent('reception', 'time', "Following the burial (approximately 12:30 PM)"),
       description: getContent('reception', 'description', "Light refreshments will be served. All are welcome to join us for fellowship and to continue sharing memories.")
-    },
+    } as { location: string; time: string; description?: string },
     receptionVisible: organizedContent.reception?.visible !== 'false',
-    subtitle: getContent('funeral', 'subtitle', "Please join us as we celebrate their life and honor their memory"),
     specialInstructions: getContent('funeral', 'specialInstructions', "Please arrive 15 minutes early for seating. The funeral service will be livestreamed for those unable to attend in person. A link will be provided to family members."),
     flowersInfo: getContent('funeral', 'flowersInfo', "In lieu of flowers, the family requests donations be made to a charity of your choice.")
+  },
+  funeral: {
+    visible: true,
+    sectionTitle: "",
+    viewingDate: "",
+    viewingTime: "",
+    viewingLocation: "",
+    serviceDate: "",
+    serviceTime: "",
+    serviceLocation: "",
+    additionalInfo: ""
   }
 };
 } catch (error) {
@@ -232,13 +261,26 @@ try {
     subtitle: "Please initialize content in admin",
     biography: "Please set up memorial content in the admin panel.",
     biographyTitle: "Memorial",
+    biographyVisible: true,
     highlights: ["Please add content in admin"],
+    highlightsVisible: true,
     images: [{ src: "/images/placeholder.jpg", alt: "Placeholder", caption: "Add images in admin" }],
+    galleryVisible: true,
+    galleryTitle: "Gallery",
     videoUrl: "/videos/memorial-video.mp4",
     posterImage: "/images/video-poster.jpg", 
     videoSectionTitle: "In Their Own Words",
     videoDescription: "Video description",
+    videoVisible: true,
+    commentsTitle: "Memories",
+    commentsSubtitle: "Share your memories",
+    commentsVisible: true,
+    commentsAutoApprove: false,
+    footerVisible: true,
+    footerQuote: "Memorial quote",
+    footerCredit: "Created with love",
     donations: {
+      sectionTitle: "Support",
       venmoUsername: "",
       venmoImage: "",
       cashappUsername: "",
@@ -246,14 +288,31 @@ try {
       zelleEmail: "",
       zelleImage: "",
       subtitle: "Support the family during this difficult time",
-      customMessage: "Thank you for your support."
+      customMessage: "Thank you for your support.",
+      visible: true
     },
     funeralInfo: {
-      services: [],
-      receptionInfo: null,
+      visible: true,
+      sectionTitle: "Funeral Information",
       subtitle: "Please set up funeral information in admin",
+      specialInstructionsVisible: true,
+      flowersInfoVisible: true,
+      services: [],
+      receptionInfo: undefined,
+      receptionVisible: false,
       specialInstructions: "Please set up funeral information in admin",
       flowersInfo: "Please configure in admin"
+    },
+    funeral: {
+      visible: true,
+      sectionTitle: "",
+      viewingDate: "",
+      viewingTime: "",
+      viewingLocation: "",
+      serviceDate: "",
+      serviceTime: "",
+      serviceLocation: "",
+      additionalInfo: ""
     }
   };
 }
@@ -410,7 +469,7 @@ try {
           isAdmin={isAdmin}
           specialInstructionsVisible={memorialData.funeralInfo.specialInstructionsVisible}
           flowersInfoVisible={memorialData.funeralInfo.flowersInfoVisible}
-          receptionVisible={memorialData.receptionVisible}
+          receptionVisible={memorialData.funeralInfo.receptionVisible}
         />
         {isAdmin && (
           <button 
