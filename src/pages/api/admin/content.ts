@@ -1,7 +1,20 @@
 import type { APIRoute } from 'astro';
 import { db, MemorialContent, eq, and } from 'astro:db';
+import { requireAuth } from '../../../lib/auth';
+import { successResponse, errorResponse, validationError } from '../../../lib/api-response';
+import { memorialContentSchema, validateData } from '../../../lib/validation';
 
 export const prerender = false;
+
+interface OrganizedContent {
+  [section: string]: {
+    [key: string]: {
+      value: string;
+      type: string;
+      updatedAt: string;
+    };
+  };
+}
 
 // GET - Fetch all memorial content
 export const GET: APIRoute = async () => {
@@ -19,29 +32,12 @@ export const GET: APIRoute = async () => {
         updatedAt: item.updatedAt
       };
       return acc;
-    }, {} as any);
+    }, {} as OrganizedContent);
 
-    return new Response(JSON.stringify({ 
-      success: true, 
-      data: organizedContent,
-      raw: content
-    }), {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    return successResponse({ organizedContent, raw: content });
   } catch (error) {
     console.error('Error fetching content:', error);
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: 'Failed to fetch content' 
-    }), {
-      status: 500,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    return errorResponse('Failed to fetch content');
   }
 };
 
@@ -49,34 +45,18 @@ export const GET: APIRoute = async () => {
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
     // Check admin authentication
-    const isAuthenticated = cookies.get('admin_auth')?.value === 'true';
-    
-    if (!isAuthenticated) {
-      return new Response(JSON.stringify({ 
-        success: false, 
-        error: 'Unauthorized - Please log in as admin' 
-      }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
+    const authError = requireAuth(cookies);
+    if (authError) return authError;
 
     const body = await request.json();
-    console.log('Received content update:', body);
     
-    const { section, key, value, type = 'text' } = body;
-
-    if (!section || !key || value === undefined) {
-      console.error('Missing required fields:', { section, key, value: value === undefined ? 'undefined' : 'provided' });
-      return new Response(JSON.stringify({ 
-        success: false, 
-        error: 'Section, key, and value are required',
-        received: { section, key, hasValue: value !== undefined }
-      }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
+    // Validate input with Zod
+    const validation = validateData(memorialContentSchema, body);
+    if (!validation.success) {
+      return validationError(validation.error, validation.details?.join(', '));
     }
+    
+    const { section, key, value, type } = validation.data;
 
     // Check if content already exists (optimized query)
     const existing = await db
@@ -89,8 +69,6 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         )
       )
       .limit(1);
-
-    console.log('Existing content found:', existing.length > 0);
 
     if (existing.length > 0) {
       // Update existing content using proper SQL update
@@ -114,24 +92,10 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       });
     }
 
-    console.log('Content updated successfully:', { section, key });
-
-    return new Response(JSON.stringify({ 
-      success: true, 
-      message: 'Content updated successfully' 
-    }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return successResponse(undefined, 'Content updated successfully');
   } catch (error) {
     console.error('Error updating content:', error);
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: 'Failed to update content',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    const details = error instanceof Error ? error.message : 'Unknown error';
+    return errorResponse('Failed to update content', 500, details);
   }
 };

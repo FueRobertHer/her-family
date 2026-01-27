@@ -12,6 +12,19 @@ let draggedItem = null; // For gallery reordering
 
 // --- Helper Functions ---
 
+// Utility function to escape HTML and prevent XSS
+function escapeHtml(text) {
+  const map = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#x27;',
+    '/': '&#x2F;',
+  };
+  return String(text).replace(/[&<>"'/]/g, (char) => map[char]);
+}
+
 function updateNavLinkVisibility(href, isVisible) {
   const link = document.querySelector(`nav a[href="${href}"]`);
   if (!link) return;
@@ -178,7 +191,7 @@ function updateHeroSection(updates) {
     if (datesEl && birthDate && deathDate) {
       const birthYear = new Date(birthDate).getFullYear();
       const deathYear = new Date(deathDate).getFullYear();
-      datesEl.innerHTML = `<time datetime="${birthDate}">${birthYear}</time><span class="w-8 h-px bg-warm-gray-400"></span><time datetime="${deathDate}">${deathYear}</time>`;
+      datesEl.innerHTML = `<time datetime="${escapeHtml(birthDate)}">${escapeHtml(birthYear)}</time><span class="w-8 h-px bg-warm-gray-400"></span><time datetime="${escapeHtml(deathDate)}">${escapeHtml(deathYear)}</time>`;
 
       const footerDates = document.querySelector("footer p.text-warm-gray-400");
       if (footerDates) footerDates.textContent = `${birthYear} - ${deathYear}`;
@@ -225,7 +238,7 @@ function updateBiographySection(updates) {
     if (contentEl) {
       const paragraphs = updates.content.split("\n\n").filter((p) => p.trim());
       contentEl.innerHTML = paragraphs
-        .map((p) => `<p class="mb-6">${p}</p>`)
+        .map((p) => `<p class="mb-6">${escapeHtml(p)}</p>`)
         .join("");
 
       // Re-check if truncation button should be visible after content update
@@ -299,7 +312,7 @@ function updateHighlightsSection(updates) {
           (highlight) => `
         <div class="flex items-start space-x-3">
           <div class="flex-shrink-0 w-2 h-2 bg-warm-gray-400 rounded-full mt-3"></div>
-          <p class="text-warm-gray-700">${highlight.trim()}</p>
+          <p class="text-warm-gray-700">${escapeHtml(highlight.trim())}</p>
         </div>
       `,
         )
@@ -969,7 +982,7 @@ async function openEditModal(section) {
     const result = await response.json();
 
     if (result.success) {
-      contentData = result.data;
+      contentData = result.data.organizedContent;
       renderModalContent(section);
       modal.classList.remove("hidden");
     } else {
@@ -1344,7 +1357,7 @@ function renderModalContent(section) {
       if (field.type === "info") {
         return `
         <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <p class="text-sm text-blue-800">${field.message}</p>
+          <p class="text-sm text-blue-800">${escapeHtml(field.message)}</p>
         </div>
       `;
       } else if (field.type === "checkbox") {
@@ -1359,7 +1372,7 @@ function renderModalContent(section) {
             class="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
           />
           <label for="${inputId}" class="ml-3 text-sm font-medium text-gray-700">
-            ${field.label}
+            ${escapeHtml(field.label)}
           </label>
         </div>
       `;

@@ -1,5 +1,7 @@
 import type { APIRoute } from 'astro';
 import { db, Comments, MemorialContent, eq, and } from 'astro:db';
+import { successResponse, errorResponse, validationError } from '../../lib/api-response';
+import { commentSchema, validateData } from '../../lib/validation';
 
 export const prerender = false;
 
@@ -10,34 +12,20 @@ export const GET: APIRoute = async ({ request }) => {
     const limit = parseInt(url.searchParams.get('limit') || '50');
     const offset = parseInt(url.searchParams.get('offset') || '0');
 
-    // Get all comments and filter in JavaScript to avoid WHERE clause issues
-    const allComments = await db.select().from(Comments);
-    const approvedComments = allComments
-      .filter(comment => comment.status === 'approved')
+    // Get approved comments using WHERE clause for better performance
+    const allApprovedComments = await db.select()
+      .from(Comments)
+      .where(eq(Comments.status, 'approved'));
+    
+    // Sort and paginate
+    const approvedComments = allApprovedComments
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .slice(offset, offset + limit);
 
-    return new Response(JSON.stringify({ 
-      success: true, 
-      data: approvedComments,
-      count: approvedComments.length 
-    }), {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    return successResponse(approvedComments);
   } catch (error) {
     console.error('Error fetching comments:', error);
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: 'Failed to fetch comments' 
-    }), {
-      status: 500,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    return errorResponse('Failed to fetch comments');
   }
 };
 
@@ -45,33 +33,14 @@ export const GET: APIRoute = async ({ request }) => {
 export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();
-    const { name, email, relationship, message, imageUrl } = body;
-
-    // Basic validation
-    if (!name || !message) {
-      return new Response(JSON.stringify({ 
-        success: false, 
-        error: 'Name and message are required' 
-      }), {
-        status: 400,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+    
+    // Validate input with Zod
+    const validation = validateData(commentSchema, body);
+    if (!validation.success) {
+      return validationError(validation.error, validation.details?.join(', '));
     }
-
-    // Validate message length
-    if (message.length > 1000) {
-      return new Response(JSON.stringify({ 
-        success: false, 
-        error: 'Message must be less than 1000 characters' 
-      }), {
-        status: 400,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-    }
+    
+    const { name, email, relationship, message, imageUrl } = validation.data;
 
     // Check auto-approve setting
     let status = 'pending';
@@ -110,26 +79,13 @@ export const POST: APIRoute = async ({ request }) => {
       ? 'Comment submitted successfully.' 
       : 'Comment submitted successfully. It will be reviewed before appearing on the page.';
 
-    return new Response(JSON.stringify({ 
-      success: true, 
-      message: responseMessage,
-      data: { id: Number(result.lastInsertRowid), status }
-    }), {
-      status: 201,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    return successResponse(
+      { id: Number(result.lastInsertRowid), status }, 
+      responseMessage,
+      201
+    );
   } catch (error) {
     console.error('Error creating comment:', error);
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: 'Failed to submit comment' 
-    }), {
-      status: 500,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    return errorResponse('Failed to submit comment');
   }
 };

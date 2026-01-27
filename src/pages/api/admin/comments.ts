@@ -1,29 +1,35 @@
 import type { APIRoute } from 'astro';
 import { db, Comments, eq } from 'astro:db';
+import { requireAuth } from '../../../lib/auth';
+import { successResponse, errorResponse, validationError } from '../../../lib/api-response';
+import { commentActionSchema, validateData } from '../../../lib/validation';
 
 export const prerender = false;
 
 // GET - Fetch all comments (including pending ones) for admin
-export const GET: APIRoute = async ({ request }) => {
+export const GET: APIRoute = async ({ request, cookies }) => {
   try {
+    // Check authentication
+    const authError = requireAuth(cookies);
+    if (authError) return authError;
+
     const url = new URL(request.url);
     const status = url.searchParams.get('status'); // 'pending', 'approved', 'rejected', 'all'
     const limit = parseInt(url.searchParams.get('limit') || '50');
     const offset = parseInt(url.searchParams.get('offset') || '0');
 
-    // Get all comments first, then filter in JavaScript to avoid WHERE clause issues
-    const allComments = await db.select().from(Comments);
-    
-    // Filter by status
-    let filteredComments = allComments;
+    // Fetch comments based on status filter using WHERE clauses for better performance
+    let filteredComments;
     if (status === 'pending') {
-      filteredComments = allComments.filter(comment => comment.status === 'pending');
+      filteredComments = await db.select().from(Comments).where(eq(Comments.status, 'pending'));
     } else if (status === 'approved') {
-      filteredComments = allComments.filter(comment => comment.status === 'approved');
+      filteredComments = await db.select().from(Comments).where(eq(Comments.status, 'approved'));
     } else if (status === 'rejected') {
-      filteredComments = allComments.filter(comment => comment.status === 'rejected');
+      filteredComments = await db.select().from(Comments).where(eq(Comments.status, 'rejected'));
+    } else {
+      // 'all' shows everything
+      filteredComments = await db.select().from(Comments);
     }
-    // 'all' shows everything
 
     // Sort by creation date (newest first)
     filteredComments.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -31,59 +37,49 @@ export const GET: APIRoute = async ({ request }) => {
     // Apply pagination
     const comments = filteredComments.slice(offset, offset + limit);
 
-    // Get counts for dashboard
-    const pendingCount = allComments.filter(comment => comment.status === 'pending');
-    const approvedCount = allComments.filter(comment => comment.status === 'approved');
-    const rejectedCount = allComments.filter(comment => comment.status === 'rejected');
+    // Get counts for dashboard using separate queries
+    const [pendingComments, approvedComments, rejectedComments, allComments] = await Promise.all([
+      db.select().from(Comments).where(eq(Comments.status, 'pending')),
+      db.select().from(Comments).where(eq(Comments.status, 'approved')),
+      db.select().from(Comments).where(eq(Comments.status, 'rejected')),
+      db.select().from(Comments)
+    ]);
 
-    return new Response(JSON.stringify({ 
-      success: true, 
-      data: comments,
+    return successResponse({
+      comments,
       counts: {
-        pending: pendingCount.length,
-        approved: approvedCount.length,
-        rejected: rejectedCount.length,
+        pending: pendingComments.length,
+        approved: approvedComments.length,
+        rejected: rejectedComments.length,
         total: allComments.length
       }
-    }), {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-      },
     });
   } catch (error) {
     console.error('Error fetching admin comments:', error);
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: 'Failed to fetch comments' 
-    }), {
-      status: 500,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    return errorResponse('Failed to fetch comments');
   }
 };
 
 // PATCH - Approve or reject a comment
-export const PATCH: APIRoute = async ({ request }) => {
+export const PATCH: APIRoute = async ({ request, cookies }) => {
   try {
+    // Check authentication
+    const authError = requireAuth(cookies);
+    if (authError) return authError;
+
     const body = await request.json();
-    const { id, action } = body; // action: 'approve' or 'reject'
-
-    if (!id || !action) {
-      return new Response(JSON.stringify({ 
-        success: false, 
-        error: 'Comment ID and action are required' 
-      }), {
-        status: 400,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+    
+    // Validate input with Zod
+    const validation = validateData(commentActionSchema, {
+      id: typeof body.id === 'string' ? parseInt(body.id) : body.id,
+      action: body.action
+    });
+    
+    if (!validation.success) {
+      return validationError(validation.error, validation.details?.join(', '));
     }
-
-    const commentId = parseInt(id);
+    
+    const { id: commentId, action } = validation.data;
     const now = new Date().toISOString();
 
     if (action === 'approve') {
@@ -91,50 +87,18 @@ export const PATCH: APIRoute = async ({ request }) => {
         .set({ status: 'approved', updatedAt: now })
         .where(eq(Comments.id, commentId));
 
-      return new Response(JSON.stringify({ 
-        success: true, 
-        message: 'Comment approved successfully' 
-      }), {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      return successResponse(undefined, 'Comment approved successfully');
     } else if (action === 'reject') {
       await db.update(Comments)
         .set({ status: 'rejected', updatedAt: now })
         .where(eq(Comments.id, commentId));
 
-      return new Response(JSON.stringify({ 
-        success: true, 
-        message: 'Comment rejected (kept for audit)' 
-      }), {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      return successResponse(undefined, 'Comment rejected (kept for audit)');
     } else {
-      return new Response(JSON.stringify({ 
-        success: false, 
-        error: 'Invalid action. Use "approve" or "reject"' 
-      }), {
-        status: 400,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      return errorResponse('Invalid action. Use "approve" or "reject"', 400);
     }
   } catch (error) {
     console.error('Error updating comment:', error);
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: 'Failed to update comment' 
-    }), {
-      status: 500,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    return errorResponse('Failed to update comment');
   }
 };
