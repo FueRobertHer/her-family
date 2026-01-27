@@ -51,20 +51,21 @@ const isPdf = (urlLower.includes('.pdf') || urlLower.includes('/raw/upload/')) &
 
 console.log('Agenda check:', { agendaUrl, isPdf, isImage, urlLower });
 
-// Helper to construct download URL for Cloudinary
-const getDownloadUrl = (url: string) => {
-  if (!url || !url.includes('/upload/')) return url;
-  return url.replace('/upload/', '/upload/fl_attachment/');
-};
-
-const downloadUrl = getDownloadUrl(agendaUrl);
-
 // Generate a proper filename for download
 const getDownloadFilename = () => {
   const extension = isPdf ? 'pdf' : isImage ? 'jpg' : 'pdf';
   const sanitizedServiceType = serviceType.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
   return `${sanitizedServiceType}-agenda.${extension}`;
 };
+
+// Helper to construct download URL for Cloudinary with proper filename
+const getDownloadUrl = (url: string) => {
+  if (!url || !url.includes('/upload/')) return url;
+  const filename = getDownloadFilename();
+  return url.replace('/upload/', `/upload/fl_attachment:${filename}/`);
+};
+
+const downloadUrl = getDownloadUrl(agendaUrl);
 ---
 
 <Layout title={`${serviceType} Agenda`} description="View service agenda">
