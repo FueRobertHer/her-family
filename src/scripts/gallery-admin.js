@@ -13,7 +13,6 @@ let selectedFile = null;
 
 if (uploadBtn) {
   uploadBtn.addEventListener("click", (e) => {
-    console.log("Upload button clicked");
     e.preventDefault();
     e.stopPropagation();
     imageInput?.click();
@@ -149,24 +148,17 @@ saveEditCaptionBtn?.addEventListener("click", async () => {
     const result = await response.json();
 
     if (result.success) {
-      console.log('Caption update successful, updating DOM for image:', currentEditImageUrl);
-      
       // Find the carousel item for this image
       const carouselItem = document.querySelector(`.carousel-item[data-image-url="${currentEditImageUrl}"]`);
-      console.log('Found carousel item:', carouselItem);
       
       if (carouselItem) {
         const groupDiv = carouselItem.querySelector('.group');
         let captionElement = groupDiv?.querySelector('.caption-text');
         
-        console.log('Current caption element:', captionElement);
-        console.log('New caption text:', caption);
-        
         if (caption) {
           if (captionElement) {
             // Update existing caption
             captionElement.textContent = caption;
-            console.log('Updated existing caption');
           } else {
             // Create new caption element
             const newCaption = document.createElement('p');
@@ -174,13 +166,11 @@ saveEditCaptionBtn?.addEventListener("click", async () => {
             newCaption.setAttribute('data-image-url', currentEditImageUrl);
             newCaption.textContent = caption;
             groupDiv?.appendChild(newCaption);
-            console.log('Created new caption element');
           }
         } else {
           // Remove caption if empty
           if (captionElement) {
             captionElement.remove();
-            console.log('Removed empty caption');
           }
         }
         
@@ -188,7 +178,6 @@ saveEditCaptionBtn?.addEventListener("click", async () => {
         const editButton = carouselItem.querySelector('.edit-caption-btn');
         if (editButton) {
           editButton.dataset.caption = caption;
-          console.log('Updated edit button data attribute');
         }
         
         // Update image element's data for lightbox
@@ -222,8 +211,6 @@ saveEditCaptionBtn?.addEventListener("click", async () => {
             }
           }
         });
-      } else {
-        console.error('Could not find carousel item for image:', currentEditImageUrl);
       }
       
       // Show success message

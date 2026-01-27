@@ -6,10 +6,6 @@ const cookies = Astro.cookies;
 const authCookie = cookies.get('admin_auth');
 const isAuthenticated = authCookie?.value === 'true';
 
-// Debug logging
-console.log('Auth cookie:', authCookie);
-console.log('Is authenticated:', isAuthenticated);
-
 // Handle logout
 if (Astro.url.searchParams.get('logout') === 'true') {
   cookies.delete('admin_auth');
@@ -107,10 +103,6 @@ if (Astro.url.searchParams.get('logout') === 'true') {
               loginError.classList.remove('text-red-600');
               loginError.classList.add('text-green-600');
               
-              // Debug: Check if cookie was set
-              console.log('All cookies:', document.cookie);
-              console.log('Admin auth cookie:', document.cookie.includes('admin_auth'));
-              
               // Redirect after a brief delay
               setTimeout(() => {
                 window.location.reload(); // Use reload instead of href to ensure fresh page load
@@ -135,8 +127,7 @@ if (Astro.url.searchParams.get('logout') === 'true') {
             const response = await fetch('/api/admin/status');
             const result = await response.json();
             
-            console.log('Auth status:', result);
-            alert(`Authentication Status:\n\nAuthenticated: ${result.isAuthenticated}\nCookie Value: ${result.cookieValue}\n\nCheck console for full details.`);
+            alert(`Authentication Status:\n\nAuthenticated: ${result.isAuthenticated}\nCookie Value: ${result.cookieValue}`);
             
             if (result.isAuthenticated) {
               window.location.reload();
@@ -245,11 +236,8 @@ if (Astro.url.searchParams.get('logout') === 'true') {
     // Load comments
     async function loadComments(status = 'pending') {
       try {
-        console.log(`Loading comments with status: ${status}`);
         const response = await fetch(`/api/admin/comments?status=${status}`);
-        console.log(`Response status: ${response.status}`);
         const result = await response.json();
-        console.log('API result:', result);
 
         if (result.success) {
           comments = result.data.comments;

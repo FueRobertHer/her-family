@@ -18,17 +18,21 @@ export const GET: APIRoute = async ({ request, cookies }) => {
     const limit = parseInt(url.searchParams.get('limit') || '50');
     const offset = parseInt(url.searchParams.get('offset') || '0');
 
-    // Fetch comments based on status filter using WHERE clauses for better performance
-    let filteredComments;
-    if (status === 'pending') {
-      filteredComments = await db.select().from(Comments).where(eq(Comments.status, 'pending'));
-    } else if (status === 'approved') {
-      filteredComments = await db.select().from(Comments).where(eq(Comments.status, 'approved'));
-    } else if (status === 'rejected') {
-      filteredComments = await db.select().from(Comments).where(eq(Comments.status, 'rejected'));
-    } else {
-      // 'all' shows everything
-      filteredComments = await db.select().from(Comments);
+    // Fetch all comments once for efficiency
+    const allComments = await db.select().from(Comments);
+    
+    // Calculate counts
+    const counts = {
+      pending: allComments.filter(c => c.status === 'pending').length,
+      approved: allComments.filter(c => c.status === 'approved').length,
+      rejected: allComments.filter(c => c.status === 'rejected').length,
+      total: allComments.length
+    };
+
+    // Filter comments based on status
+    let filteredComments = allComments;
+    if (status && status !== 'all') {
+      filteredComments = allComments.filter(c => c.status === status);
     }
 
     // Sort by creation date (newest first)
@@ -37,22 +41,9 @@ export const GET: APIRoute = async ({ request, cookies }) => {
     // Apply pagination
     const comments = filteredComments.slice(offset, offset + limit);
 
-    // Get counts for dashboard using separate queries
-    const [pendingComments, approvedComments, rejectedComments, allComments] = await Promise.all([
-      db.select().from(Comments).where(eq(Comments.status, 'pending')),
-      db.select().from(Comments).where(eq(Comments.status, 'approved')),
-      db.select().from(Comments).where(eq(Comments.status, 'rejected')),
-      db.select().from(Comments)
-    ]);
-
     return successResponse({
       comments,
-      counts: {
-        pending: pendingComments.length,
-        approved: approvedComments.length,
-        rejected: rejectedComments.length,
-        total: allComments.length
-      }
+      counts
     });
   } catch (error) {
     console.error('Error fetching admin comments:', error);

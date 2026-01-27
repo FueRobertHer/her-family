@@ -16,7 +16,62 @@ const cookies = Astro.cookies;
 const isAdmin = cookies.get('admin_auth')?.value === 'true';
 
 // Fetch dynamic content from database
-let memorialData: any = {};
+interface OrganizedContent {
+  [section: string]: {
+    [key: string]: string;
+  };
+}
+
+interface MemorialData {
+  name: string;
+  birthDate: string;
+  deathDate: string;
+  mainImage: string;
+  backgroundImage: string;
+  subtitle: string;
+  biography: string;
+  biographyTitle: string;
+  biographyVisible: boolean;
+  highlights: string[];
+  highlightsVisible: boolean;
+  images: Array<{ src: string; alt: string; caption?: string }>;
+  galleryVisible: boolean;
+  galleryTitle: string;
+  videoUrl: string;
+  posterImage: string;
+  videoSectionTitle: string;
+  videoDescription: string;
+  videoVisible: boolean;
+  donations: {
+    sectionTitle: string;
+    venmoUsername: string;
+    venmoImage: string;
+    cashappUsername: string;
+    cashappImage: string;
+    zelleEmail: string;
+    zelleImage: string;
+    subtitle: string;
+    customMessage: string;
+    visible: boolean;
+  };
+  commentsTitle: string;
+  commentsSubtitle: string;
+  commentsVisible: boolean;
+  commentsAutoApprove: boolean;
+  funeral: {
+    visible: boolean;
+    sectionTitle: string;
+    viewingDate: string;
+    viewingTime: string;
+    viewingLocation: string;
+    serviceDate: string;
+    serviceTime: string;
+    serviceLocation: string;
+    additionalInfo: string;
+  };
+}
+
+let memorialData: MemorialData | Record<string, never> = {};
 
 try {
   const content = await db.select().from(MemorialContent);
@@ -26,15 +81,13 @@ try {
   const galleryImages = allGalleryImages.filter(img => img.isActive);
   
   // Organize content by section
-  const organizedContent = content.reduce((acc, item) => {
+  const organizedContent = content.reduce<OrganizedContent>((acc, item) => {
     if (!acc[item.section]) {
       acc[item.section] = {};
     }
     acc[item.section][item.key] = item.value;
     return acc;
-  }, {} as any);
-
-  console.log('Server-side organizedContent:', JSON.stringify(organizedContent, null, 2));
+  }, {});
 
   // Process gallery images
   const processedImages = galleryImages
