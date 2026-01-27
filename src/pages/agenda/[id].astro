@@ -69,7 +69,7 @@ const downloadUrl = getDownloadUrl(agendaUrl);
           <h1 class="text-sm sm:text-lg md:text-xl font-semibold text-warm-gray-900 truncate">{serviceType} Agenda</h1>
           <div class="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
             {(isPdf || isImage) && (
-              <a href={isPdf ? downloadUrl : agendaUrl} download class="inline-flex items-center px-2 py-1.5 sm:px-3 sm:py-2 border border-warm-gray-300 shadow-sm text-xs sm:text-sm font-medium rounded-lg text-warm-gray-700 bg-white hover:bg-warm-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors whitespace-nowrap">
+              <a href={downloadUrl} download class="inline-flex items-center px-2 py-1.5 sm:px-3 sm:py-2 border border-warm-gray-300 shadow-sm text-xs sm:text-sm font-medium rounded-lg text-warm-gray-700 bg-white hover:bg-warm-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors whitespace-nowrap">
                 Download
               </a>
             )}
