@@ -1,0 +1,136 @@
+---
+// Toast notification component
+// Usage: Call window.showToast(message, type) from anywhere
+---
+
+<div id="toast-container" class="fixed top-4 right-4 z-[9999] flex flex-col gap-3 pointer-events-none">
+  <!-- Toast notifications will be inserted here -->
+</div>
+
+<script is:inline>
+  /**
+   * Shows a toast notification
+   * @param {string} message - The message to display
+   * @param {string} type - 'success', 'error', 'warning', or 'info'
+   * @param {number} duration - How long to show the toast in ms (default: 4000)
+   */
+  window.showToast = function(message, type = 'info', duration = 4000) {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.className = 'pointer-events-auto transform transition-all duration-300 translate-x-full opacity-0';
+    
+    // Store timeout IDs for cleanup
+    let autoCloseTimeout;
+    let animationTimeout;
+    
+    // Cleanup function to clear all timeouts and remove toast
+    const cleanup = () => {
+      if (autoCloseTimeout) clearTimeout(autoCloseTimeout);
+      if (animationTimeout) clearTimeout(animationTimeout);
+      toast.classList.add('translate-x-full', 'opacity-0');
+      setTimeout(() => {
+        if (toast.parentNode) toast.remove();
+      }, 300);
+    };
+    
+    // Determine colors based on type
+    let bgColor, borderColor, iconColor, icon;
+    switch (type) {
+      case 'success':
+        bgColor = 'bg-green-50';
+        borderColor = 'border-green-200';
+        iconColor = 'text-green-600';
+        icon = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>`;
+        break;
+      case 'error':
+        bgColor = 'bg-red-50';
+        borderColor = 'border-red-200';
+        iconColor = 'text-red-600';
+        icon = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>`;
+        break;
+      case 'warning':
+        bgColor = 'bg-yellow-50';
+        borderColor = 'border-yellow-200';
+        iconColor = 'text-yellow-600';
+        icon = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+        </svg>`;
+        break;
+      default:
+        bgColor = 'bg-blue-50';
+        borderColor = 'border-blue-200';
+        iconColor = 'text-blue-600';
+        icon = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>`;
+    }
+
+    // Escape HTML helper
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    toast.innerHTML = `
+      <div class="${bgColor} ${borderColor} border rounded-lg shadow-lg p-4 flex items-start gap-3 min-w-[300px] max-w-md">
+        <div class="${iconColor} flex-shrink-0">
+          ${icon}
+        </div>
+        <div class="flex-1">
+          <p class="text-sm font-medium text-gray-900">${escapeHtml(message)}</p>
+        </div>
+        <button 
+          class="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors toast-close-btn"
+          aria-label="Close"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+    `;
+
+    // Add click handler for close button
+    const closeBtn = toast.querySelector('.toast-close-btn');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', cleanup);
+    }
+
+    container.appendChild(toast);
+
+    // Animate in
+    setTimeout(() => {
+      toast.classList.remove('translate-x-full', 'opacity-0');
+      toast.classList.add('translate-x-0', 'opacity-100');
+    }, 10);
+
+    // Auto-dismiss after duration
+    autoCloseTimeout = setTimeout(() => {
+      toast.classList.add('translate-x-full', 'opacity-0');
+      animationTimeout = setTimeout(() => {
+        if (toast.parentNode) toast.remove();
+      }, 300);
+    }, duration);
+  };
+
+  // Legacy compatibility - map old showToast calls if they exist
+  if (!window.showToast) {
+    window.showToast = function(message, type) {
+      window.showToast(message, type);
+    };
+  }
+</script>
+
+<style>
+  #toast-container {
+    max-width: calc(100vw - 2rem);
+  }
+</style>
