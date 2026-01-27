@@ -1,4 +1,6 @@
 ---
+import Analytics from '@vercel/analytics/astro';
+
 export interface Props {
   title: string;
   description?: string;
@@ -36,10 +38,11 @@ const { title, description = "A memorial page to honor and remember a beloved li
     <!-- Smooth scroll behavior -->
     <script>
       // Add smooth scrolling for anchor links
-      document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function (e) {
+      document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+        anchor.addEventListener('click', function (e: Event) {
           e.preventDefault();
-          const target = document.querySelector(this.getAttribute('href'));
+          const href = (e.currentTarget as HTMLAnchorElement).getAttribute('href');
+          const target = href ? document.querySelector(href) : null;
           if (target) {
             target.scrollIntoView({
               behavior: 'smooth',
@@ -49,5 +52,7 @@ const { title, description = "A memorial page to honor and remember a beloved li
         });
       });
     </script>
+    
+    <Analytics />
   </body>
 </html>
