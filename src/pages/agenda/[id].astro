@@ -51,21 +51,8 @@ const isPdf = (urlLower.includes('.pdf') || urlLower.includes('/raw/upload/')) &
 
 console.log('Agenda check:', { agendaUrl, isPdf, isImage, urlLower });
 
-// Generate a proper filename for download
-const getDownloadFilename = () => {
-  const extension = isPdf ? 'pdf' : isImage ? 'jpg' : 'pdf';
-  const sanitizedServiceType = serviceType.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
-  return `${sanitizedServiceType}-agenda.${extension}`;
-};
-
-// Helper to construct download URL for Cloudinary with proper filename
-const getDownloadUrl = (url: string) => {
-  if (!url || !url.includes('/upload/')) return url;
-  const filename = getDownloadFilename();
-  return url.replace('/upload/', `/upload/fl_attachment:${filename}/`);
-};
-
-const downloadUrl = getDownloadUrl(agendaUrl);
+// Use our download API endpoint to handle proper filename
+const downloadUrl = `/api/download-agenda?service=${serviceIndex}`;
 ---
 
 <Layout title={`${serviceType} Agenda`} description="View service agenda">
@@ -77,7 +64,7 @@ const downloadUrl = getDownloadUrl(agendaUrl);
           <div class="flex items-center gap-2 sm:gap-3 min-w-0">
             <h1 class="text-sm sm:text-lg md:text-xl font-semibold text-warm-gray-900 truncate">{serviceType} Agenda</h1>
             {(isPdf || isImage) && (
-              <a href={downloadUrl} download={getDownloadFilename()} class="inline-flex items-center px-2 py-1.5 sm:px-3 sm:py-2 border border-warm-gray-300 shadow-sm text-xs sm:text-sm font-medium rounded-lg text-warm-gray-700 bg-white hover:bg-warm-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors whitespace-nowrap flex-shrink-0">
+              <a href={downloadUrl} class="inline-flex items-center px-2 py-1.5 sm:px-3 sm:py-2 border border-warm-gray-300 shadow-sm text-xs sm:text-sm font-medium rounded-lg text-warm-gray-700 bg-white hover:bg-warm-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors whitespace-nowrap flex-shrink-0">
                 Download
               </a>
             )}
@@ -122,8 +109,7 @@ const downloadUrl = getDownloadUrl(agendaUrl);
             <p class="text-warm-gray-600 mb-4 text-center text-sm">The PDF viewer couldn't load. Please download or open in a new tab.</p>
             <div class="flex flex-col sm:flex-row gap-3">
             <a 
-              href={downloadUrl} 
-              download={getDownloadFilename()}
+              href={downloadUrl}
               class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
             >
               Download Agenda
