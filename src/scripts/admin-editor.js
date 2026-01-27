@@ -1021,7 +1021,7 @@ function renderModalContent(section) {
           <div class="flex gap-2">
             <input type="text" id="service-agendaUrl" value="${service.agendaUrl || ""}" data-service-index="${serviceIndex}" data-field="agendaUrl"
               class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900"
-              placeholder="https://..." readonly>
+              placeholder="https://...">
             <button type="button" onclick="uploadAgendaForField('service-agendaUrl')"
               class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors flex items-center">
               <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1031,7 +1031,7 @@ function renderModalContent(section) {
             </button>
           </div>
           <input type="file" id="service-agendaUrl-file" accept="image/*,application/pdf" class="hidden" />
-          <p class="mt-1 text-xs text-gray-500">Upload an image or PDF file (max 5MB).</p>
+          <p class="mt-1 text-xs text-gray-500">You can paste a URL directly or upload an image/PDF file (max 5MB).</p>
         </div>
       </div>
     `;
