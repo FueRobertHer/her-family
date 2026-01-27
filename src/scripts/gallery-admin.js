@@ -103,19 +103,19 @@ const cancelEditCaptionBtn = document.getElementById("cancelEditCaptionBtn");
 
 let currentEditImageUrl = null;
 
-const editCaptionButtons = document.querySelectorAll(".edit-caption-btn");
-
-editCaptionButtons.forEach((btn) => {
-  btn.addEventListener("click", (e) => {
+// Use event delegation for dynamic buttons
+document.addEventListener("click", (e) => {
+  const editBtn = e.target.closest(".edit-caption-btn");
+  if (editBtn) {
     e.stopPropagation();
 
-    currentEditImageUrl = btn.dataset.imageUrl;
-    const currentCaption = btn.dataset.caption || "";
+    currentEditImageUrl = editBtn.dataset.imageUrl;
+    const currentCaption = editBtn.dataset.caption || "";
 
     editCaptionInput.value = currentCaption;
     if (editCaptionModal) editCaptionModal.style.display = "flex";
     editCaptionInput?.focus();
-  });
+  }
 });
 
 // Cancel edit caption modal
@@ -249,17 +249,17 @@ editCaptionInput?.addEventListener("keypress", (e) => {
 });
 
 // ============ ADMIN DELETE FUNCTIONALITY ============
-const deleteButtons = document.querySelectorAll(".delete-gallery-image");
-
-deleteButtons.forEach((btn) => {
-  btn.addEventListener("click", async (e) => {
+// Use event delegation for dynamic buttons
+document.addEventListener("click", async (e) => {
+  const deleteBtn = e.target.closest(".delete-gallery-image");
+  if (deleteBtn) {
     e.stopPropagation();
 
     if (!confirm("Are you sure you want to delete this image?")) {
       return;
     }
 
-    const imageUrl = btn.dataset.imageUrl;
+    const imageUrl = deleteBtn.dataset.imageUrl;
     if (!imageUrl) return;
 
     try {
@@ -294,5 +294,5 @@ deleteButtons.forEach((btn) => {
       console.error("Delete error:", error);
       alert("Failed to delete image");
     }
-  });
+  }
 });

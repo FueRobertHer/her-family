@@ -79,11 +79,13 @@ const { content, title = "Remembering a Beautiful Life", highlights = [], isAdmi
     const bioFade = document.getElementById('bio-fade');
     const chevronDown = document.getElementById('bio-chevron-down');
     const chevronUp = document.getElementById('bio-chevron-up');
+    const bioSection = document.getElementById('biography');
     
     if (!bioContent || !bioToggle || !bioToggleText || !bioFade) return;
     
     let isExpanded = false;
     const collapsedHeight = 400; // pixels
+    let toggleHandler = null;
     
     // Function to check if content needs truncation
     function checkTruncation() {
@@ -110,14 +112,19 @@ const { content, title = "Remembering a Beautiful Life", highlights = [], isAdmi
     const needsTruncation = checkTruncation();
     
     if (needsTruncation && bioToggle) {
+      // Remove old handler if it exists (for re-initialization)
+      if (toggleHandler) {
+        bioToggle.removeEventListener('click', toggleHandler);
+      }
+      
       // Handle toggle click
-      bioToggle.addEventListener('click', () => {
+      toggleHandler = () => {
         if (!bioContent) return;
         
         isExpanded = !isExpanded;
-        const contentHeight = bioContent.scrollHeight;
         
         if (isExpanded) {
+          const contentHeight = bioContent.scrollHeight;
           bioContent.style.maxHeight = contentHeight + 'px';
           if (bioToggleText) bioToggleText.textContent = 'Show Less';
           if (bioFade) bioFade.style.opacity = '0';
@@ -131,14 +138,18 @@ const { content, title = "Remembering a Beautiful Life", highlights = [], isAdmi
           chevronUp?.classList.add('hidden');
           
           // Scroll back to biography section smoothly
-          setTimeout(() => {
-            document.getElementById('biography')?.scrollIntoView({ 
-              behavior: 'smooth', 
-              block: 'start' 
+          if (bioSection) {
+            requestAnimationFrame(() => {
+              bioSection.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'start' 
+              });
             });
-          }, 100);
+          }
         }
-      });
+      };
+      
+      bioToggle.addEventListener('click', toggleHandler);
     }
   }
   

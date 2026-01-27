@@ -45,8 +45,9 @@ function initInfiniteCarousel() {
   currentIndex = cloneCount;
   realIndex = 0;
   
-  // Re-query all items including clones
-  const allItems = carouselTrack.querySelectorAll('.carousel-item');
+  // Cache all items including clones
+  cachedCarouselItems = carouselTrack.querySelectorAll('.carousel-item');
+  const allItems = cachedCarouselItems;
   
   // Setup lightbox for ALL images (originals and clones)
   allItems.forEach((item, idx) => {
@@ -70,11 +71,21 @@ function initInfiniteCarousel() {
   updateCarousel(false);
 }
 
+// Cache carousel items to avoid repeated queries
+let cachedCarouselItems = null;
+
+function getCachedCarouselItems() {
+  if (!cachedCarouselItems) {
+    cachedCarouselItems = carouselTrack?.querySelectorAll('.carousel-item');
+  }
+  return cachedCarouselItems;
+}
+
 function updateCarousel(animate = true) {
   if (!carouselTrack) return;
   
-  const allItems = carouselTrack.querySelectorAll('.carousel-item');
-  if (allItems.length === 0) return;
+  const allItems = getCachedCarouselItems();
+  if (!allItems || allItems.length === 0) return;
   
   const itemWidth = allItems[0].offsetWidth + 24; // width + gap
   const offset = -currentIndex * itemWidth;
@@ -102,7 +113,8 @@ function updateCarousel(animate = true) {
 function handleTransitionEnd() {
   if (!isTransitioning) return;
   
-  const allItems = carouselTrack.querySelectorAll('.carousel-item');
+  const allItems = getCachedCarouselItems();
+  if (!allItems) return;
   
   // If we're at a clone, jump to the real image without animation
   if (currentIndex >= allItems.length - cloneCount) {
@@ -176,11 +188,11 @@ let touchEndX = 0;
 
 carouselTrack?.addEventListener('touchstart', (e) => {
   touchStartX = e.touches[0].clientX;
-});
+}, { passive: true });
 
 carouselTrack?.addEventListener('touchmove', (e) => {
   touchEndX = e.touches[0].clientX;
-});
+}, { passive: true });
 
 carouselTrack?.addEventListener('touchend', () => {
   const swipeDistance = touchStartX - touchEndX;
@@ -191,18 +203,7 @@ carouselTrack?.addEventListener('touchend', () => {
       prevSlide();
     }
   }
-});
-
-// Keyboard navigation
-document.addEventListener('keydown', (e) => {
-  const lightbox = document.getElementById('lightbox');
-  const isLightboxOpen = lightbox && !lightbox.classList.contains('hidden');
-  
-  if (!isLightboxOpen) {
-    if (e.key === 'ArrowLeft') prevSlide();
-    if (e.key === 'ArrowRight') nextSlide();
-  }
-});
+}, { passive: true });
 
 // Initialize carousel with infinite wrap
 initInfiniteCarousel();
@@ -215,10 +216,14 @@ carouselTrack?.addEventListener('mouseenter', () => {
 
 carouselTrack?.addEventListener('mouseleave', resetAutoPlay);
 
-// Recalculate on window resize
+// Debounced resize handler for performance
+let resizeTimeout;
 window.addEventListener('resize', () => {
-  updateCarousel(false);
-});
+  if (resizeTimeout) clearTimeout(resizeTimeout);
+  resizeTimeout = setTimeout(() => {
+    updateCarousel(false);
+  }, 150);
+}, { passive: true });
 
 // ============ LIGHTBOX FUNCTIONALITY ============
 const lightbox = document.getElementById('lightbox');
@@ -298,14 +303,19 @@ closeLightbox?.addEventListener('click', closeLightboxFn);
 nextImageBtn?.addEventListener('click', showNextLightboxImage);
 prevImage?.addEventListener('click', showPrevLightboxImage);
 
-// Close on escape key
+// Unified keyboard handler for both carousel and lightbox
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && !lightbox?.classList.contains('hidden')) {
-    closeLightboxFn();
-  }
-  if (!lightbox?.classList.contains('hidden')) {
+  const isLightboxOpen = lightbox && !lightbox.classList.contains('hidden');
+  
+  if (isLightboxOpen) {
+    // Lightbox controls
+    if (e.key === 'Escape') closeLightboxFn();
     if (e.key === 'ArrowRight') showNextLightboxImage();
     if (e.key === 'ArrowLeft') showPrevLightboxImage();
+  } else {
+    // Carousel controls (only when lightbox is closed)
+    if (e.key === 'ArrowLeft') prevSlide();
+    if (e.key === 'ArrowRight') nextSlide();
   }
 });
 
