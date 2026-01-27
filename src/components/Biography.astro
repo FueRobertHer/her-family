@@ -19,10 +19,28 @@ const { content, title = "Remembering a Beautiful Life", highlights = [], isAdmi
     </div>
     
     <div class="prose prose-lg prose-warm-gray max-w-none">
-      <div class="text-warm-gray-700 leading-relaxed text-lg" data-bio-content>
-        {content.split('\n\n').map(paragraph => (
-          <p class="mb-6">{paragraph}</p>
-        ))}
+      <div id="bio-container" class="relative">
+        <div id="bio-content" class="text-warm-gray-700 leading-relaxed text-lg overflow-hidden transition-all duration-500 ease-in-out" data-bio-content style="max-height: 400px;">
+          {content.split('\n\n').map(paragraph => (
+            <p class="mb-6">{paragraph}</p>
+          ))}
+        </div>
+        <div id="bio-fade" class="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none transition-opacity duration-500"></div>
+      </div>
+      <div class="text-center mt-8">
+        <button 
+          id="bio-toggle"
+          class="group inline-flex items-center gap-2 text-warm-gray-600 hover:text-warm-gray-900 font-display text-base transition-all duration-300 relative after:absolute after:bottom-0 after:left-0 after:right-0 after:h-px after:bg-warm-gray-300 after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-300 pb-1"
+          style="display: none;"
+        >
+          <span id="bio-toggle-text" class="font-medium">Continue Reading</span>
+          <svg id="bio-chevron-down" class="w-4 h-4 transition-transform duration-300 group-hover:translate-y-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+          </svg>
+          <svg id="bio-chevron-up" class="hidden w-4 h-4 transition-transform duration-300 group-hover:-translate-y-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+          </svg>
+        </button>
       </div>
     </div>
     
@@ -51,3 +69,86 @@ const { content, title = "Remembering a Beautiful Life", highlights = [], isAdmi
     )}
   </div>
 </section>
+
+<script>
+  // Biography expand/collapse functionality
+  function initBiographyToggle() {
+    const bioContent = document.getElementById('bio-content');
+    const bioToggle = document.getElementById('bio-toggle');
+    const bioToggleText = document.getElementById('bio-toggle-text');
+    const bioFade = document.getElementById('bio-fade');
+    const chevronDown = document.getElementById('bio-chevron-down');
+    const chevronUp = document.getElementById('bio-chevron-up');
+    
+    if (!bioContent || !bioToggle || !bioToggleText || !bioFade) return;
+    
+    let isExpanded = false;
+    const collapsedHeight = 400; // pixels
+    
+    // Function to check if content needs truncation
+    function checkTruncation() {
+      if (!bioContent) return false;
+      
+      const contentHeight = bioContent.scrollHeight;
+      const needsTruncation = contentHeight > collapsedHeight + 50; // Add buffer
+      
+      if (needsTruncation) {
+        // Show the toggle button
+        if (bioToggle) bioToggle.style.display = 'inline-flex';
+        if (bioFade) bioFade.style.display = 'block';
+      } else {
+        // Content is short, remove max-height, hide button and fade
+        bioContent.style.maxHeight = 'none';
+        if (bioToggle) bioToggle.style.display = 'none';
+        if (bioFade) bioFade.style.display = 'none';
+      }
+      
+      return needsTruncation;
+    }
+    
+    // Initial check
+    const needsTruncation = checkTruncation();
+    
+    if (needsTruncation && bioToggle) {
+      // Handle toggle click
+      bioToggle.addEventListener('click', () => {
+        if (!bioContent) return;
+        
+        isExpanded = !isExpanded;
+        const contentHeight = bioContent.scrollHeight;
+        
+        if (isExpanded) {
+          bioContent.style.maxHeight = contentHeight + 'px';
+          if (bioToggleText) bioToggleText.textContent = 'Show Less';
+          if (bioFade) bioFade.style.opacity = '0';
+          chevronDown?.classList.add('hidden');
+          chevronUp?.classList.remove('hidden');
+        } else {
+          bioContent.style.maxHeight = collapsedHeight + 'px';
+          if (bioToggleText) bioToggleText.textContent = 'Continue Reading';
+          if (bioFade) bioFade.style.opacity = '1';
+          chevronDown?.classList.remove('hidden');
+          chevronUp?.classList.add('hidden');
+          
+          // Scroll back to biography section smoothly
+          setTimeout(() => {
+            document.getElementById('biography')?.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'start' 
+            });
+          }, 100);
+        }
+      });
+    }
+  }
+  
+  // Initialize on page load
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initBiographyToggle);
+  } else {
+    initBiographyToggle();
+  }
+  
+  // Expose to window for re-initialization after content updates
+  (window as any).initBiographyToggle = initBiographyToggle;
+</script>

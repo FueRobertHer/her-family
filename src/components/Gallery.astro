@@ -85,18 +85,32 @@ const { images, isAdmin = false, title = "Treasured Moments" } = Astro.props;
                   />
                 </div>
                 {image.caption && (
-                  <p class="mt-2 text-sm text-warm-gray-600 text-center">{image.caption}</p>
+                  <p class="mt-2 text-sm text-warm-gray-600 text-center caption-text" data-image-url={image.src}>{image.caption}</p>
                 )}
                 {isAdmin && (
-                  <button 
-                    class="delete-gallery-image edit-button absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                    data-image-url={image.src}
-                    aria-label="Delete image"
-                  >
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                    </svg>
-                  </button>
+                  <div class="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button 
+                      class="edit-caption-btn edit-button bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-full shadow-lg"
+                      data-image-url={image.src}
+                      data-caption={image.caption || ''}
+                      aria-label="Edit caption"
+                      title="Edit caption"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                      </svg>
+                    </button>
+                    <button 
+                      class="delete-gallery-image edit-button bg-red-600 hover:bg-red-700 text-white p-2 rounded-full shadow-lg"
+                      data-image-url={image.src}
+                      aria-label="Delete image"
+                      title="Delete image"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                      </svg>
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
@@ -164,7 +178,7 @@ const { images, isAdmin = false, title = "Treasured Moments" } = Astro.props;
   
   <!-- Caption Modal for Image Upload -->
   {isAdmin && (
-    <div id="captionModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div id="captionModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" style="display: none;">
       <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
         <h3 class="text-xl font-semibold text-gray-900 mb-4">Add Image Caption</h3>
         <p class="text-sm text-gray-600 mb-4">Enter a caption for the image (optional)</p>
@@ -186,6 +200,36 @@ const { images, isAdmin = false, title = "Treasured Moments" } = Astro.props;
             class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
           >
             Upload
+          </button>
+        </div>
+      </div>
+    </div>
+  )}
+  
+  <!-- Edit Caption Modal -->
+  {isAdmin && (
+    <div id="editCaptionModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" style="display: none;">
+      <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+        <h3 class="text-xl font-semibold text-gray-900 mb-4">Edit Image Caption</h3>
+        <p class="text-sm text-gray-600 mb-4">Update the caption for this image</p>
+        <input
+          type="text"
+          id="editCaptionInput"
+          placeholder="Enter caption..."
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 mb-4"
+        />
+        <div class="flex gap-3 justify-end">
+          <button
+            id="cancelEditCaptionBtn"
+            class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            id="saveEditCaptionBtn"
+            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+          >
+            Save
           </button>
         </div>
       </div>
