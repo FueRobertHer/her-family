@@ -1,7 +1,7 @@
 // Admin Editor Script
 // Handles inline editing, modal management, and content updates
 
-console.log('=== Edit Mode Toggle Script Loading ===');
+console.log("=== Edit Mode Toggle Script Loading ===");
 
 // Global state
 let currentSection = null;
@@ -15,129 +15,137 @@ let draggedItem = null; // For gallery reordering
 function updateNavLinkVisibility(href, isVisible) {
   const link = document.querySelector(`nav a[href="${href}"]`);
   if (!link) return;
-  
-  const isHidden = isVisible === false || isVisible === 'false';
-  
+
+  const isHidden = isVisible === false || isVisible === "false";
+
   if (isHidden) {
-    link.classList.add('is-hidden-section');
+    link.classList.add("is-hidden-section");
     // If edit mode is OFF (preview mode), hide the link
-    if (document.body.classList.contains('hide-edit-buttons')) {
-      link.style.display = 'none';
+    if (document.body.classList.contains("hide-edit-buttons")) {
+      link.style.display = "none";
     } else {
       // In edit mode, show it but with opacity to indicate it's hidden public-side
-      link.style.display = '';
-      link.classList.add('opacity-50');
+      link.style.display = "";
+      link.classList.add("opacity-50");
     }
   } else {
-    link.classList.remove('is-hidden-section');
-    link.classList.remove('opacity-50');
-    link.style.display = '';
+    link.classList.remove("is-hidden-section");
+    link.classList.remove("opacity-50");
+    link.style.display = "";
   }
 }
 
 function toggleEditButtons(show) {
   const body = document.body;
   const sections = document.querySelectorAll('[class*="border-dashed"]');
-  const hiddenLinks = document.querySelectorAll('.is-hidden-section');
-  
+  const hiddenLinks = document.querySelectorAll(".is-hidden-section");
+
   if (show) {
-    body.classList.remove('hide-edit-buttons');
+    body.classList.remove("hide-edit-buttons");
     // Show hidden sections (opacity and border)
-    sections.forEach(section => {
-      section.classList.add('opacity-60', 'opacity-70', 'border-2', 'border-dashed');
+    sections.forEach((section) => {
+      section.classList.add(
+        "opacity-60",
+        "opacity-70",
+        "border-2",
+        "border-dashed",
+      );
       // Add back 'Hidden from public' badge if it was hidden
-      const badge = section.querySelector('.hidden-badge');
-      if (badge) badge.style.display = 'block';
+      const badge = section.querySelector(".hidden-badge");
+      if (badge) badge.style.display = "block";
     });
-    
+
     // Show hidden links with opacity
-    hiddenLinks.forEach(link => {
-        link.style.display = '';
-        link.classList.add('opacity-50');
+    hiddenLinks.forEach((link) => {
+      link.style.display = "";
+      link.classList.add("opacity-50");
     });
-    
-    console.log('✅ Edit mode: ON - showing buttons and hidden sections');
+
+    console.log("✅ Edit mode: ON - showing buttons and hidden sections");
   } else {
-    body.classList.add('hide-edit-buttons');
+    body.classList.add("hide-edit-buttons");
     // Completely hide sections that are marked as hidden
-    sections.forEach(section => {
+    sections.forEach((section) => {
       // If this section has opacity/dashed border, it means it's hidden from public
       // So in preview mode, we should hide it completely (display: none)
-      if (section.classList.contains('opacity-60') || section.classList.contains('opacity-70')) {
-         section.classList.add('hidden-in-preview');
-         section.style.display = 'none';
+      if (
+        section.classList.contains("opacity-60") ||
+        section.classList.contains("opacity-70")
+      ) {
+        section.classList.add("hidden-in-preview");
+        section.style.display = "none";
       }
     });
-    
+
     // Hide hidden links completely
-    hiddenLinks.forEach(link => {
-        link.style.display = 'none';
+    hiddenLinks.forEach((link) => {
+      link.style.display = "none";
     });
-    
-    console.log('❌ Edit mode: OFF - hiding buttons and hidden sections');
+
+    console.log("❌ Edit mode: OFF - hiding buttons and hidden sections");
   }
 }
 
 function restoreHiddenSections() {
-    const hiddenSections = document.querySelectorAll('.hidden-in-preview');
-    hiddenSections.forEach(section => {
-        section.style.display = ''; // Restore default display
-        section.classList.remove('hidden-in-preview');
-    });
+  const hiddenSections = document.querySelectorAll(".hidden-in-preview");
+  hiddenSections.forEach((section) => {
+    section.style.display = ""; // Restore default display
+    section.classList.remove("hidden-in-preview");
+  });
 }
 
 function loadMemorialData() {
   if (memorialDataLoaded) return true;
-  
+
   try {
-    const memorialDataScript = document.getElementById('memorial-data');
+    const memorialDataScript = document.getElementById("memorial-data");
     if (memorialDataScript) {
       memorialData = JSON.parse(memorialDataScript.textContent);
       memorialDataLoaded = true;
-      console.log('Memorial data loaded:', memorialData);
-      
+      console.log("Memorial data loaded:", memorialData);
+
       // Initialize nav links visibility based on loaded data
       initNavLinksVisibility();
-      
+
       return true;
     } else {
-      console.error('Memorial data script not found');
+      console.error("Memorial data script not found");
       return false;
     }
   } catch (e) {
-    console.error('Failed to parse memorial data:', e);
+    console.error("Failed to parse memorial data:", e);
     return false;
   }
 }
 
 function initNavLinksVisibility() {
-    if (!memorialData) return;
-    
-    // Map of section hrefs to their visibility property in memorialData
-    const links = [
-        { href: '#biography', visible: memorialData.biographyVisible },
-        { href: '#funeral-info', visible: memorialData.funeralInfo?.visible },
-        { href: '#gallery', visible: memorialData.galleryVisible },
-        { href: '#video', visible: memorialData.videoVisible },
-        { href: '#memories', visible: memorialData.commentsVisible },
-        { href: '#donations', visible: memorialData.donations?.visible }
-    ];
-    
-    links.forEach(item => {
-        if (item.visible !== undefined) {
-            updateNavLinkVisibility(item.href, item.visible);
-        }
-    });
+  if (!memorialData) return;
+
+  // Map of section hrefs to their visibility property in memorialData
+  const links = [
+    { href: "#biography", visible: memorialData.biographyVisible },
+    { href: "#funeral-info", visible: memorialData.funeralInfo?.visible },
+    { href: "#gallery", visible: memorialData.galleryVisible },
+    { href: "#video", visible: memorialData.videoVisible },
+    { href: "#memories", visible: memorialData.commentsVisible },
+    { href: "#donations", visible: memorialData.donations?.visible },
+  ];
+
+  links.forEach((item) => {
+    if (item.visible !== undefined) {
+      updateNavLinkVisibility(item.href, item.visible);
+    }
+  });
 }
 
 function showToast(message, type) {
-  const toast = document.createElement('div');
+  const toast = document.createElement("div");
   toast.className = `fixed top-20 right-4 z-50 px-6 py-3 rounded-lg shadow-lg text-white ${
-    type === 'success' ? 'bg-green-500' : 'bg-red-500'
+    type === "success" ? "bg-green-500" : "bg-red-500"
   }`;
   toast.textContent = message;
   document.body.appendChild(toast);
-  
+
   setTimeout(() => {
     toast.remove();
   }, 3000);
@@ -146,289 +154,347 @@ function showToast(message, type) {
 // --- Section Update Functions ---
 
 function updateHeroSection(updates) {
-  const heroSection = document.getElementById('hero-section');
+  const heroSection = document.getElementById("hero-section");
   if (!heroSection) return;
-  
+
   if (updates.name) {
-    const nameEl = heroSection.querySelector('[data-hero-name]');
+    const nameEl = heroSection.querySelector("[data-hero-name]");
     if (nameEl) nameEl.textContent = updates.name;
-    const footerName = document.querySelector('footer h3');
+    const footerName = document.querySelector("footer h3");
     if (footerName) footerName.textContent = updates.name;
     document.title = `${updates.name} - Memorial Page`;
   }
-  
+
   if (updates.subtitle) {
-    const subtitleEl = heroSection.querySelector('[data-hero-subtitle]');
+    const subtitleEl = heroSection.querySelector("[data-hero-subtitle]");
     if (subtitleEl) subtitleEl.textContent = updates.subtitle;
   }
-  
+
   if (updates.birthDate || updates.deathDate) {
     const birthDate = updates.birthDate || contentData.hero?.birthDate?.value;
     const deathDate = updates.deathDate || contentData.hero?.deathDate?.value;
-    
-    const datesEl = heroSection.querySelector('[data-hero-dates]');
+
+    const datesEl = heroSection.querySelector("[data-hero-dates]");
     if (datesEl && birthDate && deathDate) {
       const birthYear = new Date(birthDate).getFullYear();
       const deathYear = new Date(deathDate).getFullYear();
       datesEl.innerHTML = `<time datetime="${birthDate}">${birthYear}</time><span class="w-8 h-px bg-warm-gray-400"></span><time datetime="${deathDate}">${deathYear}</time>`;
-      
-      const footerDates = document.querySelector('footer p.text-warm-gray-400');
+
+      const footerDates = document.querySelector("footer p.text-warm-gray-400");
       if (footerDates) footerDates.textContent = `${birthYear} - ${deathYear}`;
     }
   }
-  
+
   if (updates.mainImage) {
-    const imgEls = heroSection.querySelectorAll('[data-hero-image], img[data-hero-image]');
-    imgEls.forEach(img => {
+    const imgEls = heroSection.querySelectorAll(
+      "[data-hero-image], img[data-hero-image]",
+    );
+    imgEls.forEach((img) => {
       img.src = updates.mainImage;
     });
-    
+
     // Also update background if no specific background image is set
     if (!updates.backgroundImage && !contentData.hero?.backgroundImage?.value) {
-      const bgImg = heroSection.querySelector('[data-hero-background]');
+      const bgImg = heroSection.querySelector("[data-hero-background]");
       if (bgImg) bgImg.src = updates.mainImage;
     }
   }
 
   if (updates.backgroundImage) {
-    const bgImg = heroSection.querySelector('[data-hero-background]');
+    const bgImg = heroSection.querySelector("[data-hero-background]");
     if (bgImg) bgImg.src = updates.backgroundImage;
   }
 }
 
 function updateBiographySection(updates) {
-  const bioSection = document.getElementById('biography-section');
+  const bioSection = document.getElementById("biography-section");
   if (!bioSection) return;
-  
+
   if (updates.visible !== undefined) {
     toggleSectionVisibility(bioSection, updates.visible);
-    updateNavLinkVisibility('#biography', updates.visible);
+    updateNavLinkVisibility("#biography", updates.visible);
   }
-  
+
   if (updates.title) {
-    const titleEl = bioSection.querySelector('[data-bio-title]');
+    const titleEl = bioSection.querySelector("[data-bio-title]");
     if (titleEl) titleEl.textContent = updates.title;
   }
-  
+
   if (updates.content) {
-    const contentEl = bioSection.querySelector('[data-bio-content]');
+    const contentEl = bioSection.querySelector("[data-bio-content]");
     if (contentEl) {
-      const paragraphs = updates.content.split('\n\n').filter(p => p.trim());
-      contentEl.innerHTML = paragraphs.map(p => `<p class="mb-6">${p}</p>`).join('');
+      const paragraphs = updates.content.split("\n\n").filter((p) => p.trim());
+      contentEl.innerHTML = paragraphs
+        .map((p) => `<p class="mb-6">${p}</p>`)
+        .join("");
     }
   }
 }
 
 function updateHighlightsSection(updates) {
-  const bioSection = document.getElementById('biography-section');
+  const bioSection = document.getElementById("biography-section");
   if (!bioSection) return;
-  
-  const highlightsContainer = bioSection.querySelector('[data-bio-highlights]')?.closest('.mt-12');
-  
+
+  const highlightsContainer = bioSection
+    .querySelector("[data-bio-highlights]")
+    ?.closest(".mt-12");
+
   if (highlightsContainer && updates.visible !== undefined) {
-     toggleSectionVisibility(highlightsContainer, updates.visible);
-     highlightsContainer.style.display = 'block';
+    toggleSectionVisibility(highlightsContainer, updates.visible);
+    highlightsContainer.style.display = "block";
   }
-  
+
   if (updates.highlights) {
-    const highlightsEl = bioSection.querySelector('[data-bio-highlights]');
+    const highlightsEl = bioSection.querySelector("[data-bio-highlights]");
     if (highlightsEl) {
-      const highlightsArray = updates.highlights.split('\n').filter(h => h.trim());
-      highlightsEl.innerHTML = highlightsArray.map(highlight => `
+      const highlightsArray = updates.highlights
+        .split("\n")
+        .filter((h) => h.trim());
+      highlightsEl.innerHTML = highlightsArray
+        .map(
+          (highlight) => `
         <div class="flex items-start space-x-3">
           <div class="flex-shrink-0 w-2 h-2 bg-warm-gray-400 rounded-full mt-3"></div>
           <p class="text-warm-gray-700">${highlight.trim()}</p>
         </div>
-      `).join('');
+      `,
+        )
+        .join("");
     }
   }
 }
 
 function updateVideoSection(updates) {
-  const videoSection = document.getElementById('video-section');
+  const videoSection = document.getElementById("video-section");
   if (!videoSection) return;
-  
+
   if (updates.visible !== undefined) {
     toggleSectionVisibility(videoSection, updates.visible);
-    updateNavLinkVisibility('#video', updates.visible);
+    updateNavLinkVisibility("#video", updates.visible);
   }
-  
+
   if (updates.sectionTitle) {
-    const sectionTitleEl = videoSection.querySelector('[data-video-title]');
+    const sectionTitleEl = videoSection.querySelector("[data-video-title]");
     if (sectionTitleEl) sectionTitleEl.textContent = updates.sectionTitle;
   }
-  
+
   if (updates.description) {
-    const descEl = videoSection.querySelector('[data-video-description]');
+    const descEl = videoSection.querySelector("[data-video-description]");
     if (descEl) descEl.textContent = updates.description;
   }
-  
+
   if (updates.videoUrl) {
-    const videoSource = videoSection.querySelector('[data-video-source]');
-    const videoEl = videoSection.querySelector('[data-video-element]');
+    const videoSource = videoSection.querySelector("[data-video-source]");
+    const videoEl = videoSection.querySelector("[data-video-element]");
     if (videoSource && videoEl) {
       videoSource.src = updates.videoUrl;
       videoEl.load();
     }
   }
-  
+
   if (updates.posterImage) {
-    const videoEl = videoSection.querySelector('[data-video-element]');
+    const videoEl = videoSection.querySelector("[data-video-element]");
     if (videoEl) videoEl.poster = updates.posterImage;
   }
 }
 
 function updateDonationsSection(updates) {
-  const donationsSection = document.getElementById('donations-section');
+  const donationsSection = document.getElementById("donations-section");
   if (!donationsSection) return;
-  
+
   // If any QR code images were uploaded, reload the page to show the new structure
-  if (updates.venmoImage !== undefined || updates.cashappImage !== undefined || updates.zelleImage !== undefined) {
+  if (
+    updates.venmoImage !== undefined ||
+    updates.cashappImage !== undefined ||
+    updates.zelleImage !== undefined
+  ) {
     setTimeout(() => {
       window.location.reload();
     }, 500);
     return;
   }
-  
+
   if (updates.visible !== undefined) {
     toggleSectionVisibility(donationsSection, updates.visible);
-    updateNavLinkVisibility('#donations', updates.visible);
+    updateNavLinkVisibility("#donations", updates.visible);
   }
-  
+
   if (updates.sectionTitle) {
-    const sectionTitleEl = donationsSection.querySelector('[data-donations-title]');
+    const sectionTitleEl = donationsSection.querySelector(
+      "[data-donations-title]",
+    );
     if (sectionTitleEl) sectionTitleEl.textContent = updates.sectionTitle;
   }
-  
+
   if (updates.subtitle) {
-    const subtitleEl = donationsSection.querySelector('[data-donations-subtitle]');
+    const subtitleEl = donationsSection.querySelector(
+      "[data-donations-subtitle]",
+    );
     if (subtitleEl) subtitleEl.textContent = updates.subtitle;
   }
-  
+
   if (updates.customMessage) {
-    const msgEl = donationsSection.querySelector('[data-donation-message]');
+    const msgEl = donationsSection.querySelector("[data-donation-message]");
     if (msgEl) msgEl.textContent = updates.customMessage;
   }
-  
+
   // Helper to update payment method visibility and content
-  const updatePaymentMethod = (key, containerSelector, valueSelector, linkSelector, formatValue, formatLink) => {
+  const updatePaymentMethod = (
+    key,
+    containerSelector,
+    valueSelector,
+    linkSelector,
+    formatValue,
+    formatLink,
+  ) => {
     if (updates[key] !== undefined) {
       const container = donationsSection.querySelector(containerSelector);
       const valueEl = donationsSection.querySelector(valueSelector);
-      const linkEl = linkSelector ? donationsSection.querySelector(linkSelector) : null;
-      
+      const linkEl = linkSelector
+        ? donationsSection.querySelector(linkSelector)
+        : null;
+
       const value = updates[key];
-      
+
       if (container) {
         if (value) {
-          container.classList.remove('hidden');
+          container.classList.remove("hidden");
         } else {
-          container.classList.add('hidden');
+          container.classList.add("hidden");
         }
       }
-      
+
       if (valueEl) valueEl.textContent = formatValue(value);
       if (linkEl && value) linkEl.href = formatLink(value);
     }
   };
 
-  updatePaymentMethod('venmoUsername', '[data-venmo-container]', '[data-venmo-username]', '[data-venmo-link]', 
-    v => `@${v}`, v => `https://venmo.com/${v}`);
-    
-  updatePaymentMethod('cashappUsername', '[data-cashapp-container]', '[data-cashapp-username]', '[data-cashapp-link]', 
-    v => `${v}`, v => `https://cash.app/${v}`);
-    
-  updatePaymentMethod('zelleEmail', '[data-zelle-container]', '[data-zelle-email]', null, 
-    v => v, v => '#');
+  updatePaymentMethod(
+    "venmoUsername",
+    "[data-venmo-container]",
+    "[data-venmo-username]",
+    "[data-venmo-link]",
+    (v) => `@${v}`,
+    (v) => `https://venmo.com/${v}`,
+  );
+
+  updatePaymentMethod(
+    "cashappUsername",
+    "[data-cashapp-container]",
+    "[data-cashapp-username]",
+    "[data-cashapp-link]",
+    (v) => `${v}`,
+    (v) => `https://cash.app/${v}`,
+  );
+
+  updatePaymentMethod(
+    "zelleEmail",
+    "[data-zelle-container]",
+    "[data-zelle-email]",
+    null,
+    (v) => v,
+    (v) => "#",
+  );
 }
 
 function updateFuneralSection(updates) {
-  const funeralSection = document.getElementById('funeral-section');
+  const funeralSection = document.getElementById("funeral-section");
   if (!funeralSection) return;
-  
+
   if (updates.visible !== undefined) {
     toggleSectionVisibility(funeralSection, updates.visible);
   }
-  
+
   if (updates.sectionTitle) {
-    const sectionTitleEl = funeralSection.querySelector('[data-funeral-title]');
+    const sectionTitleEl = funeralSection.querySelector("[data-funeral-title]");
     if (sectionTitleEl) sectionTitleEl.textContent = updates.sectionTitle;
   }
-  
+
   if (updates.subtitle) {
-    const subtitleEl = funeralSection.querySelector('[data-funeral-subtitle]');
+    const subtitleEl = funeralSection.querySelector("[data-funeral-subtitle]");
     if (subtitleEl) subtitleEl.textContent = updates.subtitle;
   }
 }
 
 function updateSpecialInstructionsSection(updates) {
-  const sectionEl = document.getElementById('special-instructions-section');
+  const sectionEl = document.getElementById("special-instructions-section");
   if (!sectionEl) return;
-  
+
   if (updates.specialInstructionsVisible !== undefined) {
     toggleSectionVisibility(sectionEl, updates.specialInstructionsVisible);
   }
-  
+
   if (updates.specialInstructions) {
-    const instructionsEl = sectionEl.querySelector('[data-funeral-instructions]');
-    if (instructionsEl) instructionsEl.textContent = updates.specialInstructions;
+    const instructionsEl = sectionEl.querySelector(
+      "[data-funeral-instructions]",
+    );
+    if (instructionsEl)
+      instructionsEl.textContent = updates.specialInstructions;
   }
 }
 
 function updateFlowersInfoSection(updates) {
-  const sectionEl = document.getElementById('flowers-info-section');
+  const sectionEl = document.getElementById("flowers-info-section");
   if (!sectionEl) return;
-  
+
   if (updates.flowersInfoVisible !== undefined) {
     toggleSectionVisibility(sectionEl, updates.flowersInfoVisible);
   }
-  
+
   if (updates.flowersInfo) {
-    const flowersEl = sectionEl.querySelector('[data-funeral-flowers]');
+    const flowersEl = sectionEl.querySelector("[data-funeral-flowers]");
     if (flowersEl) flowersEl.textContent = updates.flowersInfo;
   }
 }
 
 function updateServiceOnPage(serviceIndex, serviceData) {
   console.log(`Updating service ${serviceIndex} on page with:`, serviceData);
-  
-  const serviceCard = document.querySelector(`[data-service-index="${serviceIndex}"]`);
+
+  const serviceCard = document.querySelector(
+    `[data-service-index="${serviceIndex}"]`,
+  );
   if (!serviceCard) {
     console.error(`Service card not found for index ${serviceIndex}`);
     return;
   }
-  
+
   const formatDate = (dateStr) => {
-    if (!dateStr) return '';
+    if (!dateStr) return "";
     const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
+    return date.toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   };
-  
+
   const formatTime = (timeStr) => {
-    if (!timeStr) return '';
-    const [hours, minutes] = timeStr.split(':');
+    if (!timeStr) return "";
+    const [hours, minutes] = timeStr.split(":");
     const hour = parseInt(hours);
-    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const ampm = hour >= 12 ? "PM" : "AM";
     const displayHour = hour % 12 || 12;
     return `${displayHour}:${minutes} ${ampm}`;
   };
-  
+
   if (serviceData.type !== undefined) {
-    const typeEl = serviceCard.querySelector(`[data-service-type="${serviceIndex}"]`);
+    const typeEl = serviceCard.querySelector(
+      `[data-service-type="${serviceIndex}"]`,
+    );
     if (typeEl) typeEl.textContent = serviceData.type;
   }
-  
+
   if (serviceData.date !== undefined) {
-    const dateEl = serviceCard.querySelector(`[data-service-date="${serviceIndex}"]`);
+    const dateEl = serviceCard.querySelector(
+      `[data-service-date="${serviceIndex}"]`,
+    );
     if (dateEl) {
       let dateText = formatDate(serviceData.date);
       if (serviceData.endDate && serviceData.endDate !== serviceData.date) {
-        const endDateEl = dateEl.querySelector(`[data-service-endDate="${serviceIndex}"]`);
+        const endDateEl = dateEl.querySelector(
+          `[data-service-endDate="${serviceIndex}"]`,
+        );
         if (endDateEl) {
           endDateEl.textContent = formatDate(serviceData.endDate);
         } else {
@@ -440,13 +506,17 @@ function updateServiceOnPage(serviceIndex, serviceData) {
       }
     }
   }
-  
+
   if (serviceData.time !== undefined) {
-    const timeEl = serviceCard.querySelector(`[data-service-time="${serviceIndex}"]`);
+    const timeEl = serviceCard.querySelector(
+      `[data-service-time="${serviceIndex}"]`,
+    );
     if (timeEl) {
       let timeText = formatTime(serviceData.time);
       if (serviceData.endTime) {
-        const endTimeEl = timeEl.querySelector(`[data-service-endTime="${serviceIndex}"]`);
+        const endTimeEl = timeEl.querySelector(
+          `[data-service-endTime="${serviceIndex}"]`,
+        );
         if (endTimeEl) {
           endTimeEl.textContent = formatTime(serviceData.endTime);
         } else {
@@ -458,130 +528,190 @@ function updateServiceOnPage(serviceIndex, serviceData) {
       }
     }
   }
-  
+
   if (serviceData.location) {
     if (serviceData.location.name !== undefined) {
-      const nameEl = serviceCard.querySelector(`[data-service-location-name="${serviceIndex}"]`);
+      const nameEl = serviceCard.querySelector(
+        `[data-service-location-name="${serviceIndex}"]`,
+      );
       if (nameEl) nameEl.textContent = serviceData.location.name;
     }
-    
+
     if (serviceData.location.address !== undefined) {
-      const addressEl = serviceCard.querySelector(`[data-service-location-address="${serviceIndex}"]`);
+      const addressEl = serviceCard.querySelector(
+        `[data-service-location-address="${serviceIndex}"]`,
+      );
       if (addressEl) addressEl.textContent = serviceData.location.address;
     }
-    
+
     if (serviceData.location.phone !== undefined) {
-      const phoneEl = serviceCard.querySelector(`[data-service-location-phone="${serviceIndex}"]`);
+      const phoneEl = serviceCard.querySelector(
+        `[data-service-location-phone="${serviceIndex}"]`,
+      );
       if (phoneEl) {
         phoneEl.textContent = serviceData.location.phone;
         phoneEl.href = `tel:${serviceData.location.phone}`;
       }
     }
-    
+
     if (serviceData.location.website !== undefined) {
-      const websiteEl = serviceCard.querySelector(`[data-service-location-website="${serviceIndex}"]`);
+      const websiteEl = serviceCard.querySelector(
+        `[data-service-location-website="${serviceIndex}"]`,
+      );
       if (websiteEl) {
         websiteEl.href = serviceData.location.website;
       }
     }
   }
-  
+
   if (serviceData.description !== undefined) {
-    const descEl = serviceCard.querySelector(`[data-service-description="${serviceIndex}"]`);
+    const descEl = serviceCard.querySelector(
+      `[data-service-description="${serviceIndex}"]`,
+    );
     if (descEl) descEl.textContent = serviceData.description;
   }
-  
+
   if (serviceData.dresscode !== undefined) {
-    const dresscodeEl = serviceCard.querySelector(`[data-service-dresscode="${serviceIndex}"]`);
+    const dresscodeEl = serviceCard.querySelector(
+      `[data-service-dresscode="${serviceIndex}"]`,
+    );
     if (dresscodeEl) dresscodeEl.textContent = serviceData.dresscode;
   }
-  
+
+  if (serviceData.agendaUrl !== undefined) {
+    // Find or create the agenda link container
+    let agendaContainer = serviceCard.querySelector(
+      `[data-service-agenda-link="${serviceIndex}"]`,
+    )?.parentElement;
+
+    if (serviceData.agendaUrl) {
+      // If there's an agendaUrl, show/update the link
+      if (!agendaContainer) {
+        // Create the agenda container if it doesn't exist
+        const newContainer = document.createElement("div");
+        newContainer.className = "mt-4 pt-4 border-t border-warm-gray-200";
+        newContainer.innerHTML = `
+          <a 
+            href="/agenda/${serviceIndex}"
+            class="inline-flex items-center text-indigo-600 hover:text-indigo-800 font-medium transition-colors"
+            data-service-agenda-link="${serviceIndex}"
+          >
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+            View Service Agenda
+          </a>
+        `;
+        serviceCard.appendChild(newContainer);
+      } else {
+        // Update existing link
+        const agendaLink = serviceCard.querySelector(
+          `[data-service-agenda-link="${serviceIndex}"]`,
+        );
+        if (agendaLink) {
+          agendaLink.href = `/agenda/${serviceIndex}`;
+        }
+      }
+    } else if (agendaContainer) {
+      // If agendaUrl is empty/removed, hide the container
+      agendaContainer.remove();
+    }
+  }
+
   console.log(`Service ${serviceIndex} updated successfully on page`);
 }
 
 function updateGallerySection(updates) {
-  const gallerySection = document.getElementById('gallery-section');
+  const gallerySection = document.getElementById("gallery-section");
   if (!gallerySection) return;
-  
+
   if (updates.visible !== undefined) {
     toggleSectionVisibility(gallerySection, updates.visible);
-    updateNavLinkVisibility('#gallery', updates.visible);
+    updateNavLinkVisibility("#gallery", updates.visible);
   }
-  
+
   if (updates.sectionTitle) {
-      const titleEl = gallerySection.querySelector('[data-gallery-title]');
-      if (titleEl) titleEl.textContent = updates.sectionTitle;
+    const titleEl = gallerySection.querySelector("[data-gallery-title]");
+    if (titleEl) titleEl.textContent = updates.sectionTitle;
   }
-  showToast('Gallery updated successfully.', 'success');
+  showToast("Gallery updated successfully.", "success");
 }
 
 function updateCommentsSection(updates) {
-  const commentsSection = document.getElementById('comments-section');
+  const commentsSection = document.getElementById("comments-section");
   if (!commentsSection) return;
-  
+
   if (updates.visible !== undefined) {
     toggleSectionVisibility(commentsSection, updates.visible);
-    updateNavLinkVisibility('#memories', updates.visible);
+    updateNavLinkVisibility("#memories", updates.visible);
   }
-  
+
   if (updates.sectionTitle) {
-      const titleEl = commentsSection.querySelector('[data-comments-title]');
-      if (titleEl) titleEl.textContent = updates.sectionTitle;
+    const titleEl = commentsSection.querySelector("[data-comments-title]");
+    if (titleEl) titleEl.textContent = updates.sectionTitle;
   }
-  
+
   if (updates.subtitle) {
-      const subtitleEl = commentsSection.querySelector('[data-comments-subtitle]');
-      if (subtitleEl) subtitleEl.textContent = updates.subtitle;
+    const subtitleEl = commentsSection.querySelector(
+      "[data-comments-subtitle]",
+    );
+    if (subtitleEl) subtitleEl.textContent = updates.subtitle;
   }
 }
 
 function updateFooterSection(updates) {
-  const footerSection = document.querySelector('footer');
+  const footerSection = document.querySelector("footer");
   if (!footerSection) return;
-  
+
   if (updates.visible !== undefined) {
-     toggleSectionVisibility(footerSection, updates.visible, true);
+    toggleSectionVisibility(footerSection, updates.visible, true);
   }
-  
+
   if (updates.quote) {
-    const quoteEl = document.querySelector('[data-footer-quote]');
+    const quoteEl = document.querySelector("[data-footer-quote]");
     if (quoteEl) quoteEl.textContent = updates.quote;
   }
-  
+
   if (updates.credit) {
-    const creditEl = document.querySelector('[data-footer-credit]');
+    const creditEl = document.querySelector("[data-footer-credit]");
     if (creditEl) creditEl.textContent = updates.credit;
   }
 }
 
 function updateReceptionSection(updates) {
-  const receptionSection = document.getElementById('reception-section');
+  const receptionSection = document.getElementById("reception-section");
   if (!receptionSection) return;
-  
+
   if (updates.visible !== undefined) {
     toggleSectionVisibility(receptionSection, updates.visible, true);
   }
-  
+
   if (updates.location !== undefined) {
-    const locationEl = receptionSection.querySelector('[data-reception-location]');
+    const locationEl = receptionSection.querySelector(
+      "[data-reception-location]",
+    );
     if (locationEl) locationEl.textContent = updates.location;
   }
-  
+
   if (updates.time !== undefined) {
-    const timeEl = receptionSection.querySelector('[data-reception-time]');
+    const timeEl = receptionSection.querySelector("[data-reception-time]");
     if (timeEl) timeEl.textContent = updates.time;
   }
-  
+
   if (updates.description !== undefined) {
-    const descEl = receptionSection.querySelector('[data-reception-description]');
+    const descEl = receptionSection.querySelector(
+      "[data-reception-description]",
+    );
     if (descEl) {
       descEl.textContent = updates.description;
     } else if (updates.description) {
-      const container = receptionSection.querySelector('[data-reception-content]');
+      const container = receptionSection.querySelector(
+        "[data-reception-content]",
+      );
       if (container) {
-        const newDesc = document.createElement('p');
-        newDesc.className = 'text-warm-gray-300 mt-4 max-w-2xl mx-auto';
-        newDesc.setAttribute('data-reception-description', '');
+        const newDesc = document.createElement("p");
+        newDesc.className = "text-warm-gray-300 mt-4 max-w-2xl mx-auto";
+        newDesc.setAttribute("data-reception-description", "");
         newDesc.textContent = updates.description;
         container.appendChild(newDesc);
       }
@@ -591,78 +721,103 @@ function updateReceptionSection(updates) {
 
 function toggleSectionVisibility(element, isVisible, darkTheme = false) {
   if (!element) return;
-  
-  const isHidden = isVisible === false || isVisible === 'false';
-  
+
+  const isHidden = isVisible === false || isVisible === "false";
+
   if (isHidden) {
     if (darkTheme) {
-      element.classList.add('opacity-60', 'border-2', 'border-dashed', 'border-warm-gray-600');
+      element.classList.add(
+        "opacity-60",
+        "border-2",
+        "border-dashed",
+        "border-warm-gray-600",
+      );
     } else {
-      element.classList.add('opacity-70', 'border-2', 'border-dashed', 'border-gray-300');
+      element.classList.add(
+        "opacity-70",
+        "border-2",
+        "border-dashed",
+        "border-gray-300",
+      );
     }
-    
-    if (!element.querySelector('.hidden-badge') && element.style.position !== 'static') {
-         const badge = document.createElement('div');
-         if (darkTheme) {
-           badge.className = 'hidden-badge absolute top-0 left-0 bg-gray-700 text-gray-300 text-xs px-2 py-1 rounded-br z-20';
-         } else {
-           badge.className = 'hidden-badge absolute top-0 left-0 bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-br z-20';
-         }
-         badge.textContent = 'Hidden from public';
-         element.prepend(badge);
+
+    if (
+      !element.querySelector(".hidden-badge") &&
+      element.style.position !== "static"
+    ) {
+      const badge = document.createElement("div");
+      if (darkTheme) {
+        badge.className =
+          "hidden-badge absolute top-0 left-0 bg-gray-700 text-gray-300 text-xs px-2 py-1 rounded-br z-20";
+      } else {
+        badge.className =
+          "hidden-badge absolute top-0 left-0 bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-br z-20";
+      }
+      badge.textContent = "Hidden from public";
+      element.prepend(badge);
     }
   } else {
     if (darkTheme) {
-      element.classList.remove('opacity-60', 'border-2', 'border-dashed', 'border-warm-gray-600');
+      element.classList.remove(
+        "opacity-60",
+        "border-2",
+        "border-dashed",
+        "border-warm-gray-600",
+      );
     } else {
-      element.classList.remove('opacity-70', 'border-2', 'border-dashed', 'border-gray-300');
+      element.classList.remove(
+        "opacity-70",
+        "border-2",
+        "border-dashed",
+        "border-gray-300",
+      );
     }
-    const badge = element.querySelector('.hidden-badge');
+    const badge = element.querySelector(".hidden-badge");
     if (badge) badge.remove();
   }
 }
 
 function updatePageContent(section, updates) {
   if (!updates) return;
-  
-  switch(section) {
-    case 'hero':
+
+  switch (section) {
+    case "hero":
       updateHeroSection(updates);
       break;
-    case 'biography':
+    case "biography":
       updateBiographySection(updates);
       break;
-    case 'highlights':
+    case "highlights":
       updateHighlightsSection(updates);
       break;
-    case 'video':
+    case "video":
       updateVideoSection(updates);
       break;
-    case 'donations':
+    case "donations":
       updateDonationsSection(updates);
       break;
-    case 'funeral':
+    case "funeral":
       updateFuneralSection(updates);
       break;
-    case 'specialInstructions':
+    case "specialInstructions":
       updateSpecialInstructionsSection(updates);
       break;
-    case 'flowersInfo':
+    case "flowersInfo":
       updateFlowersInfoSection(updates);
       break;
-    case 'services':
-      showToast('Services are arrays. Coming soon!', 'success');
+    case "services":
+      showToast("Services are arrays. Coming soon!", "success");
       break;
-    case 'reception':
+    case "reception":
       updateReceptionSection(updates);
       break;
-    case 'gallery':
+    case "gallery":
       updateGallerySection(updates);
       break;
-    case 'comments':
+    case "comments":
       updateCommentsSection(updates);
       break;
-    case 'footer':
+    case "footer":
       updateFooterSection(updates);
       break;
   }
@@ -672,62 +827,62 @@ function updatePageContent(section, updates) {
 
 function handleDragStart(e) {
   draggedItem = e.target;
-  draggedItem.classList.add('opacity-50');
-  e.dataTransfer.effectAllowed = 'move';
+  draggedItem.classList.add("opacity-50");
+  e.dataTransfer.effectAllowed = "move";
 }
 
 function handleDragOver(e) {
   e.preventDefault();
-  e.dataTransfer.dropEffect = 'move';
-  
-  const target = e.target.closest('.reorder-item');
+  e.dataTransfer.dropEffect = "move";
+
+  const target = e.target.closest(".reorder-item");
   if (target && target !== draggedItem) {
-    target.classList.add('ring-2', 'ring-blue-500');
+    target.classList.add("ring-2", "ring-blue-500");
   }
 }
 
 function handleDrop(e) {
   e.preventDefault();
-  
-  const target = e.target.closest('.reorder-item');
-  const container = document.getElementById('reorderList');
-  
+
+  const target = e.target.closest(".reorder-item");
+  const container = document.getElementById("reorderList");
+
   if (target && target !== draggedItem && draggedItem && container) {
     // Swap in DOM
     const parent = target.parentNode;
-    
+
     // Get all items to find indexes
-    const allItems = Array.from(container.querySelectorAll('.reorder-item'));
+    const allItems = Array.from(container.querySelectorAll(".reorder-item"));
     const draggedIndex = allItems.indexOf(draggedItem);
     const targetIndex = allItems.indexOf(target);
-    
+
     if (draggedIndex < targetIndex) {
       parent.insertBefore(draggedItem, target.nextSibling);
     } else {
       parent.insertBefore(draggedItem, target);
     }
-    
+
     // Update indices in UI
-    const updatedItems = container.querySelectorAll('.reorder-item');
+    const updatedItems = container.querySelectorAll(".reorder-item");
     updatedItems.forEach((item, idx) => {
       item.dataset.index = idx.toString();
-      const numberBadge = item.querySelector('.bg-black\\/60');
+      const numberBadge = item.querySelector(".bg-black\\/60");
       if (numberBadge) numberBadge.textContent = (idx + 1).toString();
     });
   }
-  
-  target?.classList.remove('ring-2', 'ring-blue-500');
+
+  target?.classList.remove("ring-2", "ring-blue-500");
 }
 
 function handleDragEnd(e) {
-  draggedItem?.classList.remove('opacity-50');
-  
+  draggedItem?.classList.remove("opacity-50");
+
   // Remove all ring highlights
-  const allItems = document.querySelectorAll('.reorder-item');
-  allItems.forEach(item => {
-    item.classList.remove('ring-2', 'ring-blue-500');
+  const allItems = document.querySelectorAll(".reorder-item");
+  allItems.forEach((item) => {
+    item.classList.remove("ring-2", "ring-blue-500");
   });
-  
+
   draggedItem = null;
 }
 
@@ -735,74 +890,75 @@ function handleDragEnd(e) {
 
 async function openEditModal(section) {
   currentSection = section;
-  const modal = document.getElementById('editModal');
-  const modalTitle = document.getElementById('modalTitle');
-  
+  const modal = document.getElementById("editModal");
+  const modalTitle = document.getElementById("modalTitle");
+
   if (!memorialDataLoaded) {
     loadMemorialData();
   }
-  
+
   const titles = {
-    hero: 'Edit Hero Section',
-    biography: 'Edit Biography',
-    highlights: 'Edit Highlights',
-    video: 'Edit Video Section',
-    donations: 'Edit Donations',
-    funeral: 'Edit Funeral Information',
-    specialInstructions: 'Edit Special Instructions',
-    flowersInfo: 'Edit Flowers/Donation Information',
-    services: 'Edit Service Events',
-    reception: 'Edit Reception Information',
-    gallery: 'Edit Gallery',
-    comments: 'Edit Memories',
-    footer: 'Edit Footer'
+    hero: "Edit Hero Section",
+    biography: "Edit Biography",
+    highlights: "Edit Highlights",
+    video: "Edit Video Section",
+    donations: "Edit Donations",
+    funeral: "Edit Funeral Information",
+    specialInstructions: "Edit Special Instructions",
+    flowersInfo: "Edit Flowers/Donation Information",
+    services: "Edit Service Events",
+    reception: "Edit Reception Information",
+    gallery: "Edit Gallery",
+    comments: "Edit Memories",
+    footer: "Edit Footer",
   };
-  
-  if (section.startsWith('service-')) {
-    const serviceIndex = parseInt(section.split('-')[1]);
+
+  if (section.startsWith("service-")) {
+    const serviceIndex = parseInt(section.split("-")[1]);
     modalTitle.textContent = `Edit Service Event #${serviceIndex + 1}`;
   } else {
-    modalTitle.textContent = titles[section] || 'Edit Content';
+    modalTitle.textContent = titles[section] || "Edit Content";
   }
-  
+
   try {
-    const response = await fetch('/api/admin/content');
+    const response = await fetch("/api/admin/content");
     const result = await response.json();
-    
+
     if (result.success) {
       contentData = result.data;
       renderModalContent(section);
-      modal.classList.remove('hidden');
+      modal.classList.remove("hidden");
     } else {
-      alert('Error loading content: ' + result.error);
+      alert("Error loading content: " + result.error);
     }
   } catch (error) {
-    console.error('Error loading content:', error);
-    alert('Error loading content. Please try again.');
+    console.error("Error loading content:", error);
+    alert("Error loading content. Please try again.");
   }
 }
 
 function closeEditModal() {
-  const modal = document.getElementById('editModal');
-  modal.classList.add('hidden');
+  const modal = document.getElementById("editModal");
+  modal.classList.add("hidden");
   currentSection = null;
 }
 
 function renderModalContent(section) {
   // ... (keep existing implementation)
-  const modalContent = document.getElementById('modalContent');
+  const modalContent = document.getElementById("modalContent");
   const sectionData = contentData[section] || {};
-  
-  if (section.startsWith('service-')) {
-    const serviceIndex = parseInt(section.split('-')[1]);
+
+  if (section.startsWith("service-")) {
+    const serviceIndex = parseInt(section.split("-")[1]);
     const services = memorialData.funeralInfo?.services || [];
     const service = services[serviceIndex];
-    
+
     if (!service) {
-      modalContent.innerHTML = '<div class="text-red-600">Service not found</div>';
+      modalContent.innerHTML =
+        '<div class="text-red-600">Service not found</div>';
       return;
     }
-    
+
     modalContent.innerHTML = `
       <div class="space-y-4">
         <div>
@@ -822,12 +978,12 @@ function renderModalContent(section) {
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">End Date (optional, leave blank if same day)</label>
-          <input type="date" id="service-endDate" value="${service.endDate || ''}" data-service-index="${serviceIndex}" data-field="endDate"
+          <input type="date" id="service-endDate" value="${service.endDate || ""}" data-service-index="${serviceIndex}" data-field="endDate"
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900">
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">End Time (optional, 24-hour format, e.g., 16:00)</label>
-          <input type="text" id="service-endTime" value="${service.endTime || ''}" data-service-index="${serviceIndex}" data-field="endTime"
+          <input type="text" id="service-endTime" value="${service.endTime || ""}" data-service-index="${serviceIndex}" data-field="endTime"
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900">
         </div>
         <div>
@@ -842,145 +998,318 @@ function renderModalContent(section) {
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">Phone (optional)</label>
-          <input type="text" id="service-location-phone" value="${service.location.phone || ''}" data-service-index="${serviceIndex}" data-field="location.phone"
+          <input type="text" id="service-location-phone" value="${service.location.phone || ""}" data-service-index="${serviceIndex}" data-field="location.phone"
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900" placeholder="(555) 123-4567">
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">Website (optional)</label>
-          <input type="url" id="service-location-website" value="${service.location.website || ''}" data-service-index="${serviceIndex}" data-field="location.website"
+          <input type="url" id="service-location-website" value="${service.location.website || ""}" data-service-index="${serviceIndex}" data-field="location.website"
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900" placeholder="https://example.com">
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
           <textarea id="service-description" rows="3" data-service-index="${serviceIndex}" data-field="description"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900">${service.description || ''}</textarea>
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900">${service.description || ""}</textarea>
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">Dress Code (optional)</label>
-          <input type="text" id="service-dresscode" value="${service.dresscode || ''}" data-service-index="${serviceIndex}" data-field="dresscode"
+          <input type="text" id="service-dresscode" value="${service.dresscode || ""}" data-service-index="${serviceIndex}" data-field="dresscode"
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900" placeholder="Business casual">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Service Agenda (Image or PDF)</label>
+          <div class="flex gap-2">
+            <input type="text" id="service-agendaUrl" value="${service.agendaUrl || ""}" data-service-index="${serviceIndex}" data-field="agendaUrl"
+              class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900"
+              placeholder="https://..." readonly>
+            <button type="button" onclick="uploadAgendaForField('service-agendaUrl')"
+              class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors flex items-center">
+              <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+              </svg>
+              Upload
+            </button>
+          </div>
+          <input type="file" id="service-agendaUrl-file" accept="image/*,application/pdf" class="hidden" />
+          <p class="mt-1 text-xs text-gray-500">Upload an image or PDF file (max 5MB).</p>
         </div>
       </div>
     `;
     return;
   }
-  
+
   const fields = {
     hero: [
-      { key: 'name', label: 'Full Name', type: 'text' },
-      { key: 'birthDate', label: 'Birth Date', type: 'date' },
-      { key: 'deathDate', label: 'Death Date', type: 'date' },
-      { key: 'subtitle', label: 'Subtitle', type: 'text' },
-      { key: 'mainImage', label: 'Portrait Image', type: 'image', placeholder: '/images/portrait.jpg or Cloudinary URL' },
-      { key: 'backgroundImage', label: 'Background Image', type: 'image', placeholder: 'Optional: Custom background image' }
+      { key: "name", label: "Full Name", type: "text" },
+      { key: "birthDate", label: "Birth Date", type: "date" },
+      { key: "deathDate", label: "Death Date", type: "date" },
+      { key: "subtitle", label: "Subtitle", type: "text" },
+      {
+        key: "mainImage",
+        label: "Portrait Image",
+        type: "image",
+        placeholder: "/images/portrait.jpg or Cloudinary URL",
+      },
+      {
+        key: "backgroundImage",
+        label: "Background Image",
+        type: "image",
+        placeholder: "Optional: Custom background image",
+      },
     ],
     biography: [
-      { key: 'visible', label: 'Show Biography Section', type: 'checkbox' },
-      { key: 'title', label: 'Section Title', type: 'text' },
-      { key: 'content', label: 'Biography Content', type: 'textarea', rows: 10 }
+      { key: "visible", label: "Show Biography Section", type: "checkbox" },
+      { key: "title", label: "Section Title", type: "text" },
+      {
+        key: "content",
+        label: "Biography Content",
+        type: "textarea",
+        rows: 10,
+      },
     ],
     highlights: [
-      { key: 'visible', label: 'Show Cherished Memories', type: 'checkbox' },
-      { key: 'highlights', label: 'Cherished Memories (one per line)', type: 'textarea', rows: 8, placeholder: 'Enter each memory on a new line' }
+      { key: "visible", label: "Show Cherished Memories", type: "checkbox" },
+      {
+        key: "highlights",
+        label: "Cherished Memories (one per line)",
+        type: "textarea",
+        rows: 8,
+        placeholder: "Enter each memory on a new line",
+      },
     ],
     video: [
-      { key: 'visible', label: 'Show Video Section', type: 'checkbox' },
-      { key: 'sectionTitle', label: 'Section Title', type: 'text', placeholder: 'In Their Own Words' },
-      { key: 'description', label: 'Video Description', type: 'text' },
-      { key: 'videoUrl', label: 'Video URL', type: 'video', placeholder: '/videos/memorial-video.mp4 or Cloudinary URL' },
-      { key: 'posterImage', label: 'Video Poster Image', type: 'image', placeholder: '/images/video-poster.jpg' }
+      { key: "visible", label: "Show Video Section", type: "checkbox" },
+      {
+        key: "sectionTitle",
+        label: "Section Title",
+        type: "text",
+        placeholder: "In Their Own Words",
+      },
+      { key: "description", label: "Video Description", type: "text" },
+      {
+        key: "videoUrl",
+        label: "Video URL",
+        type: "video",
+        placeholder: "/videos/memorial-video.mp4 or Cloudinary URL",
+      },
+      {
+        key: "posterImage",
+        label: "Video Poster Image",
+        type: "image",
+        placeholder: "/images/video-poster.jpg",
+      },
     ],
     donations: [
-      { key: 'visible', label: 'Show Donations Section', type: 'checkbox' },
-      { key: 'sectionTitle', label: 'Section Title', type: 'text', placeholder: 'Honor Their Memory' },
-      { key: 'customMessage', label: 'Custom Message', type: 'textarea', rows: 3 },
-      { key: 'venmoUsername', label: 'Venmo Username', type: 'text', placeholder: '@username' },
-      { key: 'venmoImage', label: 'Venmo QR Code/Image', type: 'image', placeholder: 'Upload QR Code' },
-      { key: 'cashappUsername', label: 'Cash App Username', type: 'text', placeholder: '$username' },
-      { key: 'cashappImage', label: 'Cash App QR Code/Image', type: 'image', placeholder: 'Upload QR Code' },
-      { key: 'zelleEmail', label: 'Zelle Email', type: 'email', placeholder: 'email@example.com' },
-      { key: 'zelleImage', label: 'Zelle QR Code/Image', type: 'image', placeholder: 'Upload QR Code' }
+      { key: "visible", label: "Show Donations Section", type: "checkbox" },
+      {
+        key: "sectionTitle",
+        label: "Section Title",
+        type: "text",
+        placeholder: "Honor Their Memory",
+      },
+      {
+        key: "customMessage",
+        label: "Custom Message",
+        type: "textarea",
+        rows: 3,
+      },
+      {
+        key: "venmoUsername",
+        label: "Venmo Username",
+        type: "text",
+        placeholder: "@username",
+      },
+      {
+        key: "venmoImage",
+        label: "Venmo QR Code/Image",
+        type: "image",
+        placeholder: "Upload QR Code",
+      },
+      {
+        key: "cashappUsername",
+        label: "Cash App Username",
+        type: "text",
+        placeholder: "$username",
+      },
+      {
+        key: "cashappImage",
+        label: "Cash App QR Code/Image",
+        type: "image",
+        placeholder: "Upload QR Code",
+      },
+      {
+        key: "zelleEmail",
+        label: "Zelle Email",
+        type: "email",
+        placeholder: "email@example.com",
+      },
+      {
+        key: "zelleImage",
+        label: "Zelle QR Code/Image",
+        type: "image",
+        placeholder: "Upload QR Code",
+      },
     ],
     funeral: [
-      { key: 'visible', label: 'Show Funeral Section', type: 'checkbox' },
-      { key: 'sectionTitle', label: 'Section Title', type: 'text', placeholder: 'Service Information' },
-      { key: 'subtitle', label: 'Subtitle Text', type: 'text', placeholder: 'Please join us as we celebrate their life and honor their memory' }
+      { key: "visible", label: "Show Funeral Section", type: "checkbox" },
+      {
+        key: "sectionTitle",
+        label: "Section Title",
+        type: "text",
+        placeholder: "Service Information",
+      },
+      {
+        key: "subtitle",
+        label: "Subtitle Text",
+        type: "text",
+        placeholder:
+          "Please join us as we celebrate their life and honor their memory",
+      },
     ],
     specialInstructions: [
-      { key: 'specialInstructionsVisible', label: 'Show Special Instructions', type: 'checkbox' },
-      { key: 'specialInstructions', label: 'Special Instructions', type: 'textarea', rows: 5, placeholder: 'Please arrive 15 minutes early for seating...' }
+      {
+        key: "specialInstructionsVisible",
+        label: "Show Special Instructions",
+        type: "checkbox",
+      },
+      {
+        key: "specialInstructions",
+        label: "Special Instructions",
+        type: "textarea",
+        rows: 5,
+        placeholder: "Please arrive 15 minutes early for seating...",
+      },
     ],
     flowersInfo: [
-      { key: 'flowersInfoVisible', label: 'Show Flowers/Donation Info', type: 'checkbox' },
-      { key: 'flowersInfo', label: 'Flowers/Donation Information', type: 'textarea', rows: 3, placeholder: 'In lieu of flowers, the family requests...' }
+      {
+        key: "flowersInfoVisible",
+        label: "Show Flowers/Donation Info",
+        type: "checkbox",
+      },
+      {
+        key: "flowersInfo",
+        label: "Flowers/Donation Information",
+        type: "textarea",
+        rows: 3,
+        placeholder: "In lieu of flowers, the family requests...",
+      },
     ],
     services: [
-      { key: 'info', label: 'Service Management', type: 'info', message: 'Service events are complex structured data. To edit services, dates, times, and locations, please update the database directly or contact support.' }
+      {
+        key: "info",
+        label: "Service Management",
+        type: "info",
+        message:
+          "Service events are complex structured data. To edit services, dates, times, and locations, please update the database directly or contact support.",
+      },
     ],
     reception: [
-      { key: 'visible', label: 'Show Reception Information', type: 'checkbox' },
-      { key: 'location', label: 'Reception Location', type: 'text', placeholder: 'St. Mary\'s Parish Hall' },
-      { key: 'time', label: 'Reception Time', type: 'text', placeholder: 'Following the service' },
-      { key: 'description', label: 'Reception Description', type: 'textarea', rows: 3, placeholder: 'Light refreshments will be served...' }
+      { key: "visible", label: "Show Reception Information", type: "checkbox" },
+      {
+        key: "location",
+        label: "Reception Location",
+        type: "text",
+        placeholder: "St. Mary's Parish Hall",
+      },
+      {
+        key: "time",
+        label: "Reception Time",
+        type: "text",
+        placeholder: "Following the service",
+      },
+      {
+        key: "description",
+        label: "Reception Description",
+        type: "textarea",
+        rows: 3,
+        placeholder: "Light refreshments will be served...",
+      },
     ],
     gallery: [
-      { key: 'visible', label: 'Show Gallery Section', type: 'checkbox' },
-      { key: 'sectionTitle', label: 'Section Title', type: 'text', placeholder: 'Treasured Moments' },
-      { key: 'images', label: 'Reorder Images', type: 'reorder_gallery' }
+      { key: "visible", label: "Show Gallery Section", type: "checkbox" },
+      {
+        key: "sectionTitle",
+        label: "Section Title",
+        type: "text",
+        placeholder: "Treasured Moments",
+      },
+      { key: "images", label: "Reorder Images", type: "reorder_gallery" },
     ],
     footer: [
-      { key: 'visible', label: 'Show Footer', type: 'checkbox' },
-      { key: 'quote', label: 'Memorial Quote', type: 'textarea', rows: 2 },
-      { key: 'credit', label: 'Footer Credit Text', type: 'text', placeholder: 'Created with love by the Family • 2024' }
+      { key: "visible", label: "Show Footer", type: "checkbox" },
+      { key: "quote", label: "Memorial Quote", type: "textarea", rows: 2 },
+      {
+        key: "credit",
+        label: "Footer Credit Text",
+        type: "text",
+        placeholder: "Created with love by the Family • 2024",
+      },
     ],
     comments: [
-      { key: 'visible', label: 'Show Memories Section', type: 'checkbox' },
-      { key: 'autoApprove', label: 'Auto-approve New Comments', type: 'checkbox' },
-      { key: 'sectionTitle', label: 'Section Title', type: 'text', placeholder: 'Share Your Memories' },
-      { key: 'subtitle', label: 'Subtitle Text', type: 'text', placeholder: 'Leave a message to honor their memory...' }
-    ]
+      { key: "visible", label: "Show Memories Section", type: "checkbox" },
+      {
+        key: "autoApprove",
+        label: "Auto-approve New Comments",
+        type: "checkbox",
+      },
+      {
+        key: "sectionTitle",
+        label: "Section Title",
+        type: "text",
+        placeholder: "Share Your Memories",
+      },
+      {
+        key: "subtitle",
+        label: "Subtitle Text",
+        type: "text",
+        placeholder: "Leave a message to honor their memory...",
+      },
+    ],
   };
-  
+
   const sectionFields = fields[section] || [];
-  
+
   let dataSection = section;
-  if (section === 'specialInstructions' || section === 'flowersInfo') {
-    dataSection = 'funeral';
+  if (section === "specialInstructions" || section === "flowersInfo") {
+    dataSection = "funeral";
   }
   const actualSectionData = contentData[dataSection] || {};
-  
-  modalContent.innerHTML = sectionFields.map(field => {
-    let value = actualSectionData[field.key]?.value || '';
-    
-    if (section === 'highlights' && field.key === 'highlights') {
-      try {
-        const highlightsArray = JSON.parse(actualSectionData[field.key]?.value || '[]');
-        value = highlightsArray.join('\n');
-      } catch (e) {
-        value = '';
+
+  modalContent.innerHTML = sectionFields
+    .map((field) => {
+      let value = actualSectionData[field.key]?.value || "";
+
+      if (section === "highlights" && field.key === "highlights") {
+        try {
+          const highlightsArray = JSON.parse(
+            actualSectionData[field.key]?.value || "[]",
+          );
+          value = highlightsArray.join("\n");
+        } catch (e) {
+          value = "";
+        }
       }
-    }
-    
-    if (field.type === 'checkbox' && !actualSectionData[field.key]) {
-      value = 'true';
-    }
-    
-    const inputId = `modal-${section}-${field.key}`;
-    const dataSectionAttr = dataSection;
-    
-    if (field.type === 'info') {
-      return `
+
+      if (field.type === "checkbox" && !actualSectionData[field.key]) {
+        value = "true";
+      }
+
+      const inputId = `modal-${section}-${field.key}`;
+      const dataSectionAttr = dataSection;
+
+      if (field.type === "info") {
+        return `
         <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <p class="text-sm text-blue-800">${field.message}</p>
         </div>
       `;
-    } else if (field.type === 'checkbox') {
-      return `
+      } else if (field.type === "checkbox") {
+        return `
         <div class="flex items-center p-4 bg-gray-50 rounded-lg">
           <input
             type="checkbox"
             id="${inputId}"
-            ${value === 'true' || value === true ? 'checked' : ''}
+            ${value === "true" || value === true ? "checked" : ""}
             data-section="${dataSectionAttr}"
             data-key="${field.key}"
             class="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
@@ -990,8 +1319,8 @@ function renderModalContent(section) {
           </label>
         </div>
       `;
-    } else if (field.type === 'image') {
-      return `
+      } else if (field.type === "image") {
+        return `
         <div>
           <label for="${inputId}" class="block text-sm font-medium text-gray-700 mb-2">
             ${field.label}
@@ -1004,7 +1333,7 @@ function renderModalContent(section) {
               data-section="${dataSectionAttr}"
               data-key="${field.key}"
               class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900"
-              placeholder="${field.placeholder || ''}"
+              placeholder="${field.placeholder || ""}"
             />
             <button
               type="button"
@@ -1021,8 +1350,8 @@ function renderModalContent(section) {
           <p class="mt-1 text-xs text-gray-500">You can paste a Cloudinary URL or upload a new image</p>
         </div>
       `;
-    } else if (field.type === 'video') {
-      return `
+      } else if (field.type === "video") {
+        return `
         <div>
           <label for="${inputId}" class="block text-sm font-medium text-gray-700 mb-2">
             ${field.label}
@@ -1035,7 +1364,7 @@ function renderModalContent(section) {
               data-section="${dataSectionAttr}"
               data-key="${field.key}"
               class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900"
-              placeholder="${field.placeholder || ''}"
+              placeholder="${field.placeholder || ""}"
             />
             <button
               type="button"
@@ -1052,10 +1381,12 @@ function renderModalContent(section) {
           <p class="mt-1 text-xs text-gray-500">You can paste a Cloudinary URL or upload a new video (max 100MB recommended)</p>
         </div>
       `;
-    } else if (field.type === 'reorder_gallery') {
-      // Build the grid of images
-      const images = memorialData.images || [];
-      const gridHtml = images.map((img, idx) => `
+      } else if (field.type === "reorder_gallery") {
+        // Build the grid of images
+        const images = memorialData.images || [];
+        const gridHtml = images
+          .map(
+            (img, idx) => `
         <div class="reorder-item relative bg-white rounded-lg shadow-md overflow-hidden cursor-move hover:shadow-lg transition-shadow" 
              draggable="true" data-index="${idx}" data-image-url="${img.src}">
           <div class="aspect-square overflow-hidden bg-warm-gray-200">
@@ -1070,9 +1401,11 @@ function renderModalContent(section) {
             </svg>
           </div>
         </div>
-      `).join('');
+      `,
+          )
+          .join("");
 
-      return `
+        return `
         <div class="mt-6 border-t border-gray-200 pt-6">
           <label class="block text-sm font-medium text-gray-700 mb-4">
             ${field.label}
@@ -1083,8 +1416,8 @@ function renderModalContent(section) {
           <p class="text-xs text-gray-500">Drag and drop images to reorder them. Changes are saved when you click "Save Changes".</p>
         </div>
       `;
-    } else if (field.type === 'textarea') {
-      return `
+      } else if (field.type === "textarea") {
+        return `
         <div>
           <label for="${inputId}" class="block text-sm font-medium text-gray-700 mb-2">
             ${field.label}
@@ -1095,12 +1428,12 @@ function renderModalContent(section) {
             data-section="${dataSectionAttr}"
             data-key="${field.key}"
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900"
-            placeholder="${field.placeholder || ''}"
+            placeholder="${field.placeholder || ""}"
           >${value}</textarea>
         </div>
       `;
-    } else {
-      return `
+      } else {
+        return `
         <div>
           <label for="${inputId}" class="block text-sm font-medium text-gray-700 mb-2">
             ${field.label}
@@ -1112,20 +1445,21 @@ function renderModalContent(section) {
             data-section="${dataSectionAttr}"
             data-key="${field.key}"
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900"
-            placeholder="${field.placeholder || ''}"
+            placeholder="${field.placeholder || ""}"
           />
         </div>
       `;
-    }
-  }).join('');
+      }
+    })
+    .join("");
 
   // Attach event listeners to new elements for reordering
-  const reorderItems = modalContent.querySelectorAll('.reorder-item');
-  reorderItems.forEach(item => {
-    item.addEventListener('dragstart', handleDragStart);
-    item.addEventListener('dragover', handleDragOver);
-    item.addEventListener('drop', handleDrop);
-    item.addEventListener('dragend', handleDragEnd);
+  const reorderItems = modalContent.querySelectorAll(".reorder-item");
+  reorderItems.forEach((item) => {
+    item.addEventListener("dragstart", handleDragStart);
+    item.addEventListener("dragover", handleDragOver);
+    item.addEventListener("drop", handleDrop);
+    item.addEventListener("dragend", handleDragEnd);
   });
 }
 
@@ -1134,45 +1468,51 @@ async function uploadImageForField(inputId) {
   const fileInputId = `${inputId}-file`;
   const fileInput = document.getElementById(fileInputId);
   const textInput = document.getElementById(inputId);
-  
+
   if (!fileInput) return;
-  
+
   fileInput.click();
-  
+
   fileInput.onchange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
+
     const originalValue = textInput.value;
-    textInput.value = 'Uploading...';
+    textInput.value = "Uploading...";
     textInput.disabled = true;
-    
+
     try {
       const formData = new FormData();
-      formData.append('file', file);
-      formData.append('folder', 'memorial/portraits');
-      
-      const response = await fetch('/api/upload-image', {
-        method: 'POST',
+      formData.append("file", file);
+      formData.append("folder", "memorial/portraits");
+
+      const response = await fetch("/api/upload-image", {
+        method: "POST",
         body: formData,
       });
-      
+
       const result = await response.json();
-      
+
       if (result.success) {
         textInput.value = result.url;
-        alert('✅ Image uploaded successfully!\n\nThe URL has been set. Click "Save Changes" to apply it.');
+        alert(
+          '✅ Image uploaded successfully!\n\nThe URL has been set. Click "Save Changes" to apply it.',
+        );
       } else {
-        alert('❌ Upload failed: ' + result.error + (result.details ? '\n\n' + result.details : ''));
+        alert(
+          "❌ Upload failed: " +
+            result.error +
+            (result.details ? "\n\n" + result.details : ""),
+        );
         textInput.value = originalValue;
       }
     } catch (error) {
-      console.error('Upload error:', error);
-      alert('❌ Failed to upload image: ' + error.message);
+      console.error("Upload error:", error);
+      alert("❌ Failed to upload image: " + error.message);
       textInput.value = originalValue;
     } finally {
       textInput.disabled = false;
-      fileInput.value = '';
+      fileInput.value = "";
     }
   };
 }
@@ -1182,53 +1522,63 @@ async function uploadVideoForField(inputId) {
   const fileInputId = `${inputId}-file`;
   const fileInput = document.getElementById(fileInputId);
   const textInput = document.getElementById(inputId);
-  
+
   if (!fileInput) return;
-  
+
   fileInput.click();
-  
+
   fileInput.onchange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
+
     const sizeMB = file.size / (1024 * 1024);
     if (sizeMB > 100) {
-      if (!confirm(`This video is ${sizeMB.toFixed(1)}MB. Large videos may take a while to upload. Continue?`)) {
-        fileInput.value = '';
+      if (
+        !confirm(
+          `This video is ${sizeMB.toFixed(1)}MB. Large videos may take a while to upload. Continue?`,
+        )
+      ) {
+        fileInput.value = "";
         return;
       }
     }
-    
+
     const originalValue = textInput.value;
     textInput.value = `Uploading video (${sizeMB.toFixed(1)}MB)...`;
     textInput.disabled = true;
-    
+
     try {
       const formData = new FormData();
-      formData.append('file', file);
-      formData.append('folder', 'memorial/videos');
-      
-      const response = await fetch('/api/upload-image', {
-        method: 'POST',
+      formData.append("file", file);
+      formData.append("folder", "memorial/videos");
+
+      const response = await fetch("/api/upload-image", {
+        method: "POST",
         body: formData,
       });
-      
+
       const result = await response.json();
-      
+
       if (result.success) {
         textInput.value = result.url;
-        alert('✅ Video uploaded successfully!\n\nThe URL has been set. Click "Save Changes" to apply it.');
+        alert(
+          '✅ Video uploaded successfully!\n\nThe URL has been set. Click "Save Changes" to apply it.',
+        );
       } else {
-        alert('❌ Upload failed: ' + result.error + (result.details ? '\n\n' + result.details : ''));
+        alert(
+          "❌ Upload failed: " +
+            result.error +
+            (result.details ? "\n\n" + result.details : ""),
+        );
         textInput.value = originalValue;
       }
     } catch (error) {
-      console.error('Upload error:', error);
-      alert('❌ Failed to upload video: ' + error.message);
+      console.error("Upload error:", error);
+      alert("❌ Failed to upload video: " + error.message);
       textInput.value = originalValue;
     } finally {
       textInput.disabled = false;
-      fileInput.value = '';
+      fileInput.value = "";
     }
   };
 }
@@ -1236,22 +1586,22 @@ async function uploadVideoForField(inputId) {
 async function saveAllModalContent() {
   // ... (keep existing implementation)
   if (!currentSection) return;
-  
+
   // Handle individual service editing
-  if (currentSection.startsWith('service-')) {
+  if (currentSection.startsWith("service-")) {
     // ... (keep existing service saving logic) ...
-    const serviceIndex = parseInt(currentSection.split('-')[1]);
-    const modalContent = document.getElementById('modalContent');
-    const inputs = modalContent.querySelectorAll('input, textarea');
-    
+    const serviceIndex = parseInt(currentSection.split("-")[1]);
+    const modalContent = document.getElementById("modalContent");
+    const inputs = modalContent.querySelectorAll("input, textarea");
+
     const serviceData = {};
-    inputs.forEach(input => {
+    inputs.forEach((input) => {
       const field = input.dataset.field;
       if (field) {
         const value = input.value.trim();
-        if (field.includes('.')) {
+        if (field.includes(".")) {
           // Handle nested fields (e.g., location.name, location.address, etc.)
-          const [parent, child] = field.split('.');
+          const [parent, child] = field.split(".");
           if (!serviceData[parent]) serviceData[parent] = {};
           // Always include the field, even if empty (allows clearing optional fields)
           serviceData[parent][child] = value;
@@ -1262,130 +1612,187 @@ async function saveAllModalContent() {
         }
       }
     });
-    
+
     try {
-      const response = await fetch('/api/admin/content', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/admin/content", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          section: 'funeral',
+          section: "funeral",
           key: `service${serviceIndex}`,
-          value: JSON.stringify(serviceData)
-        })
+          value: JSON.stringify(serviceData),
+        }),
       });
-      
+
       const result = await response.json();
-      
+
       if (result.success) {
         updateServiceOnPage(serviceIndex, serviceData);
-        showToast('Service updated successfully!', 'success');
+        showToast("Service updated successfully!", "success");
         closeEditModal();
       } else {
-        throw new Error(result.error || 'Failed to save service');
+        throw new Error(result.error || "Failed to save service");
       }
     } catch (error) {
-      console.error('Error saving service:', error);
-      showToast('Error saving service. Please try again.', 'error');
+      console.error("Error saving service:", error);
+      showToast("Error saving service. Please try again.", "error");
     }
     return;
   }
-  
-  const modalContent = document.getElementById('modalContent');
-  const inputs = modalContent.querySelectorAll('input:not([type="file"]):not(.hidden), textarea');
-  
+
+  const modalContent = document.getElementById("modalContent");
+  const inputs = modalContent.querySelectorAll(
+    'input:not([type="file"]):not(.hidden), textarea',
+  );
+
   const updates = [];
   const updatesMap = {};
-  
+
   // Handle standard inputs
   inputs.forEach((input, index) => {
     const section = input.dataset.section;
     const key = input.dataset.key;
-    
+
     if (!section || !key) return;
-    
+
     let value;
-    if (input.type === 'checkbox') {
-      value = input.checked ? 'true' : 'false';
+    if (input.type === "checkbox") {
+      value = input.checked ? "true" : "false";
     } else {
       value = input.value;
     }
-    
-    if (section === 'highlights' && key === 'highlights') {
-      const highlightsArray = value.split('\n').filter(h => h.trim()).map(h => h.trim());
+
+    if (section === "highlights" && key === "highlights") {
+      const highlightsArray = value
+        .split("\n")
+        .filter((h) => h.trim())
+        .map((h) => h.trim());
       value = JSON.stringify(highlightsArray);
     }
-    
+
     updates.push({ section, key, value });
-    
+
     if (!updatesMap[section]) {
       updatesMap[section] = {};
     }
-    updatesMap[section][key] = input.type === 'checkbox' ? input.checked : input.value;
+    updatesMap[section][key] =
+      input.type === "checkbox" ? input.checked : input.value;
   });
 
   // Handle Gallery Reordering
-  if (currentSection === 'gallery') {
-    const reorderItems = modalContent.querySelectorAll('.reorder-item');
+  if (currentSection === "gallery") {
+    const reorderItems = modalContent.querySelectorAll(".reorder-item");
     if (reorderItems.length > 0) {
       const reorderData = Array.from(reorderItems).map((item, idx) => ({
         imagePath: item.dataset.imageUrl,
-        displayOrder: idx
+        displayOrder: idx,
       }));
 
       // We'll save the reorder data separately
       try {
-        const updatePromises = reorderData.map(item => 
-          fetch('/api/gallery/update-order', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(item)
-          })
+        const updatePromises = reorderData.map((item) =>
+          fetch("/api/gallery/update-order", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(item),
+          }),
         );
         await Promise.all(updatePromises);
-        console.log('Gallery order updated');
+        console.log("Gallery order updated");
         // Force refresh to see new order since we don't have easy DOM manipulation for the carousel here
         setTimeout(() => window.location.reload(), 1000);
       } catch (e) {
-        console.error('Failed to update gallery order:', e);
-        showToast('Failed to update gallery order', 'error');
+        console.error("Failed to update gallery order:", e);
+        showToast("Failed to update gallery order", "error");
       }
     }
   }
-  
-  if (updates.length === 0 && currentSection !== 'gallery') {
-    showToast('Error: No valid fields to save', 'error');
+
+  if (updates.length === 0 && currentSection !== "gallery") {
+    showToast("Error: No valid fields to save", "error");
     return;
   }
-  
+
   try {
     if (updates.length > 0) {
-        const results = await Promise.all(
-        updates.map(update => 
-            fetch('/api/admin/content', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(update)
-            }).then(r => r.json())
-        )
-        );
-        
-        const allSuccess = results.every(r => r.success);
-        
-        if (allSuccess) {
+      const results = await Promise.all(
+        updates.map((update) =>
+          fetch("/api/admin/content", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(update),
+          }).then((r) => r.json()),
+        ),
+      );
+
+      const allSuccess = results.every((r) => r.success);
+
+      if (allSuccess) {
         updatePageContent(currentSection, updatesMap[currentSection]);
-        showToast('Changes saved successfully!', 'success');
+        showToast("Changes saved successfully!", "success");
         closeEditModal();
-        } else {
-        throw new Error('Some updates failed');
-        }
-    } else if (currentSection === 'gallery') {
-        showToast('Changes saved successfully!', 'success');
-        closeEditModal();
+      } else {
+        throw new Error("Some updates failed");
+      }
+    } else if (currentSection === "gallery") {
+      showToast("Changes saved successfully!", "success");
+      closeEditModal();
     }
   } catch (error) {
-    console.error('Error saving content:', error);
-    showToast('Error saving changes. Please try again.', 'error');
+    console.error("Error saving content:", error);
+    showToast("Error saving changes. Please try again.", "error");
   }
+}
+
+async function uploadAgendaForField(inputId) {
+  const fileInputId = `${inputId}-file`;
+  const fileInput = document.getElementById(fileInputId);
+  const textInput = document.getElementById(inputId);
+
+  if (!fileInput) return;
+
+  fileInput.click();
+
+  fileInput.onchange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Simple validation
+    if (file.size > 5 * 1024 * 1024) {
+      alert("File is too large (max 5MB)");
+      return;
+    }
+
+    const originalValue = textInput.value;
+    textInput.value = "Uploading...";
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("folder", "memorial/agendas"); // Separate folder for organization
+
+      const response = await fetch("/api/upload-image", {
+        // Re-using your existing upload endpoint
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        textInput.value = result.url;
+        alert("✅ Agenda uploaded successfully!");
+      } else {
+        throw new Error(result.error || "Upload failed");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("❌ Upload failed: " + error.message);
+      textInput.value = originalValue;
+    } finally {
+      fileInput.value = "";
+    }
+  };
 }
 
 // --- Event Listeners & Initialization ---
@@ -1397,47 +1804,48 @@ window.openEditModal = openEditModal;
 window.closeEditModal = closeEditModal;
 window.uploadImageForField = uploadImageForField;
 window.uploadVideoForField = uploadVideoForField;
+window.uploadAgendaForField = uploadAgendaForField;
 window.saveAllModalContent = saveAllModalContent;
 
 // Initialize when window loads
-window.addEventListener('load', function() {
-  console.log('=== Window loaded, initializing toggle ===');
-  
-  const editModeToggle = document.getElementById('editModeToggle');
-  
+window.addEventListener("load", function () {
+  console.log("=== Window loaded, initializing toggle ===");
+
+  const editModeToggle = document.getElementById("editModeToggle");
+
   // Try to load immediately
   loadMemorialData();
-  
-  const savedEditMode = localStorage.getItem('editModeEnabled');
-  
-  if (savedEditMode === 'false') {
-    document.body.classList.add('hide-edit-buttons');
-    setTimeout(() => toggleEditButtons(false), 100); 
-    
+
+  const savedEditMode = localStorage.getItem("editModeEnabled");
+
+  if (savedEditMode === "false") {
+    document.body.classList.add("hide-edit-buttons");
+    setTimeout(() => toggleEditButtons(false), 100);
+
     if (editModeToggle) editModeToggle.checked = false;
   }
-  
+
   if (editModeToggle) {
-    editModeToggle.addEventListener('change', function() {
+    editModeToggle.addEventListener("change", function () {
       const isEnabled = this.checked;
-      
+
       if (isEnabled) {
-         restoreHiddenSections();
-         toggleEditButtons(true);
+        restoreHiddenSections();
+        toggleEditButtons(true);
       } else {
-         toggleEditButtons(false);
+        toggleEditButtons(false);
       }
-      
-      localStorage.setItem('editModeEnabled', isEnabled);
+
+      localStorage.setItem("editModeEnabled", isEnabled);
     });
   }
 
   // --- Admin Toolbar Drag & Minimize Logic ---
-  const adminToolbar = document.getElementById('adminToolbar');
-  const minimizeBtn = document.getElementById('minimizeToolbarBtn');
-  const toolbarContent = document.getElementById('adminToolbarContent');
-  const toolbarControls = document.getElementById('adminToolbarControls');
-  
+  const adminToolbar = document.getElementById("adminToolbar");
+  const minimizeBtn = document.getElementById("minimizeToolbarBtn");
+  const toolbarContent = document.getElementById("adminToolbarContent");
+  const toolbarControls = document.getElementById("adminToolbarControls");
+
   if (adminToolbar) {
     let isDragging = false;
     let currentX;
@@ -1452,14 +1860,18 @@ window.addEventListener('load', function() {
     document.addEventListener("mousemove", drag);
 
     function dragStart(e) {
-      if (e.target.closest('button') || e.target.closest('input') || e.target.closest('a')) {
+      if (
+        e.target.closest("button") ||
+        e.target.closest("input") ||
+        e.target.closest("a")
+      ) {
         return; // Don't drag if clicking controls
       }
-      
+
       initialX = e.clientX - xOffset;
       initialY = e.clientY - yOffset;
 
-      if (e.target.closest('#adminToolbar')) {
+      if (e.target.closest("#adminToolbar")) {
         isDragging = true;
       }
     }
@@ -1486,38 +1898,39 @@ window.addEventListener('load', function() {
     function setTranslate(xPos, yPos, el) {
       el.style.transform = `translate3d(${xPos}px, ${yPos}px, 0)`;
     }
-    
+
     // Minimize logic
     if (minimizeBtn && toolbarControls) {
-      let isMinimized = localStorage.getItem('adminToolbarMinimized') === 'true';
-      
+      let isMinimized =
+        localStorage.getItem("adminToolbarMinimized") === "true";
+
       function updateMinimizeState() {
         if (isMinimized) {
-          toolbarControls.style.maxWidth = '0px';
-          toolbarControls.style.paddingRight = '0px';
-          toolbarControls.style.opacity = '0';
+          toolbarControls.style.maxWidth = "0px";
+          toolbarControls.style.paddingRight = "0px";
+          toolbarControls.style.opacity = "0";
           minimizeBtn.innerHTML = `
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
             </svg>
           `; // Right chevron (Expand)
         } else {
-          toolbarControls.style.maxWidth = '300px'; // Approximate max width
-          toolbarControls.style.paddingRight = '1rem';
-          toolbarControls.style.opacity = '1';
+          toolbarControls.style.maxWidth = "300px"; // Approximate max width
+          toolbarControls.style.paddingRight = "1rem";
+          toolbarControls.style.opacity = "1";
           minimizeBtn.innerHTML = `
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
             </svg>
           `; // Left chevron (Collapse)
         }
-        localStorage.setItem('adminToolbarMinimized', isMinimized);
+        localStorage.setItem("adminToolbarMinimized", isMinimized);
       }
-      
+
       // Initialize state
       updateMinimizeState();
-      
-      minimizeBtn.addEventListener('click', (e) => {
+
+      minimizeBtn.addEventListener("click", (e) => {
         e.stopPropagation(); // Prevent drag start
         isMinimized = !isMinimized;
         updateMinimizeState();
@@ -1527,15 +1940,15 @@ window.addEventListener('load', function() {
 });
 
 // Close modal on Escape key
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && currentSection) {
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && currentSection) {
     closeEditModal();
   }
 });
 
 // Close modal when clicking outside
-document.getElementById('editModal')?.addEventListener('click', (e) => {
-  if (e.target.id === 'editModal') {
+document.getElementById("editModal")?.addEventListener("click", (e) => {
+  if (e.target.id === "editModal") {
     closeEditModal();
   }
 });
