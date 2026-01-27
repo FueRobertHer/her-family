@@ -49,6 +49,19 @@ A memorial page built with Astro.js to honor and remember a loved one's life.
    ```
 6. Open your browser to `http://localhost:4321`
 
+### Development Scripts
+
+```bash
+npm run dev            # Start development server
+npm run build          # Build for production
+npm run preview        # Preview production build
+npm run check          # Run TypeScript type checking
+npm run lint           # Check code for issues
+npm run lint:fix       # Auto-fix linting issues
+npm run format         # Format code with Prettier
+npm run format:check   # Check formatting without changes
+```
+
 ### Configuration
 
 #### Cloudinary Setup (Recommended)

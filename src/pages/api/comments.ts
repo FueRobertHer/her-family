@@ -42,8 +42,8 @@ export const POST: APIRoute = async ({ request }) => {
     
     const { name, email, relationship, message, imageUrl } = validation.data;
 
-    // Check auto-approve setting
-    let status = 'pending';
+    // Check auto-approve setting with better error handling
+    let status: 'pending' | 'approved' = 'pending';
     try {
       const settings = await db.select()
         .from(MemorialContent)
@@ -57,35 +57,43 @@ export const POST: APIRoute = async ({ request }) => {
       if (settings.length > 0 && settings[0].value === 'true') {
         status = 'approved';
       }
-    } catch (e) {
-      console.error('Error checking auto-approve setting:', e);
-      // Default to pending on error
+    } catch (settingsError) {
+      console.error('Error checking auto-approve setting:', settingsError);
+      // Default to pending on error - safer approach
     }
 
-    // Insert new comment
+    // Insert new comment with proper error handling
     const now = new Date().toISOString();
-    const result = await db.insert(Comments).values({
-      name: name.trim(),
-      email: email?.trim() || null,
-      relationship: relationship?.trim() || null,
-      message: message.trim(),
-      imageUrl: imageUrl?.trim() || null,
-      status: status,
-      createdAt: now,
-      updatedAt: now
-    });
+    try {
+      const result = await db.insert(Comments).values({
+        name: name.trim(),
+        email: email?.trim() || null,
+        relationship: relationship?.trim() || null,
+        message: message.trim(),
+        imageUrl: imageUrl?.trim() || null,
+        status: status,
+        createdAt: now,
+        updatedAt: now
+      });
 
-    const responseMessage = status === 'approved' 
-      ? 'Comment submitted successfully.' 
-      : 'Comment submitted successfully. It will be reviewed before appearing on the page.';
+      const responseMessage = status === 'approved' 
+        ? 'Comment submitted successfully.' 
+        : 'Comment submitted successfully. It will be reviewed before appearing on the page.';
 
-    return successResponse(
-      { id: Number(result.lastInsertRowid), status }, 
-      responseMessage,
-      201
-    );
+      return successResponse(
+        { id: Number(result.lastInsertRowid), status }, 
+        responseMessage,
+        201
+      );
+    } catch (dbError) {
+      console.error('Database error creating comment:', dbError);
+      return errorResponse('Failed to save comment. Please try again.', 500);
+    }
   } catch (error) {
     console.error('Error creating comment:', error);
+    if (error instanceof SyntaxError) {
+      return validationError('Invalid JSON in request body');
+    }
     return errorResponse('Failed to submit comment');
   }
 };
