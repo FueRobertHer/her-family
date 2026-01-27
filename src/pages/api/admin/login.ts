@@ -1,6 +1,11 @@
 import type { APIRoute } from 'astro';
 
-const ADMIN_PASSWORD = import.meta.env.ADMIN_PASSWORD || "memorial2024";
+const ADMIN_PASSWORD = import.meta.env.ADMIN_PASSWORD;
+
+// Validate that the password is set at startup
+if (!ADMIN_PASSWORD) {
+  throw new Error('ADMIN_PASSWORD environment variable must be set');
+}
 
 export const prerender = false;
 
@@ -49,16 +54,14 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     }
 
     if (password === ADMIN_PASSWORD) {
-      // Set cookie with appropriate settings
+      // Set cookie with secure settings
       cookies.set('admin_auth', 'true', {
-        httpOnly: false, // Allow JavaScript access for debugging/client-side checks
-        secure: import.meta.env.PROD, // Require HTTPS in production
-        sameSite: 'lax',
+        httpOnly: true, // Prevent JavaScript access (XSS protection)
+        secure: true, // Always require HTTPS
+        sameSite: 'strict', // CSRF protection
         maxAge: 60 * 60 * 24, // 24 hours
         path: '/' // Ensure cookie is available site-wide
       });
-
-      console.log('Cookie set successfully');
 
       return new Response(JSON.stringify({ 
         success: true, 

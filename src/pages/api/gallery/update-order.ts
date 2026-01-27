@@ -1,86 +1,42 @@
 import type { APIRoute } from 'astro';
 import { db, GalleryImages } from 'astro:db';
 import { eq } from 'astro:db';
+import { requireAuth } from '../../../lib/auth';
+import { successResponse, errorResponse, validationError, notFoundError } from '../../../lib/api-response';
+import { galleryUpdateOrderSchema, validateData } from '../../../lib/validation';
 
 export const prerender = false;
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
     // Check authentication
-    const isAdmin = cookies.get('admin_auth')?.value === 'true';
-    if (!isAdmin) {
-      return new Response(JSON.stringify({ 
-        success: false, 
-        error: 'Unauthorized' 
-      }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
+    const authError = requireAuth(cookies);
+    if (authError) return authError;
 
     const body = await request.json();
-    const { imagePath, displayOrder } = body;
-
-    if (!imagePath || displayOrder === undefined) {
-      return new Response(JSON.stringify({ 
-        success: false, 
-        error: 'Missing required fields: imagePath and displayOrder' 
-      }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Find the image by imagePath
-    const images = await db.select().from(GalleryImages);
-    const image = images.find(img => img.imagePath === imagePath);
-
-    if (!image) {
-      return new Response(JSON.stringify({ 
-        success: false, 
-        error: 'Image not found' 
-      }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Update the display order
-    // Since Astro DB has issues with WHERE clauses, we'll use the "clear and re-insert" approach
-    const allImages = await db.select().from(GalleryImages);
     
-    // Update the specific image's displayOrder in memory
-    const updatedImages = allImages.map(img => {
-      if (img.imagePath === imagePath) {
-        return { ...img, displayOrder };
-      }
-      return img;
-    });
+    // Validate input with Zod
+    const validation = validateData(galleryUpdateOrderSchema, body);
+    if (!validation.success) {
+      return validationError(validation.error, validation.details?.join(', '));
+    }
+    
+    const { imagePath, displayOrder } = validation.data;
 
-    // Clear table
-    await db.delete(GalleryImages);
+    // Update the display order using a proper WHERE clause
+    const result = await db.update(GalleryImages)
+      .set({ displayOrder })
+      .where(eq(GalleryImages.imagePath, imagePath));
 
-    // Re-insert all images with updated data
-    if (updatedImages.length > 0) {
-      await db.insert(GalleryImages).values(updatedImages);
+    // Check if any rows were affected
+    if (!result.rowsAffected || result.rowsAffected === 0) {
+      return notFoundError('Image');
     }
 
-    return new Response(JSON.stringify({ 
-      success: true,
-      message: 'Display order updated successfully'
-    }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return successResponse(undefined, 'Display order updated successfully');
 
   } catch (error) {
     console.error('Error updating gallery order:', error);
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: 'Failed to update gallery order' 
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return errorResponse('Failed to update gallery order');
   }
 };

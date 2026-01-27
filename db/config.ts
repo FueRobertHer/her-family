@@ -9,8 +9,8 @@ const Comments = defineTable({
     message: column.text(),
     imageUrl: column.text({ optional: true }), // Optional image attachment
     status: column.text({ default: 'pending' }), // 'pending', 'approved', 'rejected'
-    createdAt: column.text({ default: new Date().toISOString() }),
-    updatedAt: column.text({ default: new Date().toISOString() })
+    createdAt: column.text(), // Must be set explicitly in application code
+    updatedAt: column.text() // Must be set explicitly in application code
   },
   indexes: {
     status_idx: { on: ["status"], unique: false }
@@ -24,10 +24,10 @@ const MemorialContent = defineTable({
     key: column.text(), // specific field name
     value: column.text(), // the content value
     type: column.text({ default: 'text' }), // 'text', 'textarea', 'image', 'date', 'boolean'
-    updatedAt: column.text({ default: new Date().toISOString() })
+    updatedAt: column.text() // Must be set explicitly in application code
   },
   indexes: {
-    section_key_idx: { on: ["section", "key"], unique: false }
+    section_key_idx: { on: ["section", "key"], unique: true } // Ensure no duplicate content entries
   }
 });
 
@@ -38,7 +38,7 @@ const GalleryImages = defineTable({
     caption: column.text({ optional: true }),
     displayOrder: column.number({ default: 0 }),
     isActive: column.boolean({ default: true }),
-    uploadedAt: column.text({ default: new Date().toISOString() })
+    uploadedAt: column.text() // Must be set explicitly in application code
   },
   indexes: {
     order_idx: { on: ["displayOrder"], unique: false }
