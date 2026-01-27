@@ -43,11 +43,11 @@ const { images, isAdmin = false, title = "Treasured Moments" } = Astro.props;
     )}
     
     <!-- Carousel Container -->
-    <div class="relative">
+    <div class="relative carousel-arrow-positioning">
       <!-- Previous Arrow -->
       <button 
         id="carouselPrev"
-        class="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white text-warm-gray-800 p-3 rounded-full shadow-lg transition-all hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
+        class="absolute left-0 -translate-y-1/2 z-10 bg-white/90 hover:bg-white text-warm-gray-800 p-3 rounded-full shadow-lg transition-all hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
         aria-label="Previous image"
       >
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -58,7 +58,7 @@ const { images, isAdmin = false, title = "Treasured Moments" } = Astro.props;
       <!-- Next Arrow -->
       <button 
         id="carouselNext"
-        class="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white text-warm-gray-800 p-3 rounded-full shadow-lg transition-all hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
+        class="absolute right-0 -translate-y-1/2 z-10 bg-white/90 hover:bg-white text-warm-gray-800 p-3 rounded-full shadow-lg transition-all hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
         aria-label="Next image"
       >
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -117,9 +117,10 @@ const { images, isAdmin = false, title = "Treasured Moments" } = Astro.props;
           ))}
         </div>
       </div>
+    </div>
       
-      <!-- Dots Indicator -->
-      <div id="carouselDots" class="flex justify-center gap-2 mt-6">
+    <!-- Dots Indicator -->
+    <div id="carouselDots" class="flex justify-center gap-2 mt-6">
         {images.map((_, index) => (
           <button 
             class="carousel-dot w-2 h-2 rounded-full bg-warm-gray-300 hover:bg-warm-gray-500 transition-colors"
@@ -236,6 +237,24 @@ const { images, isAdmin = false, title = "Treasured Moments" } = Astro.props;
     </div>
   )}
 </section>
+
+<style>
+  /* Center arrows on the square image area, accounting for captions below */
+  .carousel-arrow-positioning {
+    position: relative;
+  }
+  
+  #carouselPrev, #carouselNext {
+    /* Position at 50% of container minus half the typical caption height */
+    top: calc(50% - 0.75rem);
+  }
+  
+  @media (min-width: 640px) {
+    #carouselPrev, #carouselNext {
+      top: calc(50% - 0.5rem);
+    }
+  }
+</style>
 
 <script>
   import "../scripts/gallery-carousel.js";
