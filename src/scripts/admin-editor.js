@@ -227,8 +227,52 @@ function updateBiographySection(updates) {
       contentEl.innerHTML = paragraphs
         .map((p) => `<p class="mb-6">${p}</p>`)
         .join("");
+
+      // Re-check if truncation button should be visible after content update
+      recheckBiographyTruncation();
     }
   }
+}
+
+function recheckBiographyTruncation() {
+  const bioContent = document.getElementById("bio-content");
+  const bioToggle = document.getElementById("bio-toggle");
+  const bioFade = document.getElementById("bio-fade");
+
+  if (!bioContent || !bioToggle || !bioFade) return;
+
+  const collapsedHeight = 400;
+
+  // Reset to collapsed state first
+  bioContent.style.maxHeight = collapsedHeight + "px";
+
+  // Force a reflow to get accurate scrollHeight
+  void bioContent.offsetHeight;
+
+  // Check if content needs truncation
+  const contentHeight = bioContent.scrollHeight;
+  const needsTruncation = contentHeight > collapsedHeight + 50;
+
+  if (needsTruncation) {
+    // Show the toggle button and fade
+    bioToggle.style.display = "inline-flex";
+    bioFade.style.display = "block";
+    bioFade.style.opacity = "1";
+  } else {
+    // Content is short, remove max-height, hide button and fade
+    bioContent.style.maxHeight = "none";
+    bioToggle.style.display = "none";
+    bioFade.style.display = "none";
+  }
+
+  // Reset button text and icons to initial state
+  const bioToggleText = document.getElementById("bio-toggle-text");
+  const chevronDown = document.getElementById("bio-chevron-down");
+  const chevronUp = document.getElementById("bio-chevron-up");
+
+  if (bioToggleText) bioToggleText.textContent = "Continue Reading";
+  chevronDown?.classList.remove("hidden");
+  chevronUp?.classList.add("hidden");
 }
 
 function updateHighlightsSection(updates) {
@@ -1806,6 +1850,7 @@ window.uploadImageForField = uploadImageForField;
 window.uploadVideoForField = uploadVideoForField;
 window.uploadAgendaForField = uploadAgendaForField;
 window.saveAllModalContent = saveAllModalContent;
+window.recheckBiographyTruncation = recheckBiographyTruncation;
 
 // Initialize when window loads
 window.addEventListener("load", function () {
