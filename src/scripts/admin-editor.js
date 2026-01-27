@@ -1893,55 +1893,98 @@ window.addEventListener("load", function () {
 
   if (adminToolbar) {
     let isDragging = false;
-    let currentX;
-    let currentY;
-    let initialX;
-    let initialY;
+    let currentX = 0;
+    let currentY = 0;
+    let initialX = 0;
+    let initialY = 0;
     let xOffset = 0;
     let yOffset = 0;
+    let rafPending = false;
 
+    // Basic styling for draggable element
+    adminToolbar.style.userSelect = 'none';
+    adminToolbar.style.webkitUserSelect = 'none';
+    adminToolbar.style.cursor = 'move';
+    adminToolbar.style.touchAction = 'none';
+    adminToolbar.style.transition = 'none';
+
+    // Only add start listeners initially
     adminToolbar.addEventListener("mousedown", dragStart);
-    document.addEventListener("mouseup", dragEnd);
-    document.addEventListener("mousemove", drag);
+    adminToolbar.addEventListener("touchstart", dragStart, { passive: false });
+
+    function getEventCoordinates(e) {
+      if (e.type.includes('touch')) {
+        return {
+          clientX: e.touches[0]?.clientX || e.changedTouches[0]?.clientX || 0,
+          clientY: e.touches[0]?.clientY || e.changedTouches[0]?.clientY || 0
+        };
+      }
+      return { clientX: e.clientX, clientY: e.clientY };
+    }
 
     function dragStart(e) {
-      if (
-        e.target.closest("button") ||
-        e.target.closest("input") ||
-        e.target.closest("a")
-      ) {
-        return; // Don't drag if clicking controls
-      }
+      if (e.target.closest("button, input, a")) return;
+      if (!e.target.closest("#adminToolbar")) return;
 
-      initialX = e.clientX - xOffset;
-      initialY = e.clientY - yOffset;
+      const coords = getEventCoordinates(e);
+      initialX = coords.clientX - xOffset;
+      initialY = coords.clientY - yOffset;
+      isDragging = true;
 
-      if (e.target.closest("#adminToolbar")) {
-        isDragging = true;
+      // Enable GPU acceleration only when dragging
+      adminToolbar.style.willChange = 'transform';
+
+      // Prevent text selection during drag
+      document.body.style.userSelect = 'none';
+      document.body.style.webkitUserSelect = 'none';
+      
+      // Add move/end listeners only when dragging starts
+      document.addEventListener("mousemove", drag, { passive: true });
+      document.addEventListener("touchmove", drag, { passive: false });
+      document.addEventListener("mouseup", dragEnd);
+      document.addEventListener("touchend", dragEnd);
+      
+      if (e.type === 'touchstart') {
+        e.preventDefault();
       }
     }
 
-    function dragEnd(e) {
-      initialX = currentX;
-      initialY = currentY;
+    function dragEnd() {
       isDragging = false;
+      rafPending = false;
+
+      // Remove move/end listeners when dragging stops
+      document.removeEventListener("mousemove", drag);
+      document.removeEventListener("touchmove", drag);
+      document.removeEventListener("mouseup", dragEnd);
+      document.removeEventListener("touchend", dragEnd);
+
+      // Re-enable text selection
+      document.body.style.userSelect = '';
+      document.body.style.webkitUserSelect = '';
+      
+      // Remove GPU hint to free resources
+      adminToolbar.style.willChange = 'auto';
     }
 
     function drag(e) {
-      if (isDragging) {
+      if (e.type === 'touchmove') {
         e.preventDefault();
-        currentX = e.clientX - initialX;
-        currentY = e.clientY - initialY;
-
-        xOffset = currentX;
-        yOffset = currentY;
-
-        setTranslate(currentX, currentY, adminToolbar);
       }
-    }
+      
+      const coords = getEventCoordinates(e);
+      currentX = coords.clientX - initialX;
+      currentY = coords.clientY - initialY;
+      xOffset = currentX;
+      yOffset = currentY;
 
-    function setTranslate(xPos, yPos, el) {
-      el.style.transform = `translate3d(${xPos}px, ${yPos}px, 0)`;
+      if (!rafPending) {
+        rafPending = true;
+        requestAnimationFrame(() => {
+          adminToolbar.style.transform = `translate3d(${currentX}px, ${currentY}px, 0)`;
+          rafPending = false;
+        });
+      }
     }
 
     // Minimize logic
