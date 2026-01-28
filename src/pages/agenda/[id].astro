@@ -5,7 +5,8 @@ import Layout from '../../layouts/Layout.astro';
 import { db, MemorialContent, eq, and } from 'astro:db';
 
 const { id } = Astro.params;
-const serviceIndex = parseInt(id || '0');
+// Extract numeric index from URL (supports both "/agenda/0" and "/agenda/0-name-service")
+const serviceIndex = parseInt((id || '0').split('-')[0]);
 
 // Fetch the service data specifically
 const result = await db.select()
