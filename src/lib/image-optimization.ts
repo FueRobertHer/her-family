@@ -8,12 +8,15 @@ export interface CloudinaryOptions {
   height?: number;
   crop?: 'fill' | 'fit' | 'scale' | 'thumb';
   quality?: 'auto' | number;
-  format?: 'auto';
+  format?: 'auto' | 'webp' | 'jpg' | 'png';
 }
 
 /**
- * Optimizes a Cloudinary image URL with transformation parameters
- * @param url - Original image URL (Cloudinary or local)
+ * Optimizes a Cloudinary URL with transformation parameters
+ * Automatically detects resource type and applies appropriate optimizations:
+ * - Images: Forces WebP format for better compression
+ * - Other types (video/raw): Uses auto format
+ * @param url - Original Cloudinary URL (or local URL, which is returned as-is)
  * @param options - Transformation options
  * @returns Optimized URL with Cloudinary transformations
  */
@@ -26,12 +29,15 @@ export function optimizeCloudinaryUrl(
     return url;
   }
 
+  // Check if this is an image resource (not video or raw file)
+  const isImage = url.includes('/image/upload/');
+
   const {
     width,
     height,
     crop = 'fill',
     quality = 'auto',
-    format = 'auto',
+    format = isImage ? 'webp' : 'auto', // Force WebP for images, auto for other types
   } = options;
 
   // Build transformation string
@@ -40,14 +46,14 @@ export function optimizeCloudinaryUrl(
   if (width) transforms.push(`w_${width}`);
   if (height) transforms.push(`h_${height}`);
   if (crop && (width || height)) transforms.push(`c_${crop}`);
-  transforms.push('f_auto'); // Auto format (WebP/AVIF)
+  transforms.push(`f_${format}`); // Format: webp for images, auto for other types
   transforms.push(`q_${quality}`); // Auto quality
 
   const transformString = transforms.join(',');
 
   // Insert transformations into Cloudinary URL
   // Example: https://res.cloudinary.com/cloud/image/upload/v1/path.jpg
-  // Becomes: https://res.cloudinary.com/cloud/image/upload/w_800,f_auto,q_auto/v1/path.jpg
+  // Becomes: https://res.cloudinary.com/cloud/image/upload/w_800,f_webp,q_auto/v1/path.jpg
   
   const uploadIndex = url.indexOf('/upload/');
   if (uploadIndex === -1) return url; // Not a standard Cloudinary URL
