@@ -1930,8 +1930,12 @@ window.addEventListener("load", function () {
     }
 
     function dragStart(e) {
-      if (e.target.closest("button, input, a")) return;
+      // Check if the event target is an interactive element
+      if (e.target.closest("button, input, a, label")) return;
       if (!e.target.closest("#adminToolbar")) return;
+      
+      // For touch events, ensure we're not in the controls area
+      if (e.type === 'touchstart' && e.target.closest("#adminToolbarControls")) return;
 
       const coords = getEventCoordinates(e);
       initialX = coords.clientX - xOffset;
