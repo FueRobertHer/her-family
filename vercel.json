@@ -1,0 +1,47 @@
+{
+  "routes": [
+    {
+      "src": "/wp-(.*)",
+      "status": 404
+    },
+    {
+      "src": "/.*wp.*\\.php$",
+      "status": 404
+    },
+    {
+      "src": "/[^/]*\\.php$",
+      "status": 404
+    },
+    {
+      "src": "/(wordpress|phpmyadmin|phpMyAdmin|pma|myadmin|administrator)/(.*)",
+      "status": 404
+    },
+    {
+      "src": "/(404|index|home|admin|login|test|backup|old|temp)\\.html$",
+      "status": 404
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        }
+      ]
+    }
+  ]
+}
