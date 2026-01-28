@@ -19,6 +19,26 @@
     {
       "src": "/(404|index|home|admin|login|test|backup|old|temp)\\.html$",
       "status": 404
+    },
+    {
+      "src": "/.*\\.(asp|aspx|cgi|jsp|pl|py|rb|exe|dll|so|bat|cmd|sh)$",
+      "status": 404
+    },
+    {
+      "src": "/.*\\.(sql|bak|backup|old|tmp|log|conf|ini|config)$",
+      "status": 404
+    },
+    {
+      "src": "/\\.env.*",
+      "status": 404
+    },
+    {
+      "src": "/\\.git/",
+      "status": 404
+    },
+    {
+      "src": "/(cgi-bin|vendor|node_modules|backup|backups|db|database|sql|logs)/(.*)",
+      "status": 404
     }
   ]
 }
