@@ -12,6 +12,29 @@ let draggedItem = null; // For gallery reordering
 
 // --- Helper Functions ---
 
+// Create URL-friendly slug
+function createSlug(text) {
+  if (!text) return '';
+  return text.toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '') // Remove special characters
+    .replace(/\s+/g, '-')      // Replace spaces with hyphens
+    .replace(/-+/g, '-');      // Replace multiple hyphens with single hyphen
+}
+
+// Generate agenda URL with memorial name and service type
+function generateAgendaUrl(serviceIndex, serviceType) {
+  const memorialName = memorialData?.name || '';
+  const memorialSlug = createSlug(memorialName);
+  const serviceSlug = createSlug(serviceType);
+  
+  let url = `/agenda/${serviceIndex}`;
+  if (memorialSlug) url += `-${memorialSlug}`;
+  if (serviceSlug) url += `-${serviceSlug}`;
+  
+  return url;
+}
+
 // Utility function to escape HTML and prevent XSS
 function escapeHtml(text) {
   const map = {
@@ -643,13 +666,15 @@ function updateServiceOnPage(serviceIndex, serviceData) {
 
     if (serviceData.agendaUrl) {
       // If there's an agendaUrl, show/update the link
+      const agendaUrl = generateAgendaUrl(serviceIndex, serviceData.type || 'Service');
+      
       if (!agendaContainer) {
         // Create the agenda container if it doesn't exist
         const newContainer = document.createElement("div");
         newContainer.className = "mt-4 pt-4 border-t border-warm-gray-200";
         newContainer.innerHTML = `
           <a 
-            href="/agenda/${serviceIndex}"
+            href="${agendaUrl}"
             class="inline-flex items-center text-indigo-600 hover:text-indigo-800 font-medium transition-colors"
             data-service-agenda-link="${serviceIndex}"
           >
@@ -666,7 +691,7 @@ function updateServiceOnPage(serviceIndex, serviceData) {
           `[data-service-agenda-link="${serviceIndex}"]`,
         );
         if (agendaLink) {
-          agendaLink.href = `/agenda/${serviceIndex}`;
+          agendaLink.href = agendaUrl;
         }
       }
     } else if (agendaContainer) {
