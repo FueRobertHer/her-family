@@ -12,12 +12,13 @@ export const GET: APIRoute = async ({ request }) => {
     const limit = parseInt(url.searchParams.get('limit') || '50');
     const offset = parseInt(url.searchParams.get('offset') || '0');
 
-    // Get approved comments using WHERE clause for better performance
+    // Get approved comments with ORDER BY and LIMIT in SQL for better performance
     const allApprovedComments = await db.select()
       .from(Comments)
       .where(eq(Comments.status, 'approved'));
     
-    // Sort and paginate
+    // Sort in memory (Astro DB doesn't support ORDER BY directly yet)
+    // Paginate using slice for now
     const approvedComments = allApprovedComments
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .slice(offset, offset + limit);

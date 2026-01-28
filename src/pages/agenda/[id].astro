@@ -3,6 +3,7 @@ export const prerender = false;
 
 import Layout from '../../layouts/Layout.astro';
 import { db, MemorialContent, eq, and } from 'astro:db';
+import { optimizeCloudinaryPdf } from '../../lib/image-optimization';
 
 const { id } = Astro.params;
 // Extract numeric index from URL (supports both "/agenda/0" and "/agenda/0-name-service")
@@ -50,13 +51,26 @@ const isImage = urlLower.includes('.jpg') ||
 // It's a PDF if it explicitly has .pdf or is a raw upload (and not an image)
 const isPdf = (urlLower.includes('.pdf') || urlLower.includes('/raw/upload/')) && !isImage;
 
-console.log('Agenda check:', { agendaUrl, isPdf, isImage, urlLower });
+// Optimize PDF URLs from Cloudinary for faster loading
+const optimizedAgendaUrl = isPdf ? optimizeCloudinaryPdf(agendaUrl) : agendaUrl;
+
+console.log('Agenda check:', { agendaUrl, optimizedAgendaUrl, isPdf, isImage, urlLower });
 
 // Use our download API endpoint to handle proper filename
 const downloadUrl = `/api/download-agenda?service=${serviceIndex}`;
 ---
 
 <Layout title={`${serviceType} Agenda`} description="View service agenda">
+  <!-- Preconnect hints for faster loading -->
+  <link rel="preconnect" href="https://res.cloudinary.com" slot="head" />
+  <link rel="preconnect" href="https://docs.google.com" slot="head" />
+  <link rel="preconnect" href="https://drive.google.com" slot="head" />
+  <link rel="dns-prefetch" href="https://lh3.googleusercontent.com" slot="head" />
+  <link rel="dns-prefetch" href="https://ssl.gstatic.com" slot="head" />
+  
+  <!-- Prefetch the actual PDF for faster loading in Google viewer -->
+  {isPdf && <link rel="prefetch" href={optimizedAgendaUrl} as="fetch" crossorigin slot="head" />}
+  
   <div class="min-h-screen bg-warm-gray-100 flex flex-col">
     <!-- Header -->
     <div class="bg-warm-gray-50 border-b border-warm-gray-200 px-3 py-3 sm:px-4 sm:py-4">
@@ -86,9 +100,10 @@ const downloadUrl = `/api/download-agenda?service=${serviceIndex}`;
         <div class="w-full max-w-5xl h-[calc(100vh-120px)] sm:h-[85vh] bg-white border border-warm-gray-200 rounded-lg shadow-md overflow-hidden relative">
           <iframe
             id="pdf-viewer"
-            src={`https://docs.google.com/viewer?url=${encodeURIComponent(agendaUrl)}&embedded=true`}
+            src={`https://docs.google.com/gview?url=${encodeURIComponent(optimizedAgendaUrl)}&embedded=true&chrome=false`}
             title={`${serviceType} Agenda PDF`}
             class="w-full h-full"
+            fetchpriority="high"
             style="border: none;"
           ></iframe>
           
@@ -116,7 +131,7 @@ const downloadUrl = `/api/download-agenda?service=${serviceIndex}`;
               Download Agenda
             </a>
               <button 
-                onclick={`window.open('${agendaUrl}', '_blank')`}
+                onclick={`window.open('${optimizedAgendaUrl}', '_blank')`}
                 class="inline-flex items-center justify-center px-4 py-2 border border-warm-gray-300 shadow-sm text-sm font-medium rounded-lg text-warm-gray-700 bg-white hover:bg-warm-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
               >
                 Open in New Tab
@@ -135,7 +150,9 @@ const downloadUrl = `/api/download-agenda?service=${serviceIndex}`;
           <img 
             src={agendaUrl} 
             alt={`${serviceType} Information`}
-            class="max-w-full max-h-[calc(100vh-120px)] sm:max-h-[85vh] object-contain rounded-lg shadow-md border border-warm-gray-200" 
+            class="max-w-full max-h-[calc(100vh-120px)] sm:max-h-[85vh] object-contain rounded-lg shadow-md border border-warm-gray-200"
+            loading="eager"
+            decoding="async"
           />
         </div>
       )}

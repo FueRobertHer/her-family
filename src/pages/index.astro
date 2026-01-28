@@ -15,6 +15,15 @@ import { db, MemorialContent, GalleryImages } from 'astro:db';
 const cookies = Astro.cookies;
 const isAdmin = cookies.get('admin_auth')?.value === 'true';
 
+// Add ISR-like caching for non-admin users
+// Cache for 60 seconds, serve stale for 3600 seconds while revalidating
+if (!isAdmin) {
+  Astro.response.headers.set(
+    'Cache-Control',
+    'public, s-maxage=60, stale-while-revalidate=3600'
+  );
+}
+
 // Fetch dynamic content from database
 interface OrganizedContent {
   [section: string]: {

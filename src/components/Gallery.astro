@@ -1,4 +1,6 @@
 ---
+import { optimizeCloudinaryUrl, CloudinaryPresets } from '../lib/image-optimization';
+
 export interface Props {
   images: Array<{
     src: string;
@@ -10,6 +12,13 @@ export interface Props {
 }
 
 const { images, isAdmin = false, title = "Treasured Moments" } = Astro.props;
+
+// Optimize gallery images for thumbnails
+const optimizedImages = images.map(img => ({
+  ...img,
+  thumbSrc: optimizeCloudinaryUrl(img.src, CloudinaryPresets.galleryThumb),
+  fullSrc: optimizeCloudinaryUrl(img.src, CloudinaryPresets.galleryFull),
+}));
 ---
 
 <section id="gallery" class="py-16 sm:py-24 bg-warm-gray-50">
@@ -69,19 +78,21 @@ const { images, isAdmin = false, title = "Treasured Moments" } = Astro.props;
       <!-- Carousel Track -->
       <div id="carouselContainer" class="overflow-hidden px-12">
         <div id="carouselTrack" class="flex transition-transform duration-500 ease-out gap-6">
-          {images.map((image, index) => (
+          {optimizedImages.map((image, index) => (
             <div 
               class="carousel-item flex-shrink-0 w-full sm:w-1/2 lg:w-1/3 xl:w-1/4"
               data-index={index}
               data-image-url={image.src}
+              data-full-url={image.fullSrc}
             >
               <div class="group relative">
                 <div class="aspect-square overflow-hidden rounded-lg bg-warm-gray-200 shadow-md transition-all duration-300 hover:shadow-xl cursor-pointer">
                   <img 
-                    src={image.src} 
+                    src={image.thumbSrc} 
                     alt={image.alt}
                     class="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
                     loading="lazy"
+                    decoding="async"
                   />
                 </div>
                 {image.caption && (

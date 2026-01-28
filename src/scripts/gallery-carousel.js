@@ -242,7 +242,9 @@ function openLightbox(index) {
   const caption = item.querySelector('p');
   
   if (lightboxImage && img) {
-    lightboxImage.src = img.src;
+    // Use full-size optimized image for lightbox, fallback to thumbnail if not available
+    const fullUrl = item.dataset.fullUrl || img.src;
+    lightboxImage.src = fullUrl;
     lightboxImage.alt = img.alt;
   }
   
