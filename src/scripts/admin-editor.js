@@ -179,7 +179,7 @@ function updateHeroSection(updates) {
   const heroSection = document.getElementById('hero-section');
   if (!heroSection) return;
 
-  if (updates.name) {
+  if (updates.name !== undefined) {
     const nameEl = heroSection.querySelector('[data-hero-name]');
     if (nameEl) nameEl.textContent = updates.name;
     const footerName = document.querySelector('footer h3');
@@ -187,7 +187,7 @@ function updateHeroSection(updates) {
     document.title = `${updates.name} - Memorial Page`;
   }
 
-  if (updates.subtitle) {
+  if (updates.subtitle !== undefined) {
     const subtitleEl = heroSection.querySelector('[data-hero-subtitle]');
     if (subtitleEl) subtitleEl.textContent = updates.subtitle;
   }
@@ -207,7 +207,7 @@ function updateHeroSection(updates) {
     }
   }
 
-  if (updates.mainImage) {
+  if (updates.mainImage !== undefined) {
     const imgEls = heroSection.querySelectorAll('[data-hero-image], img[data-hero-image]');
     imgEls.forEach((img) => {
       img.src = updates.mainImage;
@@ -220,7 +220,7 @@ function updateHeroSection(updates) {
     }
   }
 
-  if (updates.backgroundImage) {
+  if (updates.backgroundImage !== undefined) {
     const bgImg = heroSection.querySelector('[data-hero-background]');
     if (bgImg) bgImg.src = updates.backgroundImage;
   }
@@ -235,12 +235,12 @@ function updateBiographySection(updates) {
     updateNavLinkVisibility('#biography', updates.visible);
   }
 
-  if (updates.title) {
+  if (updates.title !== undefined) {
     const titleEl = bioSection.querySelector('[data-bio-title]');
     if (titleEl) titleEl.textContent = updates.title;
   }
 
-  if (updates.content) {
+  if (updates.content !== undefined) {
     const contentEl = bioSection.querySelector('[data-bio-content]');
     if (contentEl) {
       const paragraphs = updates.content.split('\n\n').filter((p) => p.trim());
@@ -294,7 +294,7 @@ function recheckBiographyTruncation() {
 }
 
 function updateHighlightsSection(updates) {
-  const bioSection = document.getElementById('biography-section');
+  const bioSection = document.getElementById('biography');
   if (!bioSection) return;
 
   const highlightsContainer = bioSection.querySelector('[data-bio-highlights]')?.closest('.mt-12');
@@ -304,10 +304,25 @@ function updateHighlightsSection(updates) {
     highlightsContainer.style.display = 'block';
   }
 
-  if (updates.highlights) {
+  if (updates.highlights !== undefined) {
     const highlightsEl = bioSection.querySelector('[data-bio-highlights]');
     if (highlightsEl) {
-      const highlightsArray = updates.highlights.split('\n').filter((h) => h.trim());
+      let highlightsArray;
+
+      // Check if highlights is a JSON string or newline-separated string
+      if (updates.highlights.trim().startsWith('[')) {
+        // It's a JSON array string, parse it
+        try {
+          highlightsArray = JSON.parse(updates.highlights);
+        } catch (e) {
+          console.error('Failed to parse highlights JSON:', e);
+          highlightsArray = [];
+        }
+      } else {
+        // It's a newline-separated string, split it
+        highlightsArray = updates.highlights.split('\n').filter((h) => h.trim());
+      }
+
       highlightsEl.innerHTML = highlightsArray
         .map(
           (highlight) => `
@@ -331,17 +346,17 @@ function updateVideoSection(updates) {
     updateNavLinkVisibility('#video', updates.visible);
   }
 
-  if (updates.sectionTitle) {
+  if (updates.sectionTitle !== undefined) {
     const sectionTitleEl = videoSection.querySelector('[data-video-title]');
     if (sectionTitleEl) sectionTitleEl.textContent = updates.sectionTitle;
   }
 
-  if (updates.description) {
+  if (updates.description !== undefined) {
     const descEl = videoSection.querySelector('[data-video-description]');
     if (descEl) descEl.textContent = updates.description;
   }
 
-  if (updates.videoUrl) {
+  if (updates.videoUrl !== undefined) {
     const videoSource = videoSection.querySelector('[data-video-source]');
     const videoEl = videoSection.querySelector('[data-video-element]');
     if (videoSource && videoEl) {
@@ -350,7 +365,7 @@ function updateVideoSection(updates) {
     }
   }
 
-  if (updates.posterImage) {
+  if (updates.posterImage !== undefined) {
     const videoEl = videoSection.querySelector('[data-video-element]');
     if (videoEl) videoEl.poster = updates.posterImage;
   }
@@ -360,34 +375,26 @@ function updateDonationsSection(updates) {
   const donationsSection = document.getElementById('donations-section');
   if (!donationsSection) return;
 
-  // If any QR code images were uploaded, reload the page to show the new structure
-  if (
-    updates.venmoImage !== undefined ||
-    updates.cashappImage !== undefined ||
-    updates.zelleImage !== undefined
-  ) {
-    setTimeout(() => {
-      window.location.reload();
-    }, 500);
-    return;
-  }
+  // Note: QR code image changes require a page refresh to fully update the layout
+  // The changes ARE saved to the database, but the DOM structure changes too much
+  // to update dynamically (button vs link vs div). A page refresh will show the changes.
 
   if (updates.visible !== undefined) {
     toggleSectionVisibility(donationsSection, updates.visible);
     updateNavLinkVisibility('#donations', updates.visible);
   }
 
-  if (updates.sectionTitle) {
+  if (updates.sectionTitle !== undefined) {
     const sectionTitleEl = donationsSection.querySelector('[data-donations-title]');
     if (sectionTitleEl) sectionTitleEl.textContent = updates.sectionTitle;
   }
 
-  if (updates.subtitle) {
+  if (updates.subtitle !== undefined) {
     const subtitleEl = donationsSection.querySelector('[data-donations-subtitle]');
     if (subtitleEl) subtitleEl.textContent = updates.subtitle;
   }
 
-  if (updates.customMessage) {
+  if (updates.customMessage !== undefined) {
     const msgEl = donationsSection.querySelector('[data-donation-message]');
     if (msgEl) msgEl.textContent = updates.customMessage;
   }
@@ -457,12 +464,12 @@ function updateFuneralSection(updates) {
     toggleSectionVisibility(funeralSection, updates.visible);
   }
 
-  if (updates.sectionTitle) {
+  if (updates.sectionTitle !== undefined) {
     const sectionTitleEl = funeralSection.querySelector('[data-funeral-title]');
     if (sectionTitleEl) sectionTitleEl.textContent = updates.sectionTitle;
   }
 
-  if (updates.subtitle) {
+  if (updates.subtitle !== undefined) {
     const subtitleEl = funeralSection.querySelector('[data-funeral-subtitle]');
     if (subtitleEl) subtitleEl.textContent = updates.subtitle;
   }
@@ -476,7 +483,7 @@ function updateSpecialInstructionsSection(updates) {
     toggleSectionVisibility(sectionEl, updates.specialInstructionsVisible);
   }
 
-  if (updates.specialInstructions) {
+  if (updates.specialInstructions !== undefined) {
     const instructionsEl = sectionEl.querySelector('[data-funeral-instructions]');
     if (instructionsEl) instructionsEl.textContent = updates.specialInstructions;
   }
@@ -490,7 +497,7 @@ function updateFlowersInfoSection(updates) {
     toggleSectionVisibility(sectionEl, updates.flowersInfoVisible);
   }
 
-  if (updates.flowersInfo) {
+  if (updates.flowersInfo !== undefined) {
     const flowersEl = sectionEl.querySelector('[data-funeral-flowers]');
     if (flowersEl) flowersEl.textContent = updates.flowersInfo;
   }
@@ -657,7 +664,7 @@ function updateGallerySection(updates) {
     updateNavLinkVisibility('#gallery', updates.visible);
   }
 
-  if (updates.sectionTitle) {
+  if (updates.sectionTitle !== undefined) {
     const titleEl = gallerySection.querySelector('[data-gallery-title]');
     if (titleEl) titleEl.textContent = updates.sectionTitle;
   }
@@ -673,12 +680,12 @@ function updateCommentsSection(updates) {
     updateNavLinkVisibility('#memories', updates.visible);
   }
 
-  if (updates.sectionTitle) {
+  if (updates.sectionTitle !== undefined) {
     const titleEl = commentsSection.querySelector('[data-comments-title]');
     if (titleEl) titleEl.textContent = updates.sectionTitle;
   }
 
-  if (updates.subtitle) {
+  if (updates.subtitle !== undefined) {
     const subtitleEl = commentsSection.querySelector('[data-comments-subtitle]');
     if (subtitleEl) subtitleEl.textContent = updates.subtitle;
   }
@@ -692,12 +699,12 @@ function updateFooterSection(updates) {
     toggleSectionVisibility(footerSection, updates.visible, true);
   }
 
-  if (updates.quote) {
+  if (updates.quote !== undefined) {
     const quoteEl = document.querySelector('[data-footer-quote]');
     if (quoteEl) quoteEl.textContent = updates.quote;
   }
 
-  if (updates.credit) {
+  if (updates.credit !== undefined) {
     const creditEl = document.querySelector('[data-footer-credit]');
     if (creditEl) creditEl.textContent = updates.credit;
   }
@@ -725,7 +732,7 @@ function updateReceptionSection(updates) {
     const descEl = receptionSection.querySelector('[data-reception-description]');
     if (descEl) {
       descEl.textContent = updates.description;
-    } else if (updates.description) {
+    } else if (updates.description !== undefined && updates.description !== '') {
       const container = receptionSection.querySelector('[data-reception-content]');
       if (container) {
         const newDesc = document.createElement('p');
@@ -1265,8 +1272,15 @@ function renderModalContent(section) {
   let dataSection = section;
   if (section === 'specialInstructions' || section === 'flowersInfo') {
     dataSection = 'funeral';
+  } else if (section === 'highlights') {
+    // Highlights data is stored under biography section, but visibility under highlights
+    // We'll need to handle this specially
+    dataSection = 'biography';
   }
   const actualSectionData = contentData[dataSection] || {};
+
+  // For highlights visibility, check the highlights section
+  const highlightsVisibilityData = section === 'highlights' ? contentData['highlights'] || {} : {};
 
   modalContent.innerHTML = sectionFields
     .map((field) => {
@@ -1281,13 +1295,32 @@ function renderModalContent(section) {
         }
       }
 
+      // For highlights visibility, check the highlights section instead of biography
+      if (section === 'highlights' && field.key === 'visible') {
+        value = highlightsVisibilityData[field.key]?.value || '';
+      }
+
       if (field.type === 'checkbox' && !actualSectionData[field.key]) {
-        // Default to true for most visibility toggles, but false for autoApprove
-        value = section === 'comments' && field.key === 'autoApprove' ? 'false' : 'true';
+        // For highlights section, check visibility in highlightsVisibilityData
+        if (
+          section === 'highlights' &&
+          field.key === 'visible' &&
+          !highlightsVisibilityData[field.key]
+        ) {
+          value = 'true';
+        } else if (section === 'comments' && field.key === 'autoApprove') {
+          // Default to false for autoApprove
+          value = 'false';
+        } else {
+          // Default to true for most visibility toggles
+          value = 'true';
+        }
       }
 
       const inputId = `modal-${section}-${field.key}`;
-      const dataSectionAttr = dataSection;
+      // Special handling for highlights: content goes to 'biography', visibility goes to 'highlights'
+      const dataSectionAttr =
+        section === 'highlights' && field.key === 'visible' ? 'highlights' : dataSection;
 
       if (field.type === 'info') {
         return `
@@ -1610,6 +1643,11 @@ async function saveAllModalContent() {
       const result = await response.json();
 
       if (result.success) {
+        // Update the memorialData object so the modal will show fresh data next time
+        if (memorialData.funeralInfo && memorialData.funeralInfo.services) {
+          memorialData.funeralInfo.services[serviceIndex] = serviceData;
+        }
+
         updateServiceOnPage(serviceIndex, serviceData);
         showToast('Service updated successfully!', 'success');
         closeEditModal();
@@ -1643,7 +1681,7 @@ async function saveAllModalContent() {
       value = input.value;
     }
 
-    if (section === 'highlights' && key === 'highlights') {
+    if (section === 'biography' && key === 'highlights') {
       const highlightsArray = value
         .split('\n')
         .filter((h) => h.trim())
@@ -1656,7 +1694,8 @@ async function saveAllModalContent() {
     if (!updatesMap[section]) {
       updatesMap[section] = {};
     }
-    updatesMap[section][key] = input.type === 'checkbox' ? input.checked : input.value;
+    // Store the same value format for updatesMap as we store in updates array
+    updatesMap[section][key] = value;
   });
 
   // Handle Gallery Reordering
@@ -1707,7 +1746,59 @@ async function saveAllModalContent() {
       const allSuccess = results.every((r) => r.success);
 
       if (allSuccess) {
-        updatePageContent(currentSection, updatesMap[currentSection]);
+        // Get the correct data section for update (handle special cases)
+        let updateDataSection = currentSection;
+        if (currentSection === 'specialInstructions' || currentSection === 'flowersInfo') {
+          updateDataSection = 'funeral';
+        } else if (currentSection === 'highlights') {
+          updateDataSection = 'biography'; // highlights content is stored under biography
+        }
+
+        // Update memorialData for visibility flags (used by nav links until next page load)
+        updates.forEach((update) => {
+          if (update.key === 'visible') {
+            const isVisible = update.value === 'true';
+            switch (currentSection) {
+              case 'biography':
+                memorialData.biographyVisible = isVisible;
+                break;
+              case 'highlights':
+                memorialData.highlightsVisible = isVisible;
+                break;
+              case 'video':
+                memorialData.videoVisible = isVisible;
+                break;
+              case 'gallery':
+                memorialData.galleryVisible = isVisible;
+                break;
+              case 'comments':
+                memorialData.commentsVisible = isVisible;
+                break;
+              case 'donations':
+                if (!memorialData.donations) memorialData.donations = {};
+                memorialData.donations.visible = isVisible;
+                break;
+              case 'funeral':
+                if (!memorialData.funeralInfo) memorialData.funeralInfo = {};
+                memorialData.funeralInfo.visible = isVisible;
+                break;
+            }
+          }
+        });
+
+        // Pass updates using the correct data section key, but keep currentSection for routing
+        // For highlights, we need to gather updates from both biography and highlights sections
+        let updateData = {};
+        if (currentSection === 'highlights') {
+          // Merge updates from both sections
+          updates.forEach((update) => {
+            updateData[update.key] = updatesMap[update.section]?.[update.key];
+          });
+        } else {
+          updateData = updatesMap[updateDataSection] || {};
+        }
+
+        updatePageContent(currentSection, updateData);
         showToast('Changes saved successfully!', 'success');
         closeEditModal();
       } else {

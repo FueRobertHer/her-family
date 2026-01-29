@@ -16,7 +16,7 @@ const { videoUrl, posterImage, title, description } = Astro.props;
         class="font-display text-3xl sm:text-4xl font-bold text-warm-gray-900 mb-4"
         data-video-title
       >
-        {title || 'In Their Own Words'}
+        {title !== undefined ? title : 'In Their Own Words'}
       </h2>
       <div class="w-24 h-1 bg-warm-gray-300 mx-auto"></div>
       {

@@ -111,7 +111,7 @@ const emailAttrs = { [`data-${dataPrefix}-email`]: '' };
         <div class="flex-1">
           <h3 class="font-semibold text-warm-gray-900 mb-1">{name}</h3>
           <p class="text-warm-gray-600" {...emailAttrs}>
-            {username || 'email@example.com'}
+            {username !== undefined ? username : 'email@example.com'}
           </p>
           <p class="text-sm text-warm-gray-500 mt-1">Send via your banking app</p>
         </div>
@@ -130,7 +130,7 @@ const emailAttrs = { [`data-${dataPrefix}-email`]: '' };
         <div class="flex-1">
           <h3 class="font-semibold text-warm-gray-900 mb-1">{name}</h3>
           <p class="text-warm-gray-600" {...usernameAttrs}>
-            {username || (name === 'Venmo' ? '@username' : '$username')}
+            {username !== undefined ? username : (name === 'Venmo' ? '@username' : '$username')}
           </p>
         </div>
         <svg class={getIconColorClass()} fill="none" stroke="currentColor" viewBox="0 0 24 24">
