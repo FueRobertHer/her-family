@@ -100,8 +100,8 @@ const downloadUrl = `/api/download-agenda?service=${serviceIndex}`;
         <div class="w-full max-w-5xl h-[calc(100vh-120px)] sm:h-[85vh] bg-white border border-warm-gray-200 rounded-lg shadow-md overflow-hidden relative">
           <iframe
             id="pdf-viewer"
-            src={`https://docs.google.com/gview?url=${encodeURIComponent(optimizedAgendaUrl)}&embedded=true&chrome=false`}
-            title={`${serviceType} Agenda PDF`}
+            src={`https://docs.google.com/gview?url=${encodeURIComponent(optimizedAgendaUrl)}&embedded=true`}
+            title={`${serviceType} Agenda`}
             class="w-full h-full"
             fetchpriority="high"
             style="border: none;"
