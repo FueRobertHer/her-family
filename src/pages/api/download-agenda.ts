@@ -6,14 +6,15 @@ export const prerender = false;
 export const GET: APIRoute = async ({ request }) => {
   const url = new URL(request.url);
   const serviceIndex = url.searchParams.get('service');
-  
+
   if (!serviceIndex) {
     return new Response('Missing service parameter', { status: 400 });
   }
 
   try {
     // Fetch the service data
-    const result = await db.select()
+    const result = await db
+      .select()
       .from(MemorialContent)
       .where(
         and(
@@ -39,14 +40,14 @@ export const GET: APIRoute = async ({ request }) => {
     const urlLower = agendaUrl.toLowerCase();
     const isPdf = urlLower.includes('.pdf') || urlLower.includes('/raw/upload/');
     const extension = isPdf ? 'pdf' : 'jpg';
-    
+
     // Generate filename
     const sanitizedServiceType = serviceType.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
     const filename = `${sanitizedServiceType}-agenda.${extension}`;
 
     // Fetch the file from Cloudinary
     const fileResponse = await fetch(agendaUrl);
-    
+
     if (!fileResponse.ok) {
       return new Response('Failed to fetch file', { status: 500 });
     }

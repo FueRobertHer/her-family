@@ -7,10 +7,10 @@ export interface Props {
   description?: string;
 }
 
-const { title, description = "A memorial page to honor and remember a beloved life" } = Astro.props;
+const { title, description = 'A memorial page to honor and remember a beloved life' } = Astro.props;
 ---
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en" class="scroll-smooth">
   <head>
     <meta charset="UTF-8" />
@@ -22,11 +22,11 @@ const { title, description = "A memorial page to honor and remember a beloved li
     <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png" />
     <link rel="icon" type="image/png" sizes="128x128" href="/favicon-128x128.png" />
     <link rel="icon" type="image/png" sizes="196x196" href="/favicon-196x196.png" />
-    
+
     <!-- Android Chrome -->
     <link rel="icon" type="image/png" sizes="192x192" href="/android-chrome-192x192.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="/android-chrome-512x512.png" />
-    
+
     <!-- Apple Touch Icons (iOS/iPadOS Safari) -->
     <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png" />
     <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png" />
@@ -39,7 +39,7 @@ const { title, description = "A memorial page to honor and remember a beloved li
     <link rel="apple-touch-icon" sizes="167x167" href="/apple-touch-icon-167x167.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-180x180.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    
+
     <!-- Microsoft Tiles (Windows) -->
     <meta name="msapplication-TileColor" content="#374151" />
     <meta name="msapplication-TileImage" content="/mstile-144x144.png" />
@@ -47,21 +47,33 @@ const { title, description = "A memorial page to honor and remember a beloved li
     <meta name="msapplication-square150x150logo" content="/mstile-150x150.png" />
     <meta name="msapplication-wide310x150logo" content="/mstile-310x150.png" />
     <meta name="msapplication-square310x310logo" content="/mstile-310x310.png" />
-    
+
     <!-- Web App Manifest -->
     <link rel="manifest" href="/site.webmanifest" />
-    
+
     <!-- Theme color for mobile browsers -->
     <meta name="theme-color" content="#374151" />
-    
+
     <!-- Fallback ICO for legacy browsers -->
     <link rel="shortcut icon" href="/favicon.ico" />
     <title>{title}</title>
-    
+
     <!-- Preload self-hosted fonts for instant rendering -->
-    <link rel="preload" href="/fonts/inter-latin-var.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="/fonts/playfair-display-latin-var.woff2" as="font" type="font/woff2" crossorigin>
-    
+    <link
+      rel="preload"
+      href="/fonts/inter-latin-var.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="/fonts/playfair-display-latin-var.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+
     <style>
       /* Self-hosted fonts - preloaded with build, zero flicker */
       @font-face {
@@ -70,18 +82,22 @@ const { title, description = "A memorial page to honor and remember a beloved li
         font-weight: 300 700;
         font-display: block;
         src: url('/fonts/inter-latin-var.woff2') format('woff2');
-        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+        unicode-range:
+          U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308,
+          U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
       }
-      
+
       @font-face {
         font-family: 'Playfair Display';
         font-style: normal;
         font-weight: 400 700;
         font-display: block;
         src: url('/fonts/playfair-display-latin-var.woff2') format('woff2');
-        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+        unicode-range:
+          U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308,
+          U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
       }
-      
+
       /* Fallback fonts for instant rendering */
       @font-face {
         font-family: 'Inter Fallback';
@@ -91,7 +107,7 @@ const { title, description = "A memorial page to honor and remember a beloved li
         descent-override: 22%;
         line-gap-override: 0%;
       }
-      
+
       @font-face {
         font-family: 'Playfair Fallback';
         src: local('Georgia');
@@ -100,9 +116,16 @@ const { title, description = "A memorial page to honor and remember a beloved li
         descent-override: 25%;
         line-gap-override: 0%;
       }
-      
+
       body {
-        font-family: 'Inter', 'Inter Fallback', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+        font-family:
+          'Inter',
+          'Inter Fallback',
+          -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          system-ui,
+          sans-serif;
         /* Prevent invisible text flash */
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
@@ -110,50 +133,54 @@ const { title, description = "A memorial page to honor and remember a beloved li
       .font-display {
         font-family: 'Playfair Display', 'Playfair Fallback', Georgia, 'Times New Roman', serif;
       }
-      
+
       /* Ensure text is always visible during font load */
       * {
         text-rendering: optimizeLegibility;
       }
-      
+
       /* Prevent image layout shift - set default aspect ratios */
       img {
         max-width: 100%;
         height: auto;
       }
-      
+
       /* Prevent content shift during font load */
       body {
         font-size: 16px;
         line-height: 1.5;
       }
-      
+
       /* Smooth image loading - prevent flicker */
-      img[loading="lazy"] {
+      img[loading='lazy'] {
         opacity: 0;
         transition: opacity 0.3s ease-in;
       }
-      
-      img[loading="lazy"].loaded,
-      img[loading="eager"] {
+
+      img[loading='lazy'].loaded,
+      img[loading='eager'] {
         opacity: 1;
       }
-      
+
       /* Ensure eager loading images don't flicker */
-      img[loading="eager"] {
+      img[loading='eager'] {
         animation: fadeIn 0.2s ease-in;
       }
-      
+
       @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
       }
     </style>
   </head>
   <body class="bg-warm-gray-50 text-warm-gray-900 antialiased">
     <slot />
     <Toast />
-    
+
     <!-- Smooth scroll behavior -->
     <script>
       // Use event delegation for smooth scrolling on anchor links
@@ -166,32 +193,32 @@ const { title, description = "A memorial page to honor and remember a beloved li
           if (target) {
             target.scrollIntoView({
               behavior: 'smooth',
-              block: 'start'
+              block: 'start',
             });
           }
         }
       });
-      
+
       // Handle lazy-loaded image fade-in
-      document.addEventListener('DOMContentLoaded', function() {
+      document.addEventListener('DOMContentLoaded', function () {
         const lazyImages = document.querySelectorAll('img[loading="lazy"]');
-        
+
         lazyImages.forEach((img: Element) => {
           const image = img as HTMLImageElement;
-          
+
           // If already loaded (cached), show immediately
           if (image.complete) {
             image.classList.add('loaded');
           } else {
             // Add loaded class when image loads
-            image.addEventListener('load', function() {
+            image.addEventListener('load', function () {
               image.classList.add('loaded');
             });
           }
         });
       });
     </script>
-    
+
     <Analytics />
   </body>
 </html>

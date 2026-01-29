@@ -3,3 +3,8 @@ node_modules/
 .astro/
 .vercel/
 package-lock.json
+
+# Files with complex conditional rendering that Prettier struggles with
+src/pages/admin/index.astro
+src/pages/index.astro
+

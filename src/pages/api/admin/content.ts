@@ -20,7 +20,7 @@ interface OrganizedContent {
 export const GET: APIRoute = async () => {
   try {
     const content = await db.select().from(MemorialContent);
-    
+
     // Organize content by section for easier use
     const organizedContent = content.reduce((acc, item) => {
       if (!acc[item.section]) {
@@ -29,7 +29,7 @@ export const GET: APIRoute = async () => {
       acc[item.section][item.key] = {
         value: item.value,
         type: item.type,
-        updatedAt: item.updatedAt
+        updatedAt: item.updatedAt,
       };
       return acc;
     }, {} as OrganizedContent);
@@ -49,38 +49,32 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     if (authError) return authError;
 
     const body = await request.json();
-    
+
     // Validate input with Zod
     const validation = validateData(memorialContentSchema, body);
     if (!validation.success) {
       return validationError(validation.error, validation.details?.join(', '));
     }
-    
+
     const { section, key, value, type } = validation.data;
 
     // Check if content already exists (optimized query)
     const existing = await db
       .select()
       .from(MemorialContent)
-      .where(
-        and(
-          eq(MemorialContent.section, section),
-          eq(MemorialContent.key, key)
-        )
-      )
+      .where(and(eq(MemorialContent.section, section), eq(MemorialContent.key, key)))
       .limit(1);
 
     if (existing.length > 0) {
       // Update existing content using proper SQL update
-      await db.update(MemorialContent)
+      await db
+        .update(MemorialContent)
         .set({
           value: String(value),
           type,
-          updatedAt: new Date().toISOString()
+          updatedAt: new Date().toISOString(),
         })
-        .where(
-          eq(MemorialContent.id, existing[0].id)
-        );
+        .where(eq(MemorialContent.id, existing[0].id));
     } else {
       // Insert new content
       await db.insert(MemorialContent).values({
@@ -88,7 +82,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         key,
         value: String(value),
         type,
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       });
     }
 

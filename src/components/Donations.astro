@@ -11,26 +11,27 @@ export interface Props {
   zelleEmail?: string;
   zelleImage?: string;
   customMessage?: string;
-  subtitle?: string;
 }
 
-const { 
-  title = "Honor Their Memory",
-  venmoUsername, 
+const {
+  title = 'Honor Their Memory',
+  venmoUsername,
   venmoImage,
-  cashappUsername, 
+  cashappUsername,
   cashappImage,
   zelleEmail,
   zelleImage,
-  customMessage = "Your generous donations help honor their memory and support their family during this difficult time.",
-  subtitle = "Support the family during this difficult time"
+  customMessage = 'Your generous donations help honor their memory and support their family during this difficult time.',
 } = Astro.props;
 ---
 
 <section id="donations" class="py-16 sm:py-24 bg-warm-gray-50">
   <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="text-center mb-12">
-      <h2 class="font-display text-3xl sm:text-4xl font-bold text-warm-gray-900 mb-4" data-donations-title>
+      <h2
+        class="font-display text-3xl sm:text-4xl font-bold text-warm-gray-900 mb-4"
+        data-donations-title
+      >
         {title}
       </h2>
       <div class="w-24 h-1 bg-warm-gray-300 mx-auto mb-6"></div>
@@ -38,7 +39,7 @@ const {
         {customMessage}
       </p>
     </div>
-    
+
     <!-- Donation Options -->
     <div class="bg-white rounded-xl shadow-lg p-8 sm:p-12">
       <div class="flex flex-wrap justify-center gap-6 mb-8">
@@ -50,7 +51,7 @@ const {
           hoverColor="blue-400"
           icon="venmo"
         />
-        
+
         <PaymentMethod
           name="Cash App"
           username={cashappUsername}
@@ -59,7 +60,7 @@ const {
           hoverColor="green-500"
           icon="cashapp"
         />
-        
+
         <PaymentMethod
           name="Zelle"
           username={zelleEmail}
@@ -69,24 +70,23 @@ const {
           icon="zelle"
         />
       </div>
-      
-      
+
       <div class="mt-8 text-center text-sm text-warm-gray-500">
         <p>All donations are deeply appreciated and help support the family during this time.</p>
       </div>
     </div>
   </div>
 
-<Lightbox id="payment" />
+  <Lightbox id="payment" />
 </section>
 
 <script is:inline>
   // Wrapper functions for backwards compatibility
-  function openPaymentLightbox(imageUrl, title) {
+  window.openPaymentLightbox = function (imageUrl, title) {
     window.openLightbox('payment', imageUrl, title);
-  }
-  
-  function closePaymentLightbox() {
+  };
+
+  window.closePaymentLightbox = function () {
     window.closeLightbox('payment');
-  }
+  };
 </script>

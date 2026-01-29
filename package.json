@@ -8,8 +8,8 @@
     "preview": "astro preview",
     "astro": "astro",
     "check": "astro check",
-    "lint": "eslint . --ext .js,.ts,.astro --ignore-path .gitignore",
-    "lint:fix": "eslint . --ext .js,.ts,.astro --fix --ignore-path .gitignore",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "format": "prettier --write \"**/*.{js,ts,astro,json,md}\"",
     "format:check": "prettier --check \"**/*.{js,ts,astro,json,md}\""
   },

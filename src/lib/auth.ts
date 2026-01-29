@@ -17,10 +17,10 @@ export function isAuthenticated(cookies: AstroCookies): boolean {
 export function requireAuth(cookies: AstroCookies): Response | null {
   if (!isAuthenticated(cookies)) {
     return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: 'Unauthorized' 
-      }), 
+      JSON.stringify({
+        success: false,
+        error: 'Unauthorized',
+      }),
       {
         status: 401,
         headers: { 'Content-Type': 'application/json' },

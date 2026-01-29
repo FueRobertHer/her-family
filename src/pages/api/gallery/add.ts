@@ -13,13 +13,13 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     if (authError) return authError;
 
     const body = await request.json();
-    
+
     // Validate input with Zod
     const validation = validateData(galleryImageSchema, body);
     if (!validation.success) {
       return validationError(validation.error, validation.details?.join(', '));
     }
-    
+
     const { imagePath, caption, displayOrder } = validation.data;
 
     // Insert into database
@@ -28,7 +28,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       caption: caption || '',
       displayOrder: displayOrder || 999,
       isActive: true,
-      uploadedAt: new Date().toISOString()
+      uploadedAt: new Date().toISOString(),
     });
 
     return successResponse(undefined, 'Image added successfully');

@@ -20,30 +20,32 @@ export const GET: APIRoute = async ({ request, cookies }) => {
 
     // Fetch all comments once for efficiency
     const allComments = await db.select().from(Comments);
-    
+
     // Calculate counts
     const counts = {
-      pending: allComments.filter(c => c.status === 'pending').length,
-      approved: allComments.filter(c => c.status === 'approved').length,
-      rejected: allComments.filter(c => c.status === 'rejected').length,
-      total: allComments.length
+      pending: allComments.filter((c) => c.status === 'pending').length,
+      approved: allComments.filter((c) => c.status === 'approved').length,
+      rejected: allComments.filter((c) => c.status === 'rejected').length,
+      total: allComments.length,
     };
 
     // Filter comments based on status
     let filteredComments = allComments;
     if (status && status !== 'all') {
-      filteredComments = allComments.filter(c => c.status === status);
+      filteredComments = allComments.filter((c) => c.status === status);
     }
 
     // Sort by creation date (newest first)
-    filteredComments.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    
+    filteredComments.sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+
     // Apply pagination
     const comments = filteredComments.slice(offset, offset + limit);
 
     return successResponse({
       comments,
-      counts
+      counts,
     });
   } catch (error) {
     console.error('Error fetching admin comments:', error);
@@ -59,28 +61,30 @@ export const PATCH: APIRoute = async ({ request, cookies }) => {
     if (authError) return authError;
 
     const body = await request.json();
-    
+
     // Validate input with Zod
     const validation = validateData(commentActionSchema, {
       id: typeof body.id === 'string' ? parseInt(body.id) : body.id,
-      action: body.action
+      action: body.action,
     });
-    
+
     if (!validation.success) {
       return validationError(validation.error, validation.details?.join(', '));
     }
-    
+
     const { id: commentId, action } = validation.data;
     const now = new Date().toISOString();
 
     if (action === 'approve') {
-      await db.update(Comments)
+      await db
+        .update(Comments)
         .set({ status: 'approved', updatedAt: now })
         .where(eq(Comments.id, commentId));
 
       return successResponse(undefined, 'Comment approved successfully');
     } else if (action === 'reject') {
-      await db.update(Comments)
+      await db
+        .update(Comments)
         .set({ status: 'rejected', updatedAt: now })
         .where(eq(Comments.id, commentId));
 
