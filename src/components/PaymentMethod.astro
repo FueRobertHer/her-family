@@ -16,6 +16,12 @@ const getUrl = () => {
   return '#';
 };
 
+const getIconViewBox = () => {
+  // Cash App SVG is designed for 24x24, others are 48x48
+  if (icon === 'cashapp') return '0 0 24 24';
+  return '0 0 48 48';
+};
+
 const getIconSvg = () => {
   if (icon === 'venmo') {
     return `<path fill="#008CFF" d="M35,42H13c-3.866,0-7-3.134-7-7V13c0-3.866,3.134-7,7-7h22c3.866,0,7,3.134,7,7v22C42,38.866,38.866,42,35,42z"/>
@@ -36,7 +42,7 @@ const getIconSvg = () => {
 // Get the full button/link classes based on hover color
 const getBtnClasses = () => {
   const base =
-    'flex items-center p-6 border-2 border-warm-gray-200 rounded-lg hover:shadow-md transition-all duration-300 group-hover:scale-105';
+    'flex items-center p-6 border-2 border-warm-gray-200 rounded-lg hover:shadow-md transition-all duration-300 group-hover:scale-105 h-32';
   if (hoverColor === 'blue-400') return `${base} hover:border-blue-400 w-full text-left`;
   if (hoverColor === 'green-500') return `${base} hover:border-green-500 w-full text-left`;
   if (hoverColor === 'purple-500') return `${base} hover:border-purple-500 w-full text-left`;
@@ -45,7 +51,7 @@ const getBtnClasses = () => {
 
 const getLinkClasses = () => {
   const base =
-    'flex items-center p-6 border-2 border-warm-gray-200 rounded-lg hover:shadow-md transition-all duration-300 group-hover:scale-105';
+    'flex items-center p-6 border-2 border-warm-gray-200 rounded-lg hover:shadow-md transition-all duration-300 group-hover:scale-105 h-32';
   if (hoverColor === 'blue-400') return `${base} hover:border-blue-400`;
   if (hoverColor === 'green-500') return `${base} hover:border-green-500`;
   if (hoverColor === 'purple-500') return `${base} hover:border-purple-500`;
@@ -53,10 +59,10 @@ const getLinkClasses = () => {
 };
 
 const getTextColorClass = () => {
-  if (hoverColor === 'blue-400') return 'text-xs text-blue-500 mt-1';
-  if (hoverColor === 'green-500') return 'text-xs text-green-500 mt-1';
-  if (hoverColor === 'purple-500') return 'text-xs text-purple-500 mt-1';
-  return 'text-xs mt-1';
+  if (hoverColor === 'blue-400') return 'text-xs text-blue-500';
+  if (hoverColor === 'green-500') return 'text-xs text-green-500';
+  if (hoverColor === 'purple-500') return 'text-xs text-purple-500';
+  return 'text-xs';
 };
 
 const getIconColorClass = () => {
@@ -93,27 +99,27 @@ const emailAttrs = { [`data-${dataPrefix}-email`]: '' };
         {...btnAttrs}
       >
         <div class={iconClass}>
-          <svg class="w-full h-full" viewBox="0 0 48 48" set:html={getIconSvg()} />
+          <svg class="w-full h-full" viewBox={getIconViewBox()} set:html={getIconSvg()} />
         </div>
-        <div class="flex-1">
+        <div class="flex-1 min-w-0">
           <h3 class="font-semibold text-warm-gray-900 mb-1">{name}</h3>
-          <p class="text-warm-gray-600 truncate" {...usernameAttrs}>
+          <p class="text-warm-gray-600 truncate mb-1" {...usernameAttrs}>
             {username}
           </p>
           <p class={getTextColorClass()}>Click to view QR Code</p>
         </div>
       </button>
     ) : name === 'Zelle' ? (
-      <div class="flex items-center p-6 border-2 border-warm-gray-200 rounded-lg">
+      <div class="flex items-center p-6 border-2 border-warm-gray-200 rounded-lg h-32">
         <div class="flex-shrink-0 w-16 h-16 flex items-center justify-center mr-4">
-          <svg class="w-full h-full" viewBox="0 0 48 48" set:html={getIconSvg()} />
+          <svg class="w-full h-full" viewBox={getIconViewBox()} set:html={getIconSvg()} />
         </div>
-        <div class="flex-1">
+        <div class="flex-1 min-w-0">
           <h3 class="font-semibold text-warm-gray-900 mb-1">{name}</h3>
-          <p class="text-warm-gray-600" {...emailAttrs}>
+          <p class="text-warm-gray-600 truncate mb-1" {...emailAttrs}>
             {username !== undefined ? username : 'email@example.com'}
           </p>
-          <p class="text-sm text-warm-gray-500 mt-1">Send via your banking app</p>
+          <p class="text-sm text-warm-gray-500">Send via your banking app</p>
         </div>
       </div>
     ) : (
@@ -125,13 +131,14 @@ const emailAttrs = { [`data-${dataPrefix}-email`]: '' };
         {...linkAttrs}
       >
         <div class={iconClass}>
-          <svg class="w-full h-full" viewBox="0 0 48 48" set:html={getIconSvg()} />
+          <svg class="w-full h-full" viewBox={getIconViewBox()} set:html={getIconSvg()} />
         </div>
-        <div class="flex-1">
+        <div class="flex-1 min-w-0">
           <h3 class="font-semibold text-warm-gray-900 mb-1">{name}</h3>
-          <p class="text-warm-gray-600" {...usernameAttrs}>
+          <p class="text-warm-gray-600 truncate mb-1" {...usernameAttrs}>
             {username !== undefined ? username : (name === 'Venmo' ? '@username' : '$username')}
           </p>
+          <p class="text-sm text-transparent select-none">Spacer</p>
         </div>
         <svg class={getIconColorClass()} fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
