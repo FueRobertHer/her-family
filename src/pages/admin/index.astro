@@ -27,8 +27,8 @@ if (Astro.url.searchParams.get('logout') === 'true') {
 <body class="bg-gray-50">
 
 {!isAuthenticated ? (
-  <!-- Login Form -->
   <div class="min-h-screen flex items-center justify-center">
+    {/* Login Form */}
     <div class="max-w-md w-full space-y-8">
       <div>
         <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
@@ -58,15 +58,6 @@ if (Astro.url.searchParams.get('logout') === 'true') {
             class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
           >
             Sign in
-          </button>
-        </div>
-        <div class="mt-4">
-          <button
-            type="button"
-            id="checkAuthButton"
-            class="w-full text-sm text-gray-600 hover:text-gray-900 underline"
-          >
-            Debug: Check Authentication Status
           </button>
         </div>
       </form>
@@ -127,33 +118,12 @@ if (Astro.url.searchParams.get('logout') === 'true') {
             }
           });
         }
-
-        // Debug button to check authentication status
-        const checkAuthButton = document.getElementById('checkAuthButton');
-        if (checkAuthButton) {
-          checkAuthButton.addEventListener('click', async () => {
-          try {
-            const response = await fetch('/api/admin/status');
-            const result = await response.json();
-            
-            alert(`Authentication Status:\n\nAuthenticated: ${result.isAuthenticated}\nCookie Value: ${result.cookieValue}`);
-            
-            if (result.isAuthenticated) {
-              window.location.reload();
-            }
-          } catch (error) {
-            console.error('Error checking auth status:', error);
-            alert('Error checking authentication status. Check console.');
-          }
-        });
-      }
       </script>
     </div>
   </div>
 ) : (
-  <!-- Admin Dashboard -->
   <div class="min-h-screen bg-gray-50">
-    <!-- Header -->
+    {/* Admin Dashboard */}
     <header class="bg-white shadow">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center py-6">
@@ -169,10 +139,9 @@ if (Astro.url.searchParams.get('logout') === 'true') {
         </div>
       </div>
     </header>
-
-    <!-- Main Content -->
+    {/* Main Content */}
     <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-      <!-- Filter Tabs -->
+      {/* Filter Tabs */}
       <div class="bg-white shadow rounded-lg mb-6">
         <div class="border-b border-gray-200">
           <nav class="-mb-px flex space-x-8 px-6 overflow-x-auto" aria-label="Tabs">
@@ -207,8 +176,7 @@ if (Astro.url.searchParams.get('logout') === 'true') {
           </nav>
         </div>
       </div>
-
-      <!-- Comments List -->
+      {/* Comments List */}
       <div class="bg-white shadow rounded-lg">
         <div class="px-6 py-4 border-b border-gray-200">
           <h3 class="text-lg leading-6 font-medium text-gray-900" id="sectionTitle">
@@ -216,7 +184,7 @@ if (Astro.url.searchParams.get('logout') === 'true') {
           </h3>
         </div>
         <div id="commentsContainer" class="divide-y divide-gray-200">
-          <!-- Comments will be loaded here -->
+          {/* Comments will be loaded here */}
           <div class="p-6 text-center">
             <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
             <p class="text-gray-600 mt-2">Loading comments...</p>

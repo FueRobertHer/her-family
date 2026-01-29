@@ -35,7 +35,8 @@ const getIconSvg = () => {
 
 // Get the full button/link classes based on hover color
 const getBtnClasses = () => {
-  const base = 'flex items-center p-6 border-2 border-warm-gray-200 rounded-lg hover:shadow-md transition-all duration-300 group-hover:scale-105';
+  const base =
+    'flex items-center p-6 border-2 border-warm-gray-200 rounded-lg hover:shadow-md transition-all duration-300 group-hover:scale-105';
   if (hoverColor === 'blue-400') return `${base} hover:border-blue-400 w-full text-left`;
   if (hoverColor === 'green-500') return `${base} hover:border-green-500 w-full text-left`;
   if (hoverColor === 'purple-500') return `${base} hover:border-purple-500 w-full text-left`;
@@ -43,7 +44,8 @@ const getBtnClasses = () => {
 };
 
 const getLinkClasses = () => {
-  const base = 'flex items-center p-6 border-2 border-warm-gray-200 rounded-lg hover:shadow-md transition-all duration-300 group-hover:scale-105';
+  const base =
+    'flex items-center p-6 border-2 border-warm-gray-200 rounded-lg hover:shadow-md transition-all duration-300 group-hover:scale-105';
   if (hoverColor === 'blue-400') return `${base} hover:border-blue-400`;
   if (hoverColor === 'green-500') return `${base} hover:border-green-500`;
   if (hoverColor === 'purple-500') return `${base} hover:border-purple-500`;
@@ -65,7 +67,10 @@ const getIconColorClass = () => {
   return base;
 };
 
-const iconClass = icon === 'cashapp' ? 'flex-shrink-0 w-16 h-16 flex items-center justify-center mr-4 bg-white rounded-lg p-2' : 'flex-shrink-0 w-16 h-16 flex items-center justify-center mr-4';
+const iconClass =
+  icon === 'cashapp'
+    ? 'flex-shrink-0 w-16 h-16 flex items-center justify-center mr-4 bg-white rounded-lg p-2'
+    : 'flex-shrink-0 w-16 h-16 flex items-center justify-center mr-4';
 
 // Generate dynamic data attributes
 const containerAttrs = { [`data-${dataPrefix}-container`]: '' };
@@ -75,52 +80,68 @@ const usernameAttrs = { [`data-${dataPrefix}-username`]: '' };
 const emailAttrs = { [`data-${dataPrefix}-email`]: '' };
 ---
 
-<div class={`donation-option group w-full sm:w-[calc(50%-0.75rem)] ${!username ? 'hidden' : ''}`} {...containerAttrs}>
-  {qrImage ? (
-    <button 
-      type="button"
-      onclick={`openPaymentLightbox('${qrImage}', '${name} QR Code')`}
-      class={getBtnClasses()}
-      {...btnAttrs}
-    >
-      <div class={iconClass}>
-        <svg class="w-full h-full" viewBox="0 0 48 48" set:html={getIconSvg()} />
+<div
+  class={`donation-option group w-full sm:w-[calc(50%-0.75rem)] ${!username ? 'hidden' : ''}`}
+  {...containerAttrs}
+>
+  {
+    qrImage ? (
+      <button
+        type="button"
+        onclick={`openPaymentLightbox('${qrImage}', '${name} QR Code')`}
+        class={getBtnClasses()}
+        {...btnAttrs}
+      >
+        <div class={iconClass}>
+          <svg class="w-full h-full" viewBox="0 0 48 48" set:html={getIconSvg()} />
+        </div>
+        <div class="flex-1">
+          <h3 class="font-semibold text-warm-gray-900 mb-1">{name}</h3>
+          <p class="text-warm-gray-600 truncate" {...usernameAttrs}>
+            {username}
+          </p>
+          <p class={getTextColorClass()}>Click to view QR Code</p>
+        </div>
+      </button>
+    ) : name === 'Zelle' ? (
+      <div class="flex items-center p-6 border-2 border-warm-gray-200 rounded-lg">
+        <div class="flex-shrink-0 w-16 h-16 flex items-center justify-center mr-4">
+          <svg class="w-full h-full" viewBox="0 0 48 48" set:html={getIconSvg()} />
+        </div>
+        <div class="flex-1">
+          <h3 class="font-semibold text-warm-gray-900 mb-1">{name}</h3>
+          <p class="text-warm-gray-600" {...emailAttrs}>
+            {username || 'email@example.com'}
+          </p>
+          <p class="text-sm text-warm-gray-500 mt-1">Send via your banking app</p>
+        </div>
       </div>
-      <div class="flex-1">
-        <h3 class="font-semibold text-warm-gray-900 mb-1">{name}</h3>
-        <p class="text-warm-gray-600 truncate" {...usernameAttrs}>{username}</p>
-        <p class={getTextColorClass()}>Click to view QR Code</p>
-      </div>
-    </button>
-  ) : name === 'Zelle' ? (
-    <div class="flex items-center p-6 border-2 border-warm-gray-200 rounded-lg">
-      <div class="flex-shrink-0 w-16 h-16 flex items-center justify-center mr-4">
-        <svg class="w-full h-full" viewBox="0 0 48 48" set:html={getIconSvg()} />
-      </div>
-      <div class="flex-1">
-        <h3 class="font-semibold text-warm-gray-900 mb-1">{name}</h3>
-        <p class="text-warm-gray-600" {...emailAttrs}>{username || 'email@example.com'}</p>
-        <p class="text-sm text-warm-gray-500 mt-1">Send via your banking app</p>
-      </div>
-    </div>
-  ) : (
-    <a 
-      href={getUrl()}
-      target="_blank"
-      rel="noopener noreferrer"
-      class={getLinkClasses()}
-      {...linkAttrs}
-    >
-      <div class={iconClass}>
-        <svg class="w-full h-full" viewBox="0 0 48 48" set:html={getIconSvg()} />
-      </div>
-      <div class="flex-1">
-        <h3 class="font-semibold text-warm-gray-900 mb-1">{name}</h3>
-        <p class="text-warm-gray-600" {...usernameAttrs}>{username || (name === 'Venmo' ? '@username' : '$username')}</p>
-      </div>
-      <svg class={getIconColorClass()} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-      </svg>
-    </a>
-  )}
+    ) : (
+      <a
+        href={getUrl()}
+        target="_blank"
+        rel="noopener noreferrer"
+        class={getLinkClasses()}
+        {...linkAttrs}
+      >
+        <div class={iconClass}>
+          <svg class="w-full h-full" viewBox="0 0 48 48" set:html={getIconSvg()} />
+        </div>
+        <div class="flex-1">
+          <h3 class="font-semibold text-warm-gray-900 mb-1">{name}</h3>
+          <p class="text-warm-gray-600" {...usernameAttrs}>
+            {username || (name === 'Venmo' ? '@username' : '$username')}
+          </p>
+        </div>
+        <svg class={getIconColorClass()} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+          />
+        </svg>
+      </a>
+    )
+  }
 </div>

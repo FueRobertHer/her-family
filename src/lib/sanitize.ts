@@ -38,11 +38,11 @@ export function isValidEmail(email: string): boolean {
  */
 export function sanitizeText(text: string, maxLength: number = 1000): string {
   const trimmed = text.trim();
-  
+
   if (trimmed.length > maxLength) {
     throw new Error(`Text exceeds maximum length of ${maxLength} characters`);
   }
-  
+
   return trimmed;
 }
 
@@ -53,7 +53,9 @@ export function sanitizeText(text: string, maxLength: number = 1000): string {
  * @returns true if valid, false otherwise
  */
 export function isAlphanumeric(text: string, allowedChars: string = ' -_'): boolean {
-  const pattern = new RegExp(`^[a-zA-Z0-9${allowedChars.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}]+$`);
+  const pattern = new RegExp(
+    `^[a-zA-Z0-9${allowedChars.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}]+$`
+  );
   return pattern.test(text);
 }
 

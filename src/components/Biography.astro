@@ -6,67 +6,98 @@ export interface Props {
   isAdmin?: boolean;
 }
 
-const { content, title = "Remembering a Beautiful Life", highlights = [], isAdmin = false } = Astro.props;
+const {
+  content,
+  title = 'Remembering a Beautiful Life',
+  highlights = [],
+  isAdmin = false,
+} = Astro.props;
 ---
 
 <section id="biography" class="py-16 sm:py-24 bg-white">
   <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="text-center mb-12">
-      <h2 class="font-display text-3xl sm:text-4xl font-bold text-warm-gray-900 mb-4" data-bio-title>
+      <h2
+        class="font-display text-3xl sm:text-4xl font-bold text-warm-gray-900 mb-4"
+        data-bio-title
+      >
         {title}
       </h2>
       <div class="w-24 h-1 bg-warm-gray-300 mx-auto"></div>
     </div>
-    
+
     <div class="prose prose-lg prose-warm-gray max-w-none">
       <div id="bio-container" class="relative">
-        <div id="bio-content" class="text-warm-gray-700 leading-relaxed text-lg overflow-hidden transition-all duration-500 ease-in-out" data-bio-content style="max-height: 400px;">
-          {content.split('\n\n').map(paragraph => (
-            <p class="mb-6">{paragraph}</p>
-          ))}
+        <div
+          id="bio-content"
+          class="text-warm-gray-700 leading-relaxed text-lg overflow-hidden transition-all duration-500 ease-in-out"
+          data-bio-content
+          style="max-height: 400px;"
+        >
+          {content.split('\n\n').map((paragraph) => <p class="mb-6">{paragraph}</p>)}
         </div>
-        <div id="bio-fade" class="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none transition-opacity duration-500"></div>
+        <div
+          id="bio-fade"
+          class="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none transition-opacity duration-500"
+        >
+        </div>
       </div>
       <div class="text-center mt-8">
-        <button 
+        <button
           id="bio-toggle"
           class="group inline-flex items-center gap-2 text-warm-gray-600 hover:text-warm-gray-900 font-display text-base transition-all duration-300 relative after:absolute after:bottom-0 after:left-0 after:right-0 after:h-px after:bg-warm-gray-300 after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-300 pb-1"
           style="display: none;"
         >
           <span id="bio-toggle-text" class="font-medium">Continue Reading</span>
-          <svg id="bio-chevron-down" class="w-4 h-4 transition-transform duration-300 group-hover:translate-y-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+          <svg
+            id="bio-chevron-down"
+            class="w-4 h-4 transition-transform duration-300 group-hover:translate-y-0.5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"
+            ></path>
           </svg>
-          <svg id="bio-chevron-up" class="hidden w-4 h-4 transition-transform duration-300 group-hover:-translate-y-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+          <svg
+            id="bio-chevron-up"
+            class="hidden w-4 h-4 transition-transform duration-300 group-hover:-translate-y-0.5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"
+            ></path>
           </svg>
         </button>
       </div>
     </div>
-    
-    {highlights.length > 0 && (
-      <div class="mt-12 bg-warm-gray-50 rounded-lg p-8 relative">
-        <h3 class="font-display text-2xl font-semibold text-warm-gray-900 mb-6 text-center">
-          Cherished Memories
-        </h3>
-        <div class="grid md:grid-cols-2 gap-6" data-bio-highlights>
-          {highlights.map(highlight => (
-            <div class="flex items-start space-x-3">
-              <div class="flex-shrink-0 w-2 h-2 bg-warm-gray-400 rounded-full mt-3"></div>
-              <p class="text-warm-gray-700">{highlight}</p>
-            </div>
-          ))}
+
+    {
+      highlights.length > 0 && (
+        <div class="mt-12 bg-warm-gray-50 rounded-lg p-8 relative">
+          <h3 class="font-display text-2xl font-semibold text-warm-gray-900 mb-6 text-center">
+            Cherished Memories
+          </h3>
+          <div class="grid md:grid-cols-2 gap-6" data-bio-highlights>
+            {highlights.map((highlight) => (
+              <div class="flex items-start space-x-3">
+                <div class="flex-shrink-0 w-2 h-2 bg-warm-gray-400 rounded-full mt-3" />
+                <p class="text-warm-gray-700">{highlight}</p>
+              </div>
+            ))}
+          </div>
+          {isAdmin && (
+            <button
+              onclick="openEditModal('highlights')"
+              class="absolute top-4 right-4 bg-white hover:bg-warm-gray-100 text-indigo-600 px-3 py-2 rounded-lg shadow-md text-sm font-medium transition-all edit-button"
+            >
+              ✏️ Edit
+            </button>
+          )}
         </div>
-        {isAdmin && (
-          <button 
-            onclick="openEditModal('highlights')"
-            class="absolute top-4 right-4 bg-white hover:bg-warm-gray-100 text-indigo-600 px-3 py-2 rounded-lg shadow-md text-sm font-medium transition-all edit-button"
-          >
-            ✏️ Edit
-          </button>
-        )}
-      </div>
-    )}
+      )
+    }
   </div>
 </section>
 
@@ -80,20 +111,20 @@ const { content, title = "Remembering a Beautiful Life", highlights = [], isAdmi
     const chevronDown = document.getElementById('bio-chevron-down');
     const chevronUp = document.getElementById('bio-chevron-up');
     const bioSection = document.getElementById('biography');
-    
+
     if (!bioContent || !bioToggle || !bioToggleText || !bioFade) return;
-    
+
     let isExpanded = false;
     const collapsedHeight = 400; // pixels
     let toggleHandler = null;
-    
+
     // Function to check if content needs truncation
     function checkTruncation() {
       if (!bioContent) return false;
-      
+
       const contentHeight = bioContent.scrollHeight;
       const needsTruncation = contentHeight > collapsedHeight + 50; // Add buffer
-      
+
       if (needsTruncation) {
         // Show the toggle button
         if (bioToggle) bioToggle.style.display = 'inline-flex';
@@ -104,25 +135,25 @@ const { content, title = "Remembering a Beautiful Life", highlights = [], isAdmi
         if (bioToggle) bioToggle.style.display = 'none';
         if (bioFade) bioFade.style.display = 'none';
       }
-      
+
       return needsTruncation;
     }
-    
+
     // Initial check
     const needsTruncation = checkTruncation();
-    
+
     if (needsTruncation && bioToggle) {
       // Remove old handler if it exists (for re-initialization)
       if (toggleHandler) {
         bioToggle.removeEventListener('click', toggleHandler);
       }
-      
+
       // Handle toggle click
       toggleHandler = () => {
         if (!bioContent) return;
-        
+
         isExpanded = !isExpanded;
-        
+
         if (isExpanded) {
           const contentHeight = bioContent.scrollHeight;
           bioContent.style.maxHeight = contentHeight + 'px';
@@ -136,36 +167,36 @@ const { content, title = "Remembering a Beautiful Life", highlights = [], isAdmi
           if (bioFade) bioFade.style.opacity = '1';
           chevronDown?.classList.remove('hidden');
           chevronUp?.classList.add('hidden');
-          
+
           // Scroll back to biography section smoothly
           if (bioSection) {
             requestAnimationFrame(() => {
-              bioSection.scrollIntoView({ 
-                behavior: 'smooth', 
-                block: 'start' 
+              bioSection.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start',
               });
             });
           }
         }
       };
-      
+
       bioToggle.addEventListener('click', toggleHandler);
     }
   }
-  
+
   // Initialize on page load
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initBiographyToggle);
   } else {
     initBiographyToggle();
   }
-  
+
   // Expose to window for re-initialization after content updates
   declare global {
     interface Window {
       initBiographyToggle: () => void;
     }
   }
-  
+
   window.initBiographyToggle = initBiographyToggle;
 </script>

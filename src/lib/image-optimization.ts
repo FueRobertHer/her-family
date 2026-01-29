@@ -20,10 +20,7 @@ export interface CloudinaryOptions {
  * @param options - Transformation options
  * @returns Optimized URL with Cloudinary transformations
  */
-export function optimizeCloudinaryUrl(
-  url: string,
-  options: CloudinaryOptions = {}
-): string {
+export function optimizeCloudinaryUrl(url: string, options: CloudinaryOptions = {}): string {
   // If not a Cloudinary URL, return as-is
   if (!url || !url.includes('cloudinary.com')) {
     return url;
@@ -54,7 +51,7 @@ export function optimizeCloudinaryUrl(
   // Insert transformations into Cloudinary URL
   // Example: https://res.cloudinary.com/cloud/image/upload/v1/path.jpg
   // Becomes: https://res.cloudinary.com/cloud/image/upload/w_800,f_webp,q_auto/v1/path.jpg
-  
+
   const uploadIndex = url.indexOf('/upload/');
   if (uploadIndex === -1) return url; // Not a standard Cloudinary URL
 
@@ -95,10 +92,10 @@ export function optimizeCloudinaryPdf(url: string): string {
  * Preset configurations for common use cases
  */
 export const CloudinaryPresets = {
-  hero: { width: 1200, height: 1200, crop: 'fill' },
-  heroBackground: { width: 1920, height: 1080, crop: 'fill' },
-  galleryThumb: { width: 600, height: 600, crop: 'fill' },
-  galleryFull: { width: 1600, height: 1600, crop: 'fit' },
-  portrait: { width: 400, height: 400, crop: 'fill' },
-  commentImage: { width: 800, height: 800, crop: 'fit' },
+  hero: { width: 1200, height: 1200, crop: 'fill' as const },
+  heroBackground: { width: 1920, height: 1080, crop: 'fill' as const },
+  galleryThumb: { width: 600, height: 600, crop: 'fill' as const },
+  galleryFull: { width: 1600, height: 1600, crop: 'fit' as const },
+  portrait: { width: 400, height: 400, crop: 'fill' as const },
+  commentImage: { width: 800, height: 800, crop: 'fit' as const },
 };

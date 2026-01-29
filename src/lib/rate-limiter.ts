@@ -24,12 +24,12 @@ export function checkRateLimit(
   windowMs: number = 15 * 60 * 1000 // 15 minutes default
 ): { allowed: boolean; remaining: number; resetTime: number } {
   const now = Date.now();
-  
+
   // Prevent unbounded memory growth
   if (rateLimitStore.size > MAX_STORE_SIZE) {
     cleanupRateLimits();
   }
-  
+
   const entry = rateLimitStore.get(identifier);
 
   // If no entry or the window has expired, create/reset entry
@@ -41,19 +41,19 @@ export function checkRateLimit(
 
   // Check if limit exceeded
   if (entry.count >= maxAttempts) {
-    return { 
-      allowed: false, 
-      remaining: 0, 
-      resetTime: entry.resetTime 
+    return {
+      allowed: false,
+      remaining: 0,
+      resetTime: entry.resetTime,
     };
   }
 
   // Increment count
   entry.count++;
-  return { 
-    allowed: true, 
-    remaining: maxAttempts - entry.count, 
-    resetTime: entry.resetTime 
+  return {
+    allowed: true,
+    remaining: maxAttempts - entry.count,
+    resetTime: entry.resetTime,
   };
 }
 
@@ -72,14 +72,14 @@ export function resetRateLimit(identifier: string): void {
 export function cleanupRateLimits(): number {
   const now = Date.now();
   let cleaned = 0;
-  
+
   for (const [key, entry] of rateLimitStore.entries()) {
     if (now > entry.resetTime) {
       rateLimitStore.delete(key);
       cleaned++;
     }
   }
-  
+
   return cleaned;
 }
 
@@ -92,14 +92,17 @@ export function getRateLimitStoreSize(): number {
 
 // Auto-cleanup every 5 minutes (only in non-edge runtime environments)
 if (typeof setInterval !== 'undefined') {
-  setInterval(() => {
-    if (rateLimitStore.size > 0) {
-      const cleaned = cleanupRateLimits();
-      if (cleaned > 0) {
-        console.info(`Cleaned up ${cleaned} expired rate limit entries`);
+  setInterval(
+    () => {
+      if (rateLimitStore.size > 0) {
+        const cleaned = cleanupRateLimits();
+        if (cleaned > 0) {
+          console.warn(`Cleaned up ${cleaned} expired rate limit entries`);
+        }
       }
-    }
-  }, 5 * 60 * 1000);
+    },
+    5 * 60 * 1000
+  );
 }
 
 /**
@@ -114,18 +117,18 @@ export function getClientIdentifier(request: Request): string {
     // Take the first IP in the chain
     return forwarded.split(',')[0].trim();
   }
-  
+
   const realIp = request.headers.get('x-real-ip');
   if (realIp) {
     return realIp;
   }
-  
+
   // Cloudflare
   const cfConnectingIp = request.headers.get('cf-connecting-ip');
   if (cfConnectingIp) {
     return cfConnectingIp;
   }
-  
+
   // Fallback for development or unknown scenarios
   return 'unknown';
 }

@@ -4,16 +4,19 @@ interface Props {
   subtitle?: string;
 }
 
-const { 
-  title = "Memories & Condolences", 
-  subtitle = "Share your favorite memories and messages of love." 
+const {
+  title = 'Memories & Condolences',
+  subtitle = 'Share your favorite memories and messages of love.',
 } = Astro.props;
 ---
 
 <section id="memories" class="py-16 sm:py-24 bg-white relative overflow-hidden">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
     <div class="text-center mb-16">
-      <h2 class="font-display text-3xl sm:text-4xl font-bold text-warm-gray-900 mb-4" data-comments-title>
+      <h2
+        class="font-display text-3xl sm:text-4xl font-bold text-warm-gray-900 mb-4"
+        data-comments-title
+      >
         {title}
       </h2>
       <div class="w-24 h-1 bg-warm-gray-300 mx-auto mb-6"></div>
@@ -24,17 +27,21 @@ const {
 
     <div class="flex flex-col gap-16">
       <!-- Comment Form -->
-      <div class="w-full max-w-2xl mx-auto bg-warm-gray-50 rounded-xl p-8 shadow-sm border border-warm-gray-100">
+      <div
+        class="w-full max-w-2xl mx-auto bg-warm-gray-50 rounded-xl p-8 shadow-sm border border-warm-gray-100"
+      >
         <h3 class="text-xl font-semibold text-warm-gray-900 mb-6 text-center">Share a Memory</h3>
-        
+
         <form id="commentForm" class="space-y-4">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label for="name" class="block text-sm font-medium text-warm-gray-700 mb-1">Your Name *</label>
-              <input 
-                type="text" 
-                id="name" 
-                name="name" 
+              <label for="name" class="block text-sm font-medium text-warm-gray-700 mb-1"
+                >Your Name *</label
+              >
+              <input
+                type="text"
+                id="name"
+                name="name"
                 required
                 class="w-full px-4 py-2 rounded-lg border-warm-gray-300 focus:ring-warm-gray-500 focus:border-warm-gray-500 bg-white"
                 placeholder="Enter your name"
@@ -42,11 +49,13 @@ const {
             </div>
 
             <div>
-              <label for="relationship" class="block text-sm font-medium text-warm-gray-700 mb-1">Relationship (optional)</label>
-              <input 
-                type="text" 
-                id="relationship" 
-                name="relationship" 
+              <label for="relationship" class="block text-sm font-medium text-warm-gray-700 mb-1"
+                >Relationship (optional)</label
+              >
+              <input
+                type="text"
+                id="relationship"
+                name="relationship"
                 class="w-full px-4 py-2 rounded-lg border-warm-gray-300 focus:ring-warm-gray-500 focus:border-warm-gray-500 bg-white"
                 placeholder="e.g., Friend, Colleague"
               />
@@ -54,60 +63,84 @@ const {
           </div>
 
           <div>
-            <label for="email" class="block text-sm font-medium text-warm-gray-700 mb-1">Email (optional)</label>
-            <input 
-              type="email" 
-              id="email" 
-              name="email" 
+            <label for="email" class="block text-sm font-medium text-warm-gray-700 mb-1"
+              >Email (optional)</label
+            >
+            <input
+              type="email"
+              id="email"
+              name="email"
               class="w-full px-4 py-2 rounded-lg border-warm-gray-300 focus:ring-warm-gray-500 focus:border-warm-gray-500 bg-white"
               placeholder="For return contact only"
             />
           </div>
 
           <div>
-            <label for="message" class="block text-sm font-medium text-warm-gray-700 mb-1">Your Memory *</label>
-            <textarea 
-              id="message" 
-              name="message" 
-              rows="4" 
+            <label for="message" class="block text-sm font-medium text-warm-gray-700 mb-1"
+              >Your Memory *</label
+            >
+            <textarea
+              id="message"
+              name="message"
+              rows="4"
               required
               maxlength="1000"
               class="w-full px-4 py-2 rounded-lg border-warm-gray-300 focus:ring-warm-gray-500 focus:border-warm-gray-500 bg-white resize-none"
-              placeholder="Share a story or message..."
-            ></textarea>
+              placeholder="Share a story or message..."></textarea>
             <div class="flex justify-end mt-1">
               <span id="charCount" class="text-xs text-warm-gray-500">0/1000</span>
             </div>
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-warm-gray-700 mb-1">Add a Photo (optional)</label>
+            <label class="block text-sm font-medium text-warm-gray-700 mb-1"
+              >Add a Photo (optional)</label
+            >
             <div class="flex items-center gap-4">
-              <button 
-                type="button" 
+              <button
+                type="button"
                 id="selectImageBtn"
                 class="px-4 py-2 bg-white border border-warm-gray-300 rounded-lg text-sm text-warm-gray-700 hover:bg-warm-gray-50 transition-colors flex items-center gap-2"
               >
-                <svg class="w-5 h-5 text-warm-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                <svg
+                  class="w-5 h-5 text-warm-gray-500"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  ></path>
                 </svg>
                 Choose Photo
               </button>
-              <span id="imageFileName" class="text-sm text-warm-gray-500 truncate max-w-[150px]"></span>
-              <button type="button" id="clearImageBtn" class="hidden text-warm-gray-400 hover:text-red-500">
+              <span id="imageFileName" class="text-sm text-warm-gray-500 truncate max-w-[150px]"
+              ></span>
+              <button
+                type="button"
+                id="clearImageBtn"
+                class="hidden text-warm-gray-400 hover:text-red-500"
+              >
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"></path>
                 </svg>
               </button>
             </div>
-            <input type="file" id="commentImage" name="image" accept="image/*" class="hidden">
+            <input type="file" id="commentImage" name="image" accept="image/*" class="hidden" />
             <p class="text-xs text-warm-gray-500 mt-1">Max 5MB. JPEG, PNG, WebP supported.</p>
           </div>
 
           <div id="formMessage" class="hidden text-sm p-3 rounded-lg"></div>
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             id="submitBtn"
             class="w-full bg-warm-gray-800 text-white px-6 py-3 rounded-lg hover:bg-warm-gray-700 transition-colors font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5 duration-200"
           >
@@ -120,26 +153,34 @@ const {
       <div class="w-full relative">
         <div class="flex justify-between items-center mb-6">
           <h3 class="text-xl font-semibold text-warm-gray-900">Recent Memories</h3>
-          
+
           <!-- Navigation Buttons -->
           <div class="flex gap-2">
-            <button 
+            <button
               id="prevCommentBtn"
               class="p-2 rounded-full bg-white border border-warm-gray-200 text-warm-gray-600 hover:bg-warm-gray-50 hover:text-warm-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
               aria-label="Previous memories"
               disabled
             >
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 19l-7-7 7-7"></path>
               </svg>
             </button>
-            <button 
+            <button
               id="nextCommentBtn"
               class="p-2 rounded-full bg-white border border-warm-gray-200 text-warm-gray-600 hover:bg-warm-gray-50 hover:text-warm-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
               aria-label="Next memories"
             >
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 5l7 7-7 7"></path>
               </svg>
             </button>
           </div>
@@ -159,32 +200,45 @@ const {
   </div>
 
   <!-- Comment Image Lightbox -->
-  <div id="commentLightbox" class="fixed inset-0 bg-black bg-opacity-95 z-[100] hidden items-center justify-center p-4">
-    <button 
-      id="closeCommentLightbox" 
+  <div
+    id="commentLightbox"
+    class="fixed inset-0 bg-black bg-opacity-95 z-[100] hidden items-center justify-center p-4"
+  >
+    <button
+      id="closeCommentLightbox"
       class="absolute top-4 right-4 text-white hover:text-warm-gray-300 transition-colors p-2 z-[101] bg-black/50 rounded-full hover:bg-black/70"
       aria-label="Close lightbox"
     >
       <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M6 18L18 6M6 6l12 12"></path>
       </svg>
     </button>
-    
-    <div class="relative max-w-5xl max-h-[90vh] flex flex-col items-center justify-center w-full h-full">
-      <img 
-        id="commentLightboxImage" 
-        src="" 
-        alt="Memory" 
+
+    <div
+      class="relative max-w-5xl max-h-[90vh] flex flex-col items-center justify-center w-full h-full"
+    >
+      <img
+        id="commentLightboxImage"
+        src=""
+        alt="Memory"
         class="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
       />
-      <div id="commentLightboxCaption" class="text-white text-center mt-4 text-lg font-medium drop-shadow-md px-4"></div>
+      <div
+        id="commentLightboxCaption"
+        class="text-white text-center mt-4 text-lg font-medium drop-shadow-md px-4"
+      >
+      </div>
     </div>
   </div>
 </section>
 
 <script>
   // Client-side JavaScript for comment functionality
-  
+
   interface Comment {
     id: number;
     name: string;
@@ -196,7 +250,7 @@ const {
     createdAt: string;
     updatedAt: string;
   }
-  
+
   // State
   let allComments: Comment[] = [];
   let carouselIndex = 0;
@@ -214,16 +268,18 @@ const {
 
   // Determine items per page based on screen width
   function updateItemsPerPage() {
-    if (window.innerWidth >= 1280) { // xl
+    if (window.innerWidth >= 1280) {
+      // xl
       itemsPerPage = 3; // Three columns on large screens
-    } else if (window.innerWidth >= 768) { // md
+    } else if (window.innerWidth >= 768) {
+      // md
       itemsPerPage = 2; // Two columns on tablet
     } else {
       itemsPerPage = 1; // One column on mobile
     }
     updateCarousel(false);
   }
-  
+
   window.addEventListener('resize', updateItemsPerPage);
   // Initial call
   updateItemsPerPage();
@@ -239,7 +295,7 @@ const {
 
       if (result.success) {
         const newComments = result.data;
-        
+
         if (newComments.length < limit) {
           hasMore = false;
         }
@@ -257,18 +313,18 @@ const {
             // Remove initial loader
             initialLoader?.remove();
           }
-          
+
           allComments = [...allComments, ...newComments];
           renderNewComments(newComments);
           offset += newComments.length;
-          
+
           updateButtons();
         }
       }
     } catch (error) {
       console.error('Error loading comments:', error);
       if (offset === 0) {
-         commentsTrack.innerHTML = `
+        commentsTrack.innerHTML = `
           <div class="w-full text-center py-12 text-red-600">
             <p>Error loading memories. Please refresh to try again.</p>
           </div>
@@ -281,12 +337,12 @@ const {
 
   function renderNewComments(comments: Comment[]) {
     const fragment = document.createDocumentFragment();
-    
-    comments.forEach(comment => {
+
+    comments.forEach((comment) => {
       const slide = document.createElement('div');
       // Responsive width: 1 on mobile, 2 on tablet, 3 on desktop
-      slide.className = 'flex-shrink-0 w-full md:w-[calc(50%-12px)] xl:w-[calc(33.333%-16px)]'; 
-      
+      slide.className = 'flex-shrink-0 w-full md:w-[calc(50%-12px)] xl:w-[calc(33.333%-16px)]';
+
       slide.innerHTML = `
         <div class="bg-white rounded-xl p-6 shadow-sm border border-warm-gray-100 h-full flex flex-col">
           <div class="flex items-start justify-between mb-4">
@@ -305,7 +361,9 @@ const {
           </div>
           
           <div class="flex-grow space-y-4">
-             ${comment.imageUrl ? `
+             ${
+               comment.imageUrl
+                 ? `
               <div class="relative group cursor-pointer overflow-hidden rounded-lg mb-3" onclick="openCommentLightbox('${escapeHtml(comment.imageUrl)}', 'Photo from ${escapeHtml(comment.name)}')">
                 <img 
                   src="${escapeHtml(comment.imageUrl)}" 
@@ -318,66 +376,69 @@ const {
                   </svg>
                 </div>
               </div>
-            ` : ''}
+            `
+                 : ''
+             }
             <p class="text-warm-gray-700 leading-relaxed text-sm whitespace-pre-wrap line-clamp-6">${escapeHtml(comment.message)}</p>
           </div>
         </div>
       `;
       fragment.appendChild(slide);
     });
-    
+
     commentsTrack.appendChild(fragment);
   }
 
   function updateCarousel(animate = true) {
     if (!commentsTrack) return;
-    
+
     const allItems = commentsTrack.children;
     if (allItems.length === 0) return;
-    
+
     const itemWidth = (allItems[0] as HTMLElement).offsetWidth + 24; // width + gap
     const position = -carouselIndex * itemWidth;
-    
+
     if (animate) {
       commentsTrack.style.transition = 'transform 0.5s ease-out';
     } else {
       commentsTrack.style.transition = 'none';
     }
-    
+
     commentsTrack.style.transform = `translateX(${position}px)`;
     updateButtons();
   }
 
   function updateButtons() {
     prevBtn.disabled = carouselIndex === 0;
-    
+
     // Disable next if we are at the end and no more items to load
     // We can go next if:
     // 1. We have loaded items ahead (allComments.length > carouselIndex + itemsPerPage)
     // 2. OR we have more items to fetch on server
-    
+
     const maxIndex = Math.max(0, allComments.length - itemsPerPage);
     const canGoNext = carouselIndex < maxIndex || hasMore;
-    
+
     nextBtn.disabled = !canGoNext;
   }
 
   function nextSlide() {
     const maxIndex = Math.max(0, allComments.length - itemsPerPage);
-    
+
     if (carouselIndex < maxIndex) {
       // Just slide
       carouselIndex++;
       updateCarousel(true);
-      
+
       // Check if we need to load more (preload when close to end)
-      if (hasMore && !isLoading && (allComments.length - carouselIndex) <= (itemsPerPage * 2)) {
+      if (hasMore && !isLoading && allComments.length - carouselIndex <= itemsPerPage * 2) {
         loadComments();
       }
     } else if (hasMore && !isLoading) {
       // At end, need to load more first
       loadComments().then(() => {
-        if (allComments.length > maxIndex) { // If we actually got new items
+        if (allComments.length > maxIndex) {
+          // If we actually got new items
           carouselIndex++;
           updateCarousel(true);
         }
@@ -445,10 +506,10 @@ const {
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
     if (submitBtn.disabled) return;
-    
+
     const formData = new FormData(form);
     const imageFile = commentImageInput?.files?.[0];
-    
+
     const data: {
       name: string;
       email?: string;
@@ -459,7 +520,7 @@ const {
       name: formData.get('name')?.toString().trim() || '',
       email: formData.get('email')?.toString().trim(),
       relationship: formData.get('relationship')?.toString().trim(),
-      message: formData.get('message')?.toString().trim()
+      message: formData.get('message')?.toString().trim() || '',
     };
 
     if (!data.name || !data.message) {
@@ -483,7 +544,10 @@ const {
         imageFormData.append('file', imageFile);
         imageFormData.append('folder', 'memorial/comments');
 
-        const uploadResponse = await fetch('/api/upload-image', { method: 'POST', body: imageFormData });
+        const uploadResponse = await fetch('/api/upload-image', {
+          method: 'POST',
+          body: imageFormData,
+        });
         const uploadResult = await uploadResponse.json();
 
         if (uploadResult.success) {
@@ -497,7 +561,7 @@ const {
       const response = await fetch('/api/comments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
+        body: JSON.stringify(data),
       });
 
       const result = await response.json();
@@ -508,7 +572,7 @@ const {
         charCount.textContent = '0/1000';
         if (imageFileName) imageFileName.textContent = '';
         if (clearImageBtn) clearImageBtn.classList.add('hidden');
-        
+
         // Reload comments to show new one (simple way: reset everything)
         // Or prepend? For simplicity in carousel, reload is safer.
         allComments = [];
@@ -539,7 +603,9 @@ const {
 
   function formatDate(dateString: string) {
     return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric', month: 'short', day: 'numeric'
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
     });
   }
 
@@ -555,7 +621,7 @@ const {
       openCommentLightbox: (url: string, caption: string) => void;
     }
   }
-  
+
   window.openCommentLightbox = (url: string, caption: string) => {
     if (commentLightboxImage) commentLightboxImage.src = url;
     if (commentLightboxCaption) commentLightboxCaption.textContent = caption || '';

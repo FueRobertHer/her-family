@@ -12,49 +12,58 @@ const { videoUrl, posterImage, title, description } = Astro.props;
 <section id="video" class="py-16 sm:py-24 bg-white">
   <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="text-center mb-12">
-      <h2 class="font-display text-3xl sm:text-4xl font-bold text-warm-gray-900 mb-4" data-video-title>
-        {title || "In Their Own Words"}
+      <h2
+        class="font-display text-3xl sm:text-4xl font-bold text-warm-gray-900 mb-4"
+        data-video-title
+      >
+        {title || 'In Their Own Words'}
       </h2>
       <div class="w-24 h-1 bg-warm-gray-300 mx-auto"></div>
-      {description && (
-        <p class="mt-6 text-lg text-warm-gray-600 max-w-2xl mx-auto" data-video-description>
-          {description}
-        </p>
-      )}
+      {
+        description && (
+          <p class="mt-6 text-lg text-warm-gray-600 max-w-2xl mx-auto" data-video-description>
+            {description}
+          </p>
+        )
+      }
     </div>
-    
+
     <!-- Video Container -->
     <div class="relative bg-warm-gray-900 rounded-lg overflow-hidden shadow-2xl">
       <div class="aspect-video">
-        <video 
+        <video
           class="w-full h-full object-cover"
           controls
           preload="metadata"
           poster={posterImage}
-          aria-label={title || "Memorial video"}
+          aria-label={title || 'Memorial video'}
           data-video-element
         >
-          <source src={videoUrl} type="video/mp4" data-video-source>
-          <source src={videoUrl.replace('.mp4', '.webm')} type="video/webm">
+          <source src={videoUrl} type="video/mp4" data-video-source />
+          <source src={videoUrl.replace('.mp4', '.webm')} type="video/webm" />
           <p class="text-white p-8 text-center">
-            Your browser doesn't support video playback. 
+            Your browser doesn't support video playback.
             <a href={videoUrl} class="underline hover:no-underline" download>
               Download the video instead.
             </a>
           </p>
         </video>
       </div>
-      
+
       <!-- Custom Play Button Overlay (optional) -->
-      <div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 video-overlay transition-opacity duration-300">
-        <button class="play-button bg-white bg-opacity-90 hover:bg-opacity-100 rounded-full p-6 transition-all duration-300 hover:scale-110 shadow-lg">
+      <div
+        class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 video-overlay transition-opacity duration-300"
+      >
+        <button
+          class="play-button bg-white bg-opacity-90 hover:bg-opacity-100 rounded-full p-6 transition-all duration-300 hover:scale-110 shadow-lg"
+        >
           <svg class="w-12 h-12 text-warm-gray-900 ml-1" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M8 5v14l11-7z"/>
+            <path d="M8 5v14l11-7z"></path>
           </svg>
         </button>
       </div>
     </div>
-    
+
     <!-- Video Controls Info -->
     <div class="mt-6 text-center text-sm text-warm-gray-500">
       <p>Click play to watch • Use controls to adjust volume and playback</p>
@@ -65,27 +74,27 @@ const { videoUrl, posterImage, title, description } = Astro.props;
 <script>
   // Custom video player controls
   const video = document.querySelector('video');
-  const overlay = document.querySelector('.video-overlay');
+  const overlay = document.querySelector('.video-overlay') as HTMLElement | null;
   const playButton = document.querySelector('.play-button');
-  
+
   if (video && overlay && playButton) {
     // Hide overlay when video starts playing
     video.addEventListener('play', () => {
       overlay.style.opacity = '0';
       overlay.style.pointerEvents = 'none';
     });
-    
+
     // Show overlay when video is paused
     video.addEventListener('pause', () => {
       overlay.style.opacity = '1';
       overlay.style.pointerEvents = 'auto';
     });
-    
+
     // Play video when custom play button is clicked
     playButton.addEventListener('click', () => {
       video.play();
     });
-    
+
     // Hide overlay initially if video is set to autoplay
     if (video.autoplay) {
       overlay.style.opacity = '0';

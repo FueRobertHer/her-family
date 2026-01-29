@@ -3,7 +3,6 @@
 
 // ============ CAROUSEL FUNCTIONALITY WITH INFINITE WRAP ============
 const carouselTrack = document.getElementById('carouselTrack');
-const carouselContainer = document.getElementById('carouselContainer');
 const carouselPrev = document.getElementById('carouselPrev');
 const carouselNext = document.getElementById('carouselNext');
 const carouselDots = document.querySelectorAll('.carousel-dot');
@@ -20,7 +19,7 @@ const cloneCount = Math.min(4, totalImages); // Clone up to 4 images on each sid
 
 function initInfiniteCarousel() {
   if (!carouselTrack || totalImages === 0) return;
-  
+
   // Clone last images and prepend them
   for (let i = totalImages - cloneCount; i < totalImages; i++) {
     const clone = originalItems[i].cloneNode(true);
@@ -30,7 +29,7 @@ function initInfiniteCarousel() {
     deleteBtn?.remove();
     carouselTrack.insertBefore(clone, carouselTrack.firstChild);
   }
-  
+
   // Clone first images and append them
   for (let i = 0; i < cloneCount; i++) {
     const clone = originalItems[i].cloneNode(true);
@@ -40,15 +39,15 @@ function initInfiniteCarousel() {
     deleteBtn?.remove();
     carouselTrack.appendChild(clone);
   }
-  
+
   // Set initial position (account for prepended clones)
   currentIndex = cloneCount;
   realIndex = 0;
-  
+
   // Cache all items including clones
   cachedCarouselItems = carouselTrack.querySelectorAll('.carousel-item');
   const allItems = cachedCarouselItems;
-  
+
   // Setup lightbox for ALL images (originals and clones)
   allItems.forEach((item, idx) => {
     const imgContainer = item.querySelector('.aspect-square');
@@ -58,7 +57,7 @@ function initInfiniteCarousel() {
         if (e.target.closest('.delete-gallery-image')) {
           return;
         }
-        
+
         // Calculate real index for clones
         let realIdx = idx - cloneCount;
         if (realIdx < 0) realIdx = totalImages + realIdx;
@@ -67,7 +66,7 @@ function initInfiniteCarousel() {
       });
     }
   });
-  
+
   updateCarousel(false);
 }
 
@@ -83,21 +82,21 @@ function getCachedCarouselItems() {
 
 function updateCarousel(animate = true) {
   if (!carouselTrack) return;
-  
+
   const allItems = getCachedCarouselItems();
   if (!allItems || allItems.length === 0) return;
-  
+
   const itemWidth = allItems[0].offsetWidth + 24; // width + gap
   const offset = -currentIndex * itemWidth;
-  
+
   if (animate) {
     carouselTrack.style.transition = 'transform 0.5s ease-out';
   } else {
     carouselTrack.style.transition = 'none';
   }
-  
+
   carouselTrack.style.transform = `translateX(${offset}px)`;
-  
+
   // Update dots based on real index
   carouselDots.forEach((dot, idx) => {
     if (idx === realIndex) {
@@ -112,10 +111,10 @@ function updateCarousel(animate = true) {
 
 function handleTransitionEnd() {
   if (!isTransitioning) return;
-  
+
   const allItems = getCachedCarouselItems();
   if (!allItems) return;
-  
+
   // If we're at a clone, jump to the real image without animation
   if (currentIndex >= allItems.length - cloneCount) {
     // We're at the end clones, jump to the start
@@ -126,7 +125,7 @@ function handleTransitionEnd() {
     currentIndex = allItems.length - cloneCount - 1;
     updateCarousel(false);
   }
-  
+
   isTransitioning = false;
 }
 
@@ -134,25 +133,25 @@ carouselTrack?.addEventListener('transitionend', handleTransitionEnd);
 
 function goToSlide(direction) {
   if (isTransitioning) return;
-  
+
   isTransitioning = true;
   currentIndex += direction;
-  realIndex = ((realIndex + direction) % totalImages + totalImages) % totalImages;
-  
+  realIndex = (((realIndex + direction) % totalImages) + totalImages) % totalImages;
+
   updateCarousel(true);
   resetAutoPlay();
 }
 
 function jumpToSlide(index) {
   if (isTransitioning) return;
-  
+
   isTransitioning = true;
   realIndex = index;
   currentIndex = cloneCount + index;
-  
+
   updateCarousel(true);
   resetAutoPlay();
-  
+
   // Reset transitioning flag after animation
   setTimeout(() => {
     isTransitioning = false;
@@ -186,24 +185,37 @@ carouselDots.forEach((dot, idx) => {
 let touchStartX = 0;
 let touchEndX = 0;
 
-carouselTrack?.addEventListener('touchstart', (e) => {
-  touchStartX = e.touches[0].clientX;
-}, { passive: true });
+carouselTrack?.addEventListener(
+  'touchstart',
+  (e) => {
+    touchStartX = e.touches[0].clientX;
+  },
+  { passive: true }
+);
 
-carouselTrack?.addEventListener('touchmove', (e) => {
-  touchEndX = e.touches[0].clientX;
-}, { passive: true });
+carouselTrack?.addEventListener(
+  'touchmove',
+  (e) => {
+    touchEndX = e.touches[0].clientX;
+  },
+  { passive: true }
+);
 
-carouselTrack?.addEventListener('touchend', () => {
-  const swipeDistance = touchStartX - touchEndX;
-  if (Math.abs(swipeDistance) > 50) { // Minimum swipe distance
-    if (swipeDistance > 0) {
-      nextSlide();
-    } else {
-      prevSlide();
+carouselTrack?.addEventListener(
+  'touchend',
+  () => {
+    const swipeDistance = touchStartX - touchEndX;
+    if (Math.abs(swipeDistance) > 50) {
+      // Minimum swipe distance
+      if (swipeDistance > 0) {
+        nextSlide();
+      } else {
+        prevSlide();
+      }
     }
-  }
-}, { passive: true });
+  },
+  { passive: true }
+);
 
 // Initialize carousel with infinite wrap
 initInfiniteCarousel();
@@ -218,12 +230,16 @@ carouselTrack?.addEventListener('mouseleave', resetAutoPlay);
 
 // Debounced resize handler for performance
 let resizeTimeout;
-window.addEventListener('resize', () => {
-  if (resizeTimeout) clearTimeout(resizeTimeout);
-  resizeTimeout = setTimeout(() => {
-    updateCarousel(false);
-  }, 150);
-}, { passive: true });
+window.addEventListener(
+  'resize',
+  () => {
+    if (resizeTimeout) clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+      updateCarousel(false);
+    }, 150);
+  },
+  { passive: true }
+);
 
 // ============ LIGHTBOX FUNCTIONALITY ============
 const lightbox = document.getElementById('lightbox');
@@ -240,20 +256,20 @@ function openLightbox(index) {
   const item = originalItems[index];
   const img = item.querySelector('img');
   const caption = item.querySelector('p');
-  
+
   if (lightboxImage && img) {
     // Use full-size optimized image for lightbox, fallback to thumbnail if not available
     const fullUrl = item.dataset.fullUrl || img.src;
     lightboxImage.src = fullUrl;
     lightboxImage.alt = img.alt;
   }
-  
+
   if (lightboxCaption && caption) {
     lightboxCaption.textContent = caption.textContent;
   } else if (lightboxCaption) {
     lightboxCaption.textContent = '';
   }
-  
+
   lightbox?.classList.remove('hidden');
   lightbox?.classList.add('flex');
   document.body.style.overflow = 'hidden';
@@ -270,12 +286,12 @@ function showNextLightboxImage() {
   const item = originalItems[lightboxIndex];
   const img = item.querySelector('img');
   const caption = item.querySelector('p');
-  
+
   if (lightboxImage && img) {
     lightboxImage.src = img.src;
     lightboxImage.alt = img.alt;
   }
-  
+
   if (lightboxCaption && caption) {
     lightboxCaption.textContent = caption.textContent;
   } else if (lightboxCaption) {
@@ -288,12 +304,12 @@ function showPrevLightboxImage() {
   const item = originalItems[lightboxIndex];
   const img = item.querySelector('img');
   const caption = item.querySelector('p');
-  
+
   if (lightboxImage && img) {
     lightboxImage.src = img.src;
     lightboxImage.alt = img.alt;
   }
-  
+
   if (lightboxCaption && caption) {
     lightboxCaption.textContent = caption.textContent;
   } else if (lightboxCaption) {
@@ -308,7 +324,7 @@ prevImage?.addEventListener('click', showPrevLightboxImage);
 // Unified keyboard handler for both carousel and lightbox
 document.addEventListener('keydown', (e) => {
   const isLightboxOpen = lightbox && !lightbox.classList.contains('hidden');
-  
+
   if (isLightboxOpen) {
     // Lightbox controls
     if (e.key === 'Escape') closeLightboxFn();

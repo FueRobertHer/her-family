@@ -10,11 +10,11 @@ const Comments = defineTable({
     imageUrl: column.text({ optional: true }), // Optional image attachment
     status: column.text({ default: 'pending' }), // 'pending', 'approved', 'rejected'
     createdAt: column.text(), // Must be set explicitly in application code
-    updatedAt: column.text() // Must be set explicitly in application code
+    updatedAt: column.text(), // Must be set explicitly in application code
   },
   indexes: {
-    status_idx: { on: ["status"], unique: false }
-  }
+    status_idx: { on: ['status'], unique: false },
+  },
 });
 
 const MemorialContent = defineTable({
@@ -24,11 +24,11 @@ const MemorialContent = defineTable({
     key: column.text(), // specific field name
     value: column.text(), // the content value
     type: column.text({ default: 'text' }), // 'text', 'textarea', 'image', 'date', 'boolean'
-    updatedAt: column.text() // Must be set explicitly in application code
+    updatedAt: column.text(), // Must be set explicitly in application code
   },
   indexes: {
-    section_key_idx: { on: ["section", "key"], unique: true } // Ensure no duplicate content entries
-  }
+    section_key_idx: { on: ['section', 'key'], unique: true }, // Ensure no duplicate content entries
+  },
 });
 
 const GalleryImages = defineTable({
@@ -38,14 +38,14 @@ const GalleryImages = defineTable({
     caption: column.text({ optional: true }),
     displayOrder: column.number({ default: 0 }),
     isActive: column.boolean({ default: true }),
-    uploadedAt: column.text() // Must be set explicitly in application code
+    uploadedAt: column.text(), // Must be set explicitly in application code
   },
   indexes: {
-    order_idx: { on: ["displayOrder"], unique: false }
-  }
+    order_idx: { on: ['displayOrder'], unique: false },
+  },
 });
 
 // https://astro.build/db/config
 export default defineDb({
-  tables: { Comments, MemorialContent, GalleryImages }
+  tables: { Comments, MemorialContent, GalleryImages },
 });

@@ -3,7 +3,10 @@
 // Usage: Call window.showToast(message, type) from anywhere
 ---
 
-<div id="toast-container" class="fixed top-4 right-4 z-[9999] flex flex-col gap-3 pointer-events-none">
+<div
+  id="toast-container"
+  class="fixed top-4 right-4 z-[9999] flex flex-col gap-3 pointer-events-none"
+>
   <!-- Toast notifications will be inserted here -->
 </div>
 
@@ -14,18 +17,19 @@
    * @param {string} type - 'success', 'error', 'warning', or 'info'
    * @param {number} duration - How long to show the toast in ms (default: 4000)
    */
-  window.showToast = function(message, type = 'info', duration = 4000) {
+  window.showToast = function (message, type = 'info', duration = 4000) {
     const container = document.getElementById('toast-container');
     if (!container) return;
 
     // Create toast element
     const toast = document.createElement('div');
-    toast.className = 'pointer-events-auto transform transition-all duration-300 translate-x-full opacity-0';
-    
+    toast.className =
+      'pointer-events-auto transform transition-all duration-300 translate-x-full opacity-0';
+
     // Store timeout IDs for cleanup
     let autoCloseTimeout;
     let animationTimeout;
-    
+
     // Cleanup function to clear all timeouts and remove toast
     const cleanup = () => {
       if (autoCloseTimeout) clearTimeout(autoCloseTimeout);
@@ -35,7 +39,7 @@
         if (toast.parentNode) toast.remove();
       }, 300);
     };
-    
+
     // Determine colors based on type
     let bgColor, borderColor, iconColor, icon;
     switch (type) {
@@ -123,7 +127,7 @@
 
   // Legacy compatibility - map old showToast calls if they exist
   if (!window.showToast) {
-    window.showToast = function(message, type) {
+    window.showToast = function (message, type) {
       window.showToast(message, type);
     };
   }

@@ -13,10 +13,11 @@ export const GET: APIRoute = async ({ request }) => {
     const offset = parseInt(url.searchParams.get('offset') || '0');
 
     // Get approved comments with ORDER BY and LIMIT in SQL for better performance
-    const allApprovedComments = await db.select()
+    const allApprovedComments = await db
+      .select()
       .from(Comments)
       .where(eq(Comments.status, 'approved'));
-    
+
     // Sort in memory (Astro DB doesn't support ORDER BY directly yet)
     // Paginate using slice for now
     const approvedComments = allApprovedComments
@@ -34,27 +35,25 @@ export const GET: APIRoute = async ({ request }) => {
 export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();
-    
+
     // Validate input with Zod
     const validation = validateData(commentSchema, body);
     if (!validation.success) {
       return validationError(validation.error, validation.details?.join(', '));
     }
-    
+
     const { name, email, relationship, message, imageUrl } = validation.data;
 
     // Check auto-approve setting with better error handling
     let status: 'pending' | 'approved' = 'pending';
     try {
-      const settings = await db.select()
+      const settings = await db
+        .select()
         .from(MemorialContent)
         .where(
-          and(
-            eq(MemorialContent.section, 'comments'),
-            eq(MemorialContent.key, 'autoApprove')
-          )
+          and(eq(MemorialContent.section, 'comments'), eq(MemorialContent.key, 'autoApprove'))
         );
-      
+
       // Only approve automatically if the setting explicitly exists and is set to 'true'
       if (settings.length > 0 && settings[0].value === 'true') {
         status = 'approved';
@@ -76,18 +75,15 @@ export const POST: APIRoute = async ({ request }) => {
         imageUrl: imageUrl?.trim() || null,
         status: status,
         createdAt: now,
-        updatedAt: now
+        updatedAt: now,
       });
 
-      const responseMessage = status === 'approved' 
-        ? 'Comment submitted successfully.' 
-        : 'Comment submitted successfully. It will be reviewed before appearing on the page.';
+      const responseMessage =
+        status === 'approved'
+          ? 'Comment submitted successfully.'
+          : 'Comment submitted successfully. It will be reviewed before appearing on the page.';
 
-      return successResponse(
-        { id: Number(result.lastInsertRowid), status }, 
-        responseMessage,
-        201
-      );
+      return successResponse({ id: Number(result.lastInsertRowid), status }, responseMessage, 201);
     } catch (dbError) {
       console.error('Database error creating comment:', dbError);
       return errorResponse('Failed to save comment. Please try again.', 500);

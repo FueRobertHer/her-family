@@ -21,17 +21,13 @@ interface ErrorResponse {
  * @param status - HTTP status code (default: 200)
  * @returns Response object with standardized format
  */
-export function successResponse<T>(
-  data?: T,
-  message?: string,
-  status: number = 200
-): Response {
+export function successResponse<T>(data?: T, message?: string, status: number = 200): Response {
   const body: SuccessResponse<T> = { success: true };
-  
+
   if (data !== undefined) {
     body.data = data;
   }
-  
+
   if (message) {
     body.message = message;
   }
@@ -49,13 +45,9 @@ export function successResponse<T>(
  * @param details - Optional additional error details
  * @returns Response object with standardized error format
  */
-export function errorResponse(
-  error: string,
-  status: number = 500,
-  details?: string
-): Response {
+export function errorResponse(error: string, status: number = 500, details?: string): Response {
   const body: ErrorResponse = { success: false, error };
-  
+
   if (details) {
     body.details = details;
   }
