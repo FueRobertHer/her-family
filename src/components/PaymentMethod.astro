@@ -10,9 +10,12 @@ interface Props {
 
 const { name, username, qrImage, dataPrefix, hoverColor, icon } = Astro.props;
 
+// replace @ and $ with nothing
+const cleanUsername = username?.replace(/@/g, '').replace(/\$/g, '');
+
 const getUrl = () => {
-  if (name === 'Venmo') return `https://venmo.com/${username}`;
-  if (name === 'Cash App') return `https://cash.app/${username}`;
+  if (name === 'Venmo') return `https://venmo.com/${cleanUsername}`;
+  if (name === 'Cash App') return `https://cash.app/${cleanUsername}`;
   return '#';
 };
 
@@ -136,7 +139,7 @@ const emailAttrs = { [`data-${dataPrefix}-email`]: '' };
         <div class="flex-1 min-w-0">
           <h3 class="font-semibold text-warm-gray-900 mb-1">{name}</h3>
           <p class="text-warm-gray-600 truncate mb-1" {...usernameAttrs}>
-            {username !== undefined ? username : (name === 'Venmo' ? '@username' : '$username')}
+            {username !== undefined ? username : name === 'Venmo' ? '@username' : '$username'}
           </p>
           <p class="text-sm text-transparent select-none">Spacer</p>
         </div>
