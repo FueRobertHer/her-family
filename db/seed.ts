@@ -57,7 +57,13 @@ This legacy lives on through the many people inspired, the family loved deeply, 
     },
 
     // Video Section
-    { section: 'video', key: 'title', value: 'A Life Remembered', type: 'text', updatedAt: now },
+    {
+      section: 'video',
+      key: 'sectionTitle',
+      value: 'A Life Remembered',
+      type: 'text',
+      updatedAt: now,
+    },
     {
       section: 'video',
       key: 'description',
