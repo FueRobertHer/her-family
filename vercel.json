@@ -1,44 +1,25 @@
 {
-  "routes": [
+  "headers": [
     {
-      "src": "/wp-(.*)",
-      "status": 404
-    },
-    {
-      "src": "/.*wp.*\\.php$",
-      "status": 404
-    },
-    {
-      "src": "/[^/]*\\.php$",
-      "status": 404
-    },
-    {
-      "src": "/(wordpress|phpmyadmin|phpMyAdmin|pma|myadmin|administrator)/(.*)",
-      "status": 404
-    },
-    {
-      "src": "/(404|index|home|admin|login|test|backup|old|temp)\\.html$",
-      "status": 404
-    },
-    {
-      "src": "/.*\\.(asp|aspx|cgi|jsp|pl|py|rb|exe|dll|so|bat|cmd|sh)$",
-      "status": 404
-    },
-    {
-      "src": "/.*\\.(sql|bak|backup|old|tmp|log|conf|ini|config)$",
-      "status": 404
-    },
-    {
-      "src": "/\\.env.*",
-      "status": 404
-    },
-    {
-      "src": "/\\.git/",
-      "status": 404
-    },
-    {
-      "src": "/(cgi-bin|vendor|node_modules|backup|backups|db|database|sql|logs)/(.*)",
-      "status": 404
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        }
+      ]
     }
   ]
 }

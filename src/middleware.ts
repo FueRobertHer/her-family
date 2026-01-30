@@ -1,6 +1,28 @@
 import { defineMiddleware } from 'astro:middleware';
 
-export const onRequest = defineMiddleware(async (_context, next) => {
+export const onRequest = defineMiddleware(async (context, next) => {
+  const pathname = context.url.pathname;
+
+  // Block scanner/bot paths immediately with 404
+  const blockedPatterns = [
+    /\/wp-/,
+    /\.php$/,
+    /\/wordpress\//,
+    /\/phpmyadmin\//i,
+    /\/pma\//,
+    /\/myadmin\//,
+    /\/administrator\//,
+    /\.(asp|aspx|cgi|jsp|pl|py|rb|exe|dll|so|bat|cmd|sh)$/,
+    /\.(sql|bak|backup|old|tmp|log|conf|ini|config)$/,
+    /^\/\.env/,
+    /^\/\.git\//,
+    /^\/(cgi-bin|vendor|node_modules|backup|backups|db|database|sql|logs)\//,
+  ];
+
+  if (blockedPatterns.some(pattern => pattern.test(pathname))) {
+    return new Response(null, { status: 404 });
+  }
+
   // Get the response
   const response = await next();
 
