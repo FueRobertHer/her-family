@@ -16,6 +16,7 @@ if (!memorial) {
 }
 // Extract numeric index from URL (supports both "/agenda/0" and "/agenda/0-name-service")
 const serviceIndex = parseInt((id || '0').split('-')[0]);
+const agendaTransitionName = `agenda-header-${memorialSlug || 'default'}-${serviceIndex}`;
 
 // Fetch the service data specifically
 const result = await db
@@ -81,7 +82,10 @@ const downloadUrl = `/api/download-agenda?service=${serviceIndex}&memorial=${enc
 
   <div class="min-h-screen bg-warm-gray-100 flex flex-col">
     <!-- Header -->
-    <div class="bg-warm-gray-50 border-b border-warm-gray-200 px-3 py-3 sm:px-4 sm:py-4">
+    <div
+      transition:name={agendaTransitionName}
+      class="bg-warm-gray-50 border-b border-warm-gray-200 px-3 py-3 sm:px-4 sm:py-4"
+    >
       <div class="max-w-5xl mx-auto">
         <div class="flex justify-between items-center gap-2 sm:gap-3">
           <div class="flex items-center gap-2 sm:gap-3 min-w-0">
@@ -100,7 +104,8 @@ const downloadUrl = `/api/download-agenda?service=${serviceIndex}&memorial=${enc
             }
           </div>
           <a
-            href={`/memorials/${memorialSlug}#funeral-info`}
+            id="back-to-memorial-link"
+            href={`/memorials/${memorialSlug}`}
             class="inline-flex items-center text-indigo-600 hover:text-indigo-800 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0"
           >
             <svg
@@ -279,5 +284,32 @@ const downloadUrl = `/api/download-agenda?service=${serviceIndex}&memorial=${enc
         }, 10000);
       });
     }
+  }
+</script>
+
+<script>
+  // Prefer history back so we restore the exact memorial scroll position
+  // without relying on hash navigation (which can cause a visible jump).
+  const backToMemorialLink = document.getElementById(
+    'back-to-memorial-link'
+  ) as HTMLAnchorElement | null;
+
+  if (backToMemorialLink) {
+    backToMemorialLink.addEventListener('click', (event) => {
+      if (!document.referrer) return;
+
+      try {
+        const referrerUrl = new URL(document.referrer);
+        const targetUrl = new URL(backToMemorialLink.href);
+        const cameFromTargetMemorial = referrerUrl.pathname === targetUrl.pathname;
+
+        if (cameFromTargetMemorial && window.history.length > 1) {
+          event.preventDefault();
+          window.history.back();
+        }
+      } catch {
+        // If URL parsing fails, keep default link navigation.
+      }
+    });
   }
 </script>
