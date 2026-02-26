@@ -208,7 +208,10 @@ const isAdminAuthenticated = Astro.cookies.get('admin_auth')?.value === 'true';
     <header class="sticky top-0 z-40 border-b border-warm-gray-200/80 bg-white/90 backdrop-blur-sm">
       <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <nav class="flex h-14 items-center justify-between" aria-label="Primary">
-          <a href="/" class="text-lg font-semibold text-warm-gray-900 hover:text-warm-gray-700 transition-colors">
+          <a
+            href="/"
+            class="text-lg font-semibold text-warm-gray-900 hover:text-warm-gray-700 transition-colors"
+          >
             {brandLabel}
           </a>
           <div class="flex items-center gap-2 sm:gap-3">
@@ -232,18 +235,20 @@ const isAdminAuthenticated = Astro.cookies.get('admin_auth')?.value === 'true';
             >
               Memorials
             </a>
-            {isAdminAuthenticated && (
-              <a
-                href="/admin"
-                class={`rounded-md px-3 py-1.5 text-sm transition-colors ${
-                  pathname.startsWith('/admin')
-                    ? 'bg-indigo-600 text-white'
-                    : 'text-indigo-700 hover:bg-indigo-50'
-                }`}
-              >
-                Admin
-              </a>
-            )}
+            {
+              isAdminAuthenticated && (
+                <a
+                  href="/admin"
+                  class={`rounded-md px-3 py-1.5 text-sm transition-colors ${
+                    pathname.startsWith('/admin')
+                      ? 'bg-indigo-600 text-white'
+                      : 'text-indigo-700 hover:bg-indigo-50'
+                  }`}
+                >
+                  Admin
+                </a>
+              )
+            }
           </div>
         </nav>
       </div>
