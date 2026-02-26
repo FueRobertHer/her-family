@@ -10,6 +10,8 @@ const confirmCaptionBtn = document.getElementById('confirmCaptionBtn');
 const cancelCaptionBtn = document.getElementById('cancelCaptionBtn');
 
 let selectedFile = null;
+const memorialSlug =
+  (document.getElementById('gallery')?.getAttribute('data-memorial-slug') || '').trim() || 'default';
 
 if (uploadBtn) {
   uploadBtn.addEventListener('click', (e) => {
@@ -53,7 +55,7 @@ confirmCaptionBtn?.addEventListener('click', async () => {
   try {
     const formData = new FormData();
     formData.append('file', selectedFile);
-    formData.append('folder', 'memorial/gallery');
+    formData.append('folder', `memorials/${memorialSlug}/gallery`);
 
     const response = await fetch('/api/upload-image', {
       method: 'POST',
@@ -71,6 +73,7 @@ confirmCaptionBtn?.addEventListener('click', async () => {
           imagePath: result.url,
           caption: caption || '',
           displayOrder: 999,
+          memorialSlug,
         }),
       });
 
@@ -142,6 +145,7 @@ saveEditCaptionBtn?.addEventListener('click', async () => {
       body: JSON.stringify({
         imagePath: currentEditImageUrl,
         caption: caption,
+        memorialSlug,
       }),
     });
 
@@ -270,7 +274,7 @@ document.addEventListener('click', async (e) => {
       const dbResponse = await fetch('/api/gallery/delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imagePath: imageUrl }),
+        body: JSON.stringify({ imagePath: imageUrl, memorialSlug }),
       });
 
       if (dbResponse.ok) {

@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { db, Comments, MemorialContent, eq, and } from 'astro:db';
 import { successResponse, errorResponse, validationError } from '../../lib/api-response';
 import { commentSchema, validateData } from '../../lib/validation';
+import { getMemorialBySlug } from '../../lib/memorial-context';
 
 export const prerender = false;
 
@@ -9,14 +10,24 @@ export const prerender = false;
 export const GET: APIRoute = async ({ request }) => {
   try {
     const url = new URL(request.url);
+    const memorialSlug = url.searchParams.get('memorial')?.trim();
     const limit = parseInt(url.searchParams.get('limit') || '50');
     const offset = parseInt(url.searchParams.get('offset') || '0');
+
+    if (!memorialSlug) {
+      return validationError('memorial query parameter is required');
+    }
+
+    const memorial = await getMemorialBySlug(memorialSlug);
+    if (!memorial) {
+      return errorResponse('Memorial not found', 404);
+    }
 
     // Get approved comments with ORDER BY and LIMIT in SQL for better performance
     const allApprovedComments = await db
       .select()
       .from(Comments)
-      .where(eq(Comments.status, 'approved'));
+      .where(and(eq(Comments.status, 'approved'), eq(Comments.memorialId, memorial.id)));
 
     // Sort in memory (Astro DB doesn't support ORDER BY directly yet)
     // Paginate using slice for now
@@ -35,6 +46,16 @@ export const GET: APIRoute = async ({ request }) => {
 export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();
+    const memorialSlug = typeof body.memorialSlug === 'string' ? body.memorialSlug.trim() : '';
+
+    if (!memorialSlug) {
+      return validationError('memorialSlug is required');
+    }
+
+    const memorial = await getMemorialBySlug(memorialSlug);
+    if (!memorial) {
+      return errorResponse('Memorial not found', 404);
+    }
 
     // Validate input with Zod
     const validation = validateData(commentSchema, body);
@@ -51,7 +72,11 @@ export const POST: APIRoute = async ({ request }) => {
         .select()
         .from(MemorialContent)
         .where(
-          and(eq(MemorialContent.section, 'comments'), eq(MemorialContent.key, 'autoApprove'))
+          and(
+            eq(MemorialContent.memorialId, memorial.id),
+            eq(MemorialContent.section, 'comments'),
+            eq(MemorialContent.key, 'autoApprove')
+          )
         );
 
       // Only approve automatically if the setting explicitly exists and is set to 'true'
@@ -68,6 +93,7 @@ export const POST: APIRoute = async ({ request }) => {
     const now = new Date().toISOString();
     try {
       const result = await db.insert(Comments).values({
+        memorialId: memorial.id,
         name: name.trim(),
         email: email?.trim() || null,
         relationship: relationship?.trim() || null,

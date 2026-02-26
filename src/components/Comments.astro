@@ -2,15 +2,17 @@
 interface Props {
   title?: string;
   subtitle?: string;
+  memorialSlug?: string;
 }
 
 const {
   title = 'Memories & Condolences',
   subtitle = 'Share your favorite memories and messages of love.',
+  memorialSlug = '',
 } = Astro.props;
 ---
 
-<section id="memories" class="py-16 sm:py-24 bg-white relative overflow-hidden">
+<section id="memories" class="py-16 sm:py-24 bg-white relative overflow-hidden" data-memorial-slug={memorialSlug}>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
     <div class="text-center mb-16">
       <h2
@@ -265,6 +267,9 @@ const {
   const prevBtn = document.getElementById('prevCommentBtn') as HTMLButtonElement;
   const nextBtn = document.getElementById('nextCommentBtn') as HTMLButtonElement;
   const initialLoader = document.getElementById('initialLoader');
+  const memorialSlug = (
+    (document.getElementById('memories') as HTMLElement | null)?.dataset.memorialSlug || ''
+  ).trim();
 
   // Determine items per page based on screen width
   function updateItemsPerPage() {
@@ -290,7 +295,12 @@ const {
     isLoading = true;
 
     try {
-      const response = await fetch(`/api/comments?limit=${limit}&offset=${offset}`);
+      const params = new URLSearchParams({
+        limit: String(limit),
+        offset: String(offset),
+      });
+      if (memorialSlug) params.set('memorial', memorialSlug);
+      const response = await fetch(`/api/comments?${params.toString()}`);
       const result = await response.json();
 
       if (result.success) {
@@ -516,6 +526,7 @@ const {
       relationship?: string;
       message: string;
       imageUrl?: string;
+      memorialSlug?: string;
     } = {
       name: formData.get('name')?.toString().trim() || '',
       email: formData.get('email')?.toString().trim(),
@@ -542,7 +553,7 @@ const {
         submitBtn.textContent = 'Uploading Image...';
         const imageFormData = new FormData();
         imageFormData.append('file', imageFile);
-        imageFormData.append('folder', 'memorial/comments');
+        imageFormData.append('folder', `memorials/${memorialSlug || 'default'}/comments`);
 
         const uploadResponse = await fetch('/api/upload-image', {
           method: 'POST',
@@ -558,6 +569,10 @@ const {
       }
 
       submitBtn.textContent = 'Saving Memory...';
+      if (memorialSlug) {
+        data.memorialSlug = memorialSlug;
+      }
+
       const response = await fetch('/api/comments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

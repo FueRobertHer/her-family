@@ -3,6 +3,7 @@ export interface Props {
   content: string;
   title?: string;
   highlights?: string[];
+  highlightsVisible?: boolean;
   isAdmin?: boolean;
 }
 
@@ -10,6 +11,7 @@ const {
   content,
   title = 'Remembering a Beautiful Life',
   highlights = [],
+  highlightsVisible = true,
   isAdmin = false,
 } = Astro.props;
 ---
@@ -74,8 +76,14 @@ const {
     </div>
 
     {
-      highlights.length > 0 && (
-        <div class="mt-12 bg-warm-gray-50 rounded-lg p-8 relative">
+      highlights.length > 0 &&
+        (highlightsVisible || isAdmin) && (
+        <div class={`mt-12 bg-warm-gray-50 rounded-lg p-8 relative ${!highlightsVisible && isAdmin ? 'opacity-60 border-2 border-dashed border-gray-300' : ''}`}>
+          {!highlightsVisible && isAdmin && (
+            <span class="hidden-badge absolute top-3 left-3 text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">
+              Hidden
+            </span>
+          )}
           <h3 class="font-display text-2xl font-semibold text-warm-gray-900 mb-6 text-center">
             Cherished Memories
           </h3>

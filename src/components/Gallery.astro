@@ -9,9 +9,10 @@ export interface Props {
   }>;
   isAdmin?: boolean;
   title?: string;
+  memorialSlug?: string;
 }
 
-const { images, isAdmin = false, title = 'Treasured Moments' } = Astro.props;
+const { images, isAdmin = false, title = 'Treasured Moments', memorialSlug = '' } = Astro.props;
 
 // Optimize gallery images for thumbnails
 const optimizedImages = images.map((img) => ({
@@ -21,7 +22,7 @@ const optimizedImages = images.map((img) => ({
 }));
 ---
 
-<section id="gallery" class="py-16 sm:py-24 bg-warm-gray-50">
+<section id="gallery" class="py-16 sm:py-24 bg-warm-gray-50" data-memorial-slug={memorialSlug}>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="text-center mb-12">
       <h2

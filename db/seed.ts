@@ -1,12 +1,23 @@
-import { db, Comments, MemorialContent, GalleryImages } from 'astro:db';
+import { db, Comments, MemorialContent, GalleryImages, Memorials } from 'astro:db';
 
 // https://astro.build/db/seed
 export default async function seed() {
   const now = new Date().toISOString();
+  const defaultMemorialSlug = 'founder-memorial';
+
+  console.log('Seeding memorials...');
+  const memorialInsert = await db.insert(Memorials).values({
+    slug: defaultMemorialSlug,
+    name: 'Founder Memorial',
+    status: 'active',
+    createdAt: now,
+    updatedAt: now,
+  });
+  const memorialId = Number(memorialInsert.lastInsertRowid);
 
   // Insert memorial content
   console.log('Seeding memorial content...');
-  await db.insert(MemorialContent).values([
+  const memorialContentSeed = [
     // Hero Section
     { section: 'hero', key: 'name', value: 'Full Name', type: 'text', updatedAt: now },
     { section: 'hero', key: 'birthDate', value: '1965-03-15', type: 'date', updatedAt: now },
@@ -212,11 +223,14 @@ This legacy lives on through the many people inspired, the family loved deeply, 
       type: 'json',
       updatedAt: now,
     },
-  ]);
+  ];
+  await db
+    .insert(MemorialContent)
+    .values(memorialContentSeed.map((item) => ({ ...item, memorialId })));
 
   // Insert gallery images
   console.log('Seeding gallery images...');
-  await db.insert(GalleryImages).values([
+  const gallerySeed = [
     {
       imagePath: '/images/gallery1.jpg',
       caption: 'A cherished memory',
@@ -259,11 +273,12 @@ This legacy lives on through the many people inspired, the family loved deeply, 
       isActive: true,
       uploadedAt: now,
     },
-  ]);
+  ];
+  await db.insert(GalleryImages).values(gallerySeed.map((item) => ({ ...item, memorialId })));
 
   // Insert sample comments for demonstration
   console.log('Seeding comments...');
-  await db.insert(Comments).values([
+  const commentsSeed = [
     {
       name: 'Former Colleague',
       relationship: 'Colleague',
@@ -300,7 +315,8 @@ This legacy lives on through the many people inspired, the family loved deeply, 
       createdAt: now,
       updatedAt: now,
     },
-  ]);
+  ];
+  await db.insert(Comments).values(commentsSeed.map((item) => ({ ...item, memorialId })));
 
   console.log('Seeding complete!');
 }

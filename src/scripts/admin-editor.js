@@ -7,6 +7,12 @@ let contentData = {};
 let memorialData = {};
 let memorialDataLoaded = false;
 let draggedItem = null; // For gallery reordering
+const memorialSlug =
+  window.__MEMORIAL_SLUG__ ||
+  (() => {
+    const match = window.location.pathname.match(/^\/memorials\/([^/]+)/);
+    return match ? decodeURIComponent(match[1]) : 'default';
+  })();
 
 // --- Helper Functions ---
 
@@ -924,7 +930,7 @@ async function openEditModal(section) {
   }
 
   try {
-    const response = await fetch('/api/admin/content');
+    const response = await fetch(`/api/admin/content?memorial=${encodeURIComponent(memorialSlug)}`);
     const result = await response.json();
 
     if (result.success) {
@@ -1509,7 +1515,7 @@ async function uploadImageForField(inputId) {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('folder', 'memorial/portraits');
+      formData.append('folder', `memorials/${memorialSlug}/portraits`);
 
       const response = await fetch('/api/upload-image', {
         method: 'POST',
@@ -1570,7 +1576,7 @@ async function uploadVideoForField(inputId) {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('folder', 'memorial/videos');
+      formData.append('folder', `memorials/${memorialSlug}/videos`);
 
       const response = await fetch('/api/upload-image', {
         method: 'POST',
@@ -1634,6 +1640,7 @@ async function saveAllModalContent() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          memorialSlug,
           section: 'funeral',
           key: `service${serviceIndex}`,
           value: JSON.stringify(serviceData),
@@ -1705,6 +1712,7 @@ async function saveAllModalContent() {
       const reorderData = Array.from(reorderItems).map((item, idx) => ({
         imagePath: item.dataset.imageUrl,
         displayOrder: idx,
+        memorialSlug,
       }));
 
       // We'll save the reorder data separately
@@ -1738,7 +1746,7 @@ async function saveAllModalContent() {
           fetch('/api/admin/content', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(update),
+            body: JSON.stringify({ ...update, memorialSlug }),
           }).then((r) => r.json())
         )
       );
@@ -1839,7 +1847,7 @@ async function uploadAgendaForField(inputId) {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('folder', 'memorial/agendas'); // Separate folder for organization
+      formData.append('folder', `memorials/${memorialSlug}/agendas`); // Separate folder for organization
 
       const response = await fetch('/api/upload-image', {
         // Re-using your existing upload endpoint

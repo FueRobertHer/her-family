@@ -3,6 +3,7 @@ import { db, MemorialContent, eq, and } from 'astro:db';
 import { requireAuth } from '../../../lib/auth';
 import { successResponse, errorResponse, validationError } from '../../../lib/api-response';
 import { memorialContentSchema, validateData } from '../../../lib/validation';
+import { getMemorialBySlug } from '../../../lib/memorial-context';
 
 export const prerender = false;
 
@@ -17,9 +18,22 @@ interface OrganizedContent {
 }
 
 // GET - Fetch all memorial content
-export const GET: APIRoute = async () => {
+export const GET: APIRoute = async ({ request }) => {
   try {
-    const content = await db.select().from(MemorialContent);
+    const memorialSlug = new URL(request.url).searchParams.get('memorial')?.trim();
+    if (!memorialSlug) {
+      return validationError('memorial query parameter is required');
+    }
+
+    const memorial = await getMemorialBySlug(memorialSlug);
+    if (!memorial) {
+      return errorResponse('Memorial not found', 404);
+    }
+
+    const content = await db
+      .select()
+      .from(MemorialContent)
+      .where(eq(MemorialContent.memorialId, memorial.id));
 
     // Organize content by section for easier use
     const organizedContent = content.reduce((acc, item) => {
@@ -56,13 +70,29 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       return validationError(validation.error, validation.details?.join(', '));
     }
 
+    const memorialSlug = typeof body.memorialSlug === 'string' ? body.memorialSlug.trim() : '';
+    if (!memorialSlug) {
+      return validationError('memorialSlug is required');
+    }
+
+    const memorial = await getMemorialBySlug(memorialSlug);
+    if (!memorial) {
+      return errorResponse('Memorial not found', 404);
+    }
+
     const { section, key, value, type } = validation.data;
 
     // Check if content already exists (optimized query)
     const existing = await db
       .select()
       .from(MemorialContent)
-      .where(and(eq(MemorialContent.section, section), eq(MemorialContent.key, key)))
+      .where(
+        and(
+          eq(MemorialContent.memorialId, memorial.id),
+          eq(MemorialContent.section, section),
+          eq(MemorialContent.key, key)
+        )
+      )
       .limit(1);
 
     if (existing.length > 0) {
@@ -78,6 +108,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     } else {
       // Insert new content
       await db.insert(MemorialContent).values({
+        memorialId: memorial.id,
         section,
         key,
         value: String(value),

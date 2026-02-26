@@ -1,0 +1,36 @@
+---
+// @ts-nocheck
+export const prerender = false;
+
+import Layout from '../../layouts/Layout.astro';
+import { db, Memorials, eq } from 'astro:db';
+
+const memorials = await db.select().from(Memorials).where(eq(Memorials.status, 'active'));
+---
+
+<Layout title="Memorials" description="Browse memorial pages">
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <header class="mb-10">
+      <h1 class="text-3xl sm:text-4xl font-display text-warm-gray-900">Memorials</h1>
+      <p class="mt-3 text-warm-gray-600">A place to remember and honor loved ones.</p>
+    </header>
+
+    {memorials.length === 0 ? (
+      <div class="bg-white border border-warm-gray-200 rounded-xl p-8 text-warm-gray-600">
+        No memorials available yet.
+      </div>
+    ) : (
+      <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {memorials.map((memorial) => (
+          <a
+            href={`/memorials/${memorial.slug}`}
+            class="block bg-white border border-warm-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow"
+          >
+            <h2 class="text-xl font-semibold text-warm-gray-900">{memorial.name}</h2>
+            <p class="mt-2 text-sm text-warm-gray-500">Open memorial</p>
+          </a>
+        ))}
+      </div>
+    )}
+  </main>
+</Layout>
