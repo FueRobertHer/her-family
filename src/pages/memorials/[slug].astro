@@ -275,7 +275,7 @@ if (memorial) {
           </AdminToolbar>
         )}
 
-        <div id="hero-section" class="relative">
+        <div id="hero-section" transition:name={`memorial-card-${slug}`} class="relative">
           <Hero
             name={memorialData.name}
             birthDate={memorialData.birthDate}

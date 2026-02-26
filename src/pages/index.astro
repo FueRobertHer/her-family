@@ -33,7 +33,7 @@ const homeDescription = getContent(
 ---
 
 <Layout title={homeTitle} brandLabel={homeTitle} description="A place to honor and remember loved ones.">
-  <main class="relative isolate overflow-hidden min-h-[calc(100vh-3.5rem)] bg-warm-gray-50 flex items-start">
+  <main class="relative overflow-hidden min-h-[calc(100vh-3.5rem)] bg-warm-gray-50 flex items-start">
     <div
       aria-hidden="true"
       class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(99,102,241,0.10),transparent_55%)]"
@@ -61,7 +61,10 @@ const homeDescription = getContent(
       </AdminToolbar>
     )}
 
-    <section class="relative z-10 w-full max-w-4xl mx-auto px-6 pt-28 sm:pt-32 pb-24 text-center">
+    <section
+      transition:name="home-hero"
+      class="relative z-10 w-full max-w-4xl mx-auto px-6 pt-28 sm:pt-32 pb-24 text-center"
+    >
       <p
         id="homeEyebrow"
         class="home-fade-1 text-xs sm:text-sm uppercase tracking-[0.14em] text-warm-gray-500"

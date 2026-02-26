@@ -1,5 +1,6 @@
 ---
 import Analytics from '@vercel/analytics/astro';
+import { ClientRouter } from 'astro:transitions';
 import Toast from '../components/Toast.astro';
 
 export interface Props {
@@ -64,6 +65,7 @@ const isAdminAuthenticated = Astro.cookies.get('admin_auth')?.value === 'true';
     <!-- Fallback ICO for legacy browsers -->
     <link rel="shortcut icon" href="/favicon.ico" />
     <title>{title}</title>
+    <ClientRouter />
 
     <!-- Preload self-hosted fonts for instant rendering -->
     <link
@@ -82,6 +84,24 @@ const isAdminAuthenticated = Astro.cookies.get('admin_auth')?.value === 'true';
     />
 
     <style>
+      :root {
+        --page-transition-duration: 260ms;
+        --page-transition-easing: cubic-bezier(0.22, 1, 0.36, 1);
+      }
+
+      ::view-transition-old(root),
+      ::view-transition-new(root) {
+        animation-duration: var(--page-transition-duration);
+        animation-timing-function: var(--page-transition-easing);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        ::view-transition-old(root),
+        ::view-transition-new(root) {
+          animation-duration: 1ms !important;
+        }
+      }
+
       /* Self-hosted fonts - preloaded with build, zero flicker */
       @font-face {
         font-family: 'Inter';
