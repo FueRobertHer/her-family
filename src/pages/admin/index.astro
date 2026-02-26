@@ -314,33 +314,34 @@ if (Astro.url.searchParams.get('logout') === 'true') {
           </div>
         </div>
 
-        <div id="editSlugModal" class="hidden fixed inset-0 z-50 bg-black/50 p-4 pt-20">
+        <div id="editMemorialModal" class="hidden fixed inset-0 z-50 bg-black/50 p-4 pt-20">
           <div class="w-full max-w-md mx-auto rounded-lg bg-white shadow-xl">
             <div class="border-b border-gray-200 px-6 py-4">
-              <h3 class="text-lg font-semibold text-gray-900">Edit Memorial Slug</h3>
+              <h3 class="text-lg font-semibold text-gray-900">Edit Memorial</h3>
             </div>
             <div class="px-6 py-4 space-y-3">
-              <p class="text-sm text-gray-700">
-                This changes the memorial URL.
-              </p>
-              <p class="text-sm text-gray-700">
-                Current: <span id="editSlugCurrentValue" class="font-semibold"></span>
-              </p>
-              <label for="editSlugInput" class="block text-sm font-medium text-gray-700">New slug</label>
+              <label for="editMemorialNameInput" class="block text-sm font-medium text-gray-700">Name</label>
               <input
-                id="editSlugInput"
+                id="editMemorialNameInput"
                 type="text"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md"
-                placeholder="new-memorial-slug"
+                placeholder="Memorial name"
               />
-              <p id="editSlugMessage" class="hidden text-sm text-red-600"></p>
+              <label for="editMemorialSlugInput" class="block text-sm font-medium text-gray-700">Slug</label>
+              <input
+                id="editMemorialSlugInput"
+                type="text"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md"
+                placeholder="memorial-slug"
+              />
+              <p id="editMemorialMessage" class="hidden text-sm text-red-600"></p>
             </div>
             <div class="flex justify-end gap-3 border-t border-gray-200 bg-gray-50 px-6 py-4">
-              <button id="cancelEditSlugBtn" class="px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-100">
+              <button id="cancelEditMemorialBtn" class="px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-100">
                 Cancel
               </button>
-              <button id="saveEditSlugBtn" class="px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700">
-                Save Slug
+              <button id="saveEditMemorialBtn" class="px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700">
+                Save Changes
               </button>
             </div>
           </div>
@@ -357,7 +358,7 @@ if (Astro.url.searchParams.get('logout') === 'true') {
       moderateComment: (id: number, action: string) => Promise<void>;
       toggleMemorialVisibility: (id: number, nextStatus: 'active' | 'hidden') => Promise<void>;
       requestMemorialDelete: (id: number) => void;
-      requestMemorialSlugEdit: (id: number) => void;
+      requestMemorialEdit: (id: number) => void;
     }
   }
 
@@ -399,7 +400,7 @@ if (Astro.url.searchParams.get('logout') === 'true') {
     let comments: Comment[] = [];
     let memorialList: Memorial[] = [];
     let pendingDeleteMemorial: Memorial | null = null;
-    let pendingSlugEditMemorial: Memorial | null = null;
+    let pendingEditMemorial: Memorial | null = null;
     let counts: Counts = { pending: 0, approved: 0, rejected: 0, total: 0 };
 
     // DOM elements
@@ -430,12 +431,12 @@ if (Astro.url.searchParams.get('logout') === 'true') {
     const deleteMemorialMessage = document.getElementById('deleteMemorialMessage');
     const cancelDeleteMemorialBtn = document.getElementById('cancelDeleteMemorialBtn');
     const confirmDeleteMemorialBtn = document.getElementById('confirmDeleteMemorialBtn') as HTMLButtonElement | null;
-    const editSlugModal = document.getElementById('editSlugModal');
-    const editSlugCurrentValue = document.getElementById('editSlugCurrentValue');
-    const editSlugInput = document.getElementById('editSlugInput') as HTMLInputElement | null;
-    const editSlugMessage = document.getElementById('editSlugMessage');
-    const cancelEditSlugBtn = document.getElementById('cancelEditSlugBtn');
-    const saveEditSlugBtn = document.getElementById('saveEditSlugBtn') as HTMLButtonElement | null;
+    const editMemorialModal = document.getElementById('editMemorialModal');
+    const editMemorialNameInput = document.getElementById('editMemorialNameInput') as HTMLInputElement | null;
+    const editMemorialSlugInput = document.getElementById('editMemorialSlugInput') as HTMLInputElement | null;
+    const editMemorialMessage = document.getElementById('editMemorialMessage');
+    const cancelEditMemorialBtn = document.getElementById('cancelEditMemorialBtn');
+    const saveEditMemorialBtn = document.getElementById('saveEditMemorialBtn') as HTMLButtonElement | null;
     let currentMemorialSlug = memorialSelect?.value || 'all';
 
     // Load comments
@@ -638,10 +639,10 @@ if (Astro.url.searchParams.get('logout') === 'true') {
                 ${memorial.status === 'active' ? 'Hide' : 'Show Publicly'}
               </button>
               <button
-                onclick="requestMemorialSlugEdit(${memorial.id})"
+                onclick="requestMemorialEdit(${memorial.id})"
                 class="px-3 py-1.5 rounded-md text-sm bg-indigo-600 text-white hover:bg-indigo-700"
               >
-                Edit Slug
+                Edit
               </button>
               <button
                 onclick="requestMemorialDelete(${memorial.id})"
@@ -716,43 +717,44 @@ if (Astro.url.searchParams.get('logout') === 'true') {
       deleteMemorialConfirmInput?.focus();
     };
 
-    function showEditSlugError(message: string) {
-      if (!editSlugMessage) return;
+    function showEditMemorialError(message: string) {
+      if (!editMemorialMessage) return;
       if (!message) {
-        editSlugMessage.classList.add('hidden');
-        editSlugMessage.textContent = '';
+        editMemorialMessage.classList.add('hidden');
+        editMemorialMessage.textContent = '';
         return;
       }
-      editSlugMessage.classList.remove('hidden');
-      editSlugMessage.textContent = message;
+      editMemorialMessage.classList.remove('hidden');
+      editMemorialMessage.textContent = message;
     }
 
-    function closeEditSlugModal() {
-      pendingSlugEditMemorial = null;
-      showEditSlugError('');
-      if (editSlugInput) editSlugInput.value = '';
-      editSlugModal?.classList.add('hidden');
-      saveEditSlugBtn?.removeAttribute('disabled');
-      if (saveEditSlugBtn) saveEditSlugBtn.textContent = 'Save Slug';
+    function closeEditMemorialModal() {
+      pendingEditMemorial = null;
+      showEditMemorialError('');
+      if (editMemorialNameInput) editMemorialNameInput.value = '';
+      if (editMemorialSlugInput) editMemorialSlugInput.value = '';
+      editMemorialModal?.classList.add('hidden');
+      saveEditMemorialBtn?.removeAttribute('disabled');
+      if (saveEditMemorialBtn) saveEditMemorialBtn.textContent = 'Save Changes';
     }
 
-    window.requestMemorialSlugEdit = function(id: number) {
+    window.requestMemorialEdit = function(id: number) {
       const memorial = memorialList.find((item) => item.id === id);
       if (!memorial) {
         alert('Memorial not found');
         return;
       }
-      pendingSlugEditMemorial = memorial;
-      if (editSlugCurrentValue) {
-        editSlugCurrentValue.textContent = memorial.slug;
+      pendingEditMemorial = memorial;
+      if (editMemorialNameInput) {
+        editMemorialNameInput.value = memorial.name;
       }
-      if (editSlugInput) {
-        editSlugInput.value = memorial.slug;
+      if (editMemorialSlugInput) {
+        editMemorialSlugInput.value = memorial.slug;
       }
-      showEditSlugError('');
-      editSlugModal?.classList.remove('hidden');
-      editSlugInput?.focus();
-      editSlugInput?.select();
+      showEditMemorialError('');
+      editMemorialModal?.classList.remove('hidden');
+      editMemorialNameInput?.focus();
+      editMemorialNameInput?.select();
     };
 
     function syncMemorialSelector() {
@@ -959,7 +961,7 @@ if (Astro.url.searchParams.get('logout') === 'true') {
     cancelCreateMemorialBtn?.addEventListener('click', closeCreateMemorialModal);
 
     cancelDeleteMemorialBtn?.addEventListener('click', closeDeleteModal);
-    cancelEditSlugBtn?.addEventListener('click', closeEditSlugModal);
+    cancelEditMemorialBtn?.addEventListener('click', closeEditMemorialModal);
 
     confirmDeleteMemorialBtn?.addEventListener('click', async () => {
       if (!pendingDeleteMemorial) {
@@ -1009,26 +1011,33 @@ if (Astro.url.searchParams.get('logout') === 'true') {
       }
     });
 
-    saveEditSlugBtn?.addEventListener('click', async () => {
-      if (!pendingSlugEditMemorial || !editSlugInput || !saveEditSlugBtn) {
-        closeEditSlugModal();
+    saveEditMemorialBtn?.addEventListener('click', async () => {
+      if (!pendingEditMemorial || !editMemorialNameInput || !editMemorialSlugInput || !saveEditMemorialBtn) {
+        closeEditMemorialModal();
         return;
       }
 
-      const nextSlug = editSlugInput.value.trim();
+      const nextName = editMemorialNameInput.value.trim();
+      const nextSlug = editMemorialSlugInput.value.trim();
+
+      if (!nextName) {
+        showEditMemorialError('Name is required');
+        return;
+      }
+
       if (!nextSlug) {
-        showEditSlugError('Slug is required');
+        showEditMemorialError('Slug is required');
         return;
       }
 
-      if (nextSlug === pendingSlugEditMemorial.slug) {
-        closeEditSlugModal();
+      if (nextName === pendingEditMemorial.name && nextSlug === pendingEditMemorial.slug) {
+        closeEditMemorialModal();
         return;
       }
 
-      saveEditSlugBtn.disabled = true;
-      saveEditSlugBtn.textContent = 'Saving...';
-      showEditSlugError('');
+      saveEditMemorialBtn.disabled = true;
+      saveEditMemorialBtn.textContent = 'Saving...';
+      showEditMemorialError('');
 
       try {
         const response = await fetch('/api/admin/memorials', {
@@ -1037,30 +1046,31 @@ if (Astro.url.searchParams.get('logout') === 'true') {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            id: pendingSlugEditMemorial.id,
+            id: pendingEditMemorial.id,
+            name: nextName,
             slug: nextSlug,
           }),
         });
         const result = await response.json();
         if (!result.success) {
-          throw new Error(result.error || 'Failed to update memorial slug');
+          throw new Error(result.error || 'Failed to update memorial');
         }
 
-        const previousSlug = pendingSlugEditMemorial.slug;
+        const previousSlug = pendingEditMemorial.slug;
         const updatedSlug = result.data?.slug || nextSlug;
         if (currentMemorialSlug === previousSlug) {
           currentMemorialSlug = updatedSlug;
         }
 
-        closeEditSlugModal();
-        showToast(result.message || 'Memorial slug updated');
+        closeEditMemorialModal();
+        showToast(result.message || 'Memorial updated');
         await loadMemorials();
         loadComments(currentTab);
       } catch (error) {
-        console.error('Error updating memorial slug:', error);
-        showEditSlugError(error instanceof Error ? error.message : 'Failed to update memorial slug');
-        saveEditSlugBtn.disabled = false;
-        saveEditSlugBtn.textContent = 'Save Slug';
+        console.error('Error updating memorial:', error);
+        showEditMemorialError(error instanceof Error ? error.message : 'Failed to update memorial');
+        saveEditMemorialBtn.disabled = false;
+        saveEditMemorialBtn.textContent = 'Save Changes';
       }
     });
 
