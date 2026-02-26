@@ -3,6 +3,7 @@ import { db, GalleryImages } from 'astro:db';
 import { requireAuth } from '../../../lib/auth';
 import { successResponse, errorResponse, validationError } from '../../../lib/api-response';
 import { galleryImageSchema, validateData } from '../../../lib/validation';
+import { getMemorialBySlug } from '../../../lib/memorial-context';
 
 export const prerender = false;
 
@@ -13,6 +14,15 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     if (authError) return authError;
 
     const body = await request.json();
+    const memorialSlug = typeof body.memorialSlug === 'string' ? body.memorialSlug.trim() : '';
+    if (!memorialSlug) {
+      return validationError('memorialSlug is required');
+    }
+
+    const memorial = await getMemorialBySlug(memorialSlug);
+    if (!memorial) {
+      return errorResponse('Memorial not found', 404);
+    }
 
     // Validate input with Zod
     const validation = validateData(galleryImageSchema, body);
@@ -24,6 +34,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     // Insert into database
     await db.insert(GalleryImages).values({
+      memorialId: memorial.id,
       imagePath,
       caption: caption || '',
       displayOrder: displayOrder || 999,

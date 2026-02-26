@@ -1,17 +1,19 @@
-# Memorial Page
+# Her Family App
 
-A memorial page built with Astro.js to honor and remember a loved one's life.
+A family-focused app built with Astro.js. It now supports multiple memorials under dedicated routes while expanding toward a broader family hub.
 
 ## Features
 
-- ✨ **Elegant Design**: Timeless, classy design with warm color palette
+- 🏠 **Family Hub**: Root route focused on family-wide navigation and future modules
+- 🕊️ **Multi-Memorial Support**: Dedicated routes for multiple memorial pages
+- ✨ **Elegant Design**: Timeless design with warm color palette
 - 📅 **Funeral Information**: Complete service details with dates, times, and locations
 - 🎠 **Carousel Gallery**: Auto-scrolling image carousel with infinite loop, touch/swipe support, and drag-and-drop reordering
 - 🖼️ **Lightbox View**: Full-screen image viewing with keyboard and touch navigation
 - 🎥 **Video Player**: Custom video player for memorial videos
 - 💬 **Comments System**: Interactive memory sharing with moderation and optional photo attachments
 - 💝 **Donation Integration**: Support for Venmo, Cash App, and Zelle
-- 🔐 **Admin Panel**: Secure authentication with comment moderation
+- 🔐 **Admin Panel**: Secure authentication with memorial-aware moderation
 - ✏️ **Inline Editing**: Edit all content directly on the page with live updates - no separate admin forms
 - ☁️ **Cloud Image Hosting**: Upload images directly via Cloudinary integration with captions
 - 🔄 **Drag-and-Drop Reordering**: Admins can reorder gallery images with intuitive drag-and-drop interface
@@ -48,6 +50,13 @@ A memorial page built with Astro.js to honor and remember a loved one's life.
    npm run dev
    ```
 6. Open your browser to `http://localhost:4321`
+
+### Core Routes
+
+- `/` - Family hub
+- `/memorials` - Memorial index
+- `/memorials/:slug` - Individual memorial page
+- `/admin` - Admin dashboard (supports `?memorial=<slug>` context)
 
 ### Development Scripts
 
@@ -100,10 +109,12 @@ You can also place images manually in `public/images/` and reference them in the
 
 Log in at `/admin` (default password: what you set in `.env`).
 
+Use the memorial selector in the header to choose which memorial context you want to manage.
+
 #### Inline Editing
 
 1. Log in as admin.
-2. Click "✏️ Edit Site Content (Inline)" to view the home page in Edit Mode.
+2. Click "✏️ Edit Content" to open the selected memorial page.
 3. Click the "✏️ Edit" buttons on any section to modify text, images, or visibility.
 4. Changes are saved instantly.
 
@@ -115,7 +126,7 @@ Log in at `/admin` (default password: what you set in `.env`).
 
 #### Comment Moderation
 
-Visit `/admin` to approve or reject memories shared by visitors.
+Visit `/admin` to approve or reject memories shared by visitors for the selected memorial.
 
 ## Deployment
 
@@ -147,8 +158,9 @@ src/
 ├── layouts/        # Page layouts
 ├── pages/
 │   ├── admin/      # Admin dashboard
+│   ├── memorials/  # Memorial list and detail routes
 │   ├── api/        # API endpoints
-│   └── index.astro # Main page
+│   └── index.astro # Family hub
 └── scripts/        # Client-side scripts (Gallery, Admin)
 
 db/                 # Database config & seed
@@ -160,6 +172,7 @@ db/                 # Database config & seed
 - **Images Not Loading**: Ensure your `CLOUDINARY_CLOUD_NAME` is correct.
 - **Node Version Error**: This project requires Node.js 18.20.8+. If you see version errors, use `nvm install 18` or update your Node version.
 - **"Unauthorized" Error**: Make sure you are logged in at `/admin` before trying to upload or edit content.
+- **Memorial not found**: Confirm the memorial slug exists in the `Memorials` table and is marked `active`.
 - **Changes Not Appearing**: Try a hard refresh (Ctrl+Shift+R or Cmd+Shift+R) to clear browser cache.
 
 ## License

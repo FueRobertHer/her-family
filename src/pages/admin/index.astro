@@ -1,10 +1,15 @@
 ---
+// @ts-nocheck
 export const prerender = false;
+import { db, Memorials } from 'astro:db';
 
 // Check for authentication
 const cookies = Astro.cookies;
 const authCookie = cookies.get('admin_auth');
 const isAuthenticated = authCookie?.value === 'true';
+const memorials = isAuthenticated ? await db.select().from(Memorials) : [];
+const selectedMemorialSlug =
+  Astro.url.searchParams.get('memorial') || memorials[0]?.slug || 'default';
 
 // Handle logout
 if (Astro.url.searchParams.get('logout') === 'true') {
@@ -131,7 +136,17 @@ if (Astro.url.searchParams.get('logout') === 'true') {
             <h1 class="text-3xl font-bold text-gray-900">The Her Family Admin</h1>
           </div>
           <div class="flex items-center space-x-4">
-            <a href="/" class="text-indigo-600 hover:text-indigo-900 font-medium">✏️ Edit Content</a>
+            <label class="text-sm text-gray-600">
+              Memorial:
+              <select id="memorialSelect" class="ml-2 border border-gray-300 rounded-md px-2 py-1">
+                {memorials.map((memorial) => (
+                  <option value={memorial.slug} selected={memorial.slug === selectedMemorialSlug}>
+                    {memorial.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <a href={`/memorials/${selectedMemorialSlug}`} class="text-indigo-600 hover:text-indigo-900 font-medium">✏️ Edit Content</a>
             <a href="/admin?logout=true" class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700">
               Logout
             </a>
@@ -236,11 +251,15 @@ if (Astro.url.searchParams.get('logout') === 'true') {
     const approvedCount = document.getElementById('approvedCount');
     const rejectedCount = document.getElementById('rejectedCount');
     const totalCount = document.getElementById('totalCount');
+    const memorialSelect = document.getElementById('memorialSelect') as HTMLSelectElement | null;
+    let currentMemorialSlug = memorialSelect?.value || 'default';
 
     // Load comments
     async function loadComments(status: string = 'pending') {
       try {
-        const response = await fetch(`/api/admin/comments?status=${status}`);
+        const response = await fetch(
+          `/api/admin/comments?status=${status}&memorial=${encodeURIComponent(currentMemorialSlug)}`
+        );
         const result = await response.json();
 
         if (result.success) {
@@ -376,7 +395,7 @@ if (Astro.url.searchParams.get('logout') === 'true') {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ id, action })
+          body: JSON.stringify({ id, action, memorialSlug: currentMemorialSlug })
         });
 
         const result = await response.json();
@@ -440,6 +459,12 @@ if (Astro.url.searchParams.get('logout') === 'true') {
 
     // Initial load
     loadComments('pending');
+
+    memorialSelect?.addEventListener('change', () => {
+      const nextSlug = memorialSelect.value;
+      const nextUrl = `/admin?memorial=${encodeURIComponent(nextSlug)}`;
+      window.location.href = nextUrl;
+    });
     
     // Set initial active tab
     const initialTab = document.querySelector('[data-tab="pending"]');

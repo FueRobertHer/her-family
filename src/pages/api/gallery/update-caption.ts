@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { db, GalleryImages, eq } from 'astro:db';
+import { db, GalleryImages, eq, and } from 'astro:db';
 import { requireAuth } from '../../../lib/auth';
 import {
   successResponse,
@@ -9,11 +9,13 @@ import {
 } from '../../../lib/api-response';
 import { validateData } from '../../../lib/validation';
 import { z } from 'zod';
+import { getMemorialBySlug } from '../../../lib/memorial-context';
 
 export const prerender = false;
 
 // Validation schema for updating caption
 const updateCaptionSchema = z.object({
+  memorialSlug: z.string().trim().min(1, 'Memorial slug is required'),
   imagePath: z.string().trim().min(1, 'Image path is required'),
   caption: z
     .string()
@@ -37,13 +39,17 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       return validationError(validation.error, validation.details?.join(', '));
     }
 
-    const { imagePath, caption } = validation.data;
+    const { imagePath, caption, memorialSlug } = validation.data;
+    const memorial = await getMemorialBySlug(memorialSlug);
+    if (!memorial) {
+      return notFoundError('Memorial');
+    }
 
     // Update the caption in the database
     const result = await db
       .update(GalleryImages)
       .set({ caption: caption || '' })
-      .where(eq(GalleryImages.imagePath, imagePath));
+      .where(and(eq(GalleryImages.imagePath, imagePath), eq(GalleryImages.memorialId, memorial.id)));
 
     // Check if any rows were affected
     if (!result.rowsAffected || result.rowsAffected === 0) {

@@ -2,6 +2,7 @@
 export interface Props {
   title?: string;
   memorialName?: string;
+  memorialSlug?: string;
   services: Array<{
     type: string; // "Viewing", "Funeral Service", "Burial", "Memorial Service", etc.
     date: string;
@@ -35,6 +36,7 @@ export interface Props {
 const {
   title = 'Service Information',
   memorialName = '',
+  memorialSlug = '',
   services,
   specialInstructions,
   flowersInfo,
@@ -252,7 +254,7 @@ function formatTime(timeString: string) {
             {service.agendaUrl && (
               <div class="mt-4 pt-4 border-t border-warm-gray-200">
                 <a
-                  href={`/agenda/${index}${memorialName ? `-${createSlug(memorialName)}` : ''}${service.type ? `-${createSlug(service.type)}` : ''}`}
+                  href={`/agenda/${index}${memorialName ? `-${createSlug(memorialName)}` : ''}${service.type ? `-${createSlug(service.type)}` : ''}${memorialSlug ? `?memorial=${encodeURIComponent(memorialSlug)}` : ''}`}
                   class="inline-flex items-center text-indigo-600 hover:text-indigo-800 font-medium transition-colors"
                   data-service-agenda-link={index}
                 >

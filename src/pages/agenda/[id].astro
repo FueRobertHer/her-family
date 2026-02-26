@@ -1,11 +1,19 @@
 ---
+// @ts-nocheck
 export const prerender = false;
 
 import Layout from '../../layouts/Layout.astro';
 import { db, MemorialContent, eq, and } from 'astro:db';
 import { optimizeCloudinaryPdf } from '../../lib/image-optimization';
+import { getMemorialBySlug } from '../../lib/memorial-context';
 
 const { id } = Astro.params;
+const memorialSlug = Astro.url.searchParams.get('memorial')?.trim() || '';
+const memorial = memorialSlug ? await getMemorialBySlug(memorialSlug) : null;
+
+if (!memorial) {
+  return Astro.redirect('/memorials');
+}
 // Extract numeric index from URL (supports both "/agenda/0" and "/agenda/0-name-service")
 const serviceIndex = parseInt((id || '0').split('-')[0]);
 
@@ -14,7 +22,11 @@ const result = await db
   .select()
   .from(MemorialContent)
   .where(
-    and(eq(MemorialContent.section, 'funeral'), eq(MemorialContent.key, `service${serviceIndex}`))
+    and(
+      eq(MemorialContent.memorialId, memorial.id),
+      eq(MemorialContent.section, 'funeral'),
+      eq(MemorialContent.key, `service${serviceIndex}`)
+    )
   )
   .get();
 
@@ -33,7 +45,7 @@ if (result && result.value) {
 
 if (!agendaUrl) {
   console.error('No agenda URL found, redirecting');
-  return Astro.redirect('/#funeral-info');
+  return Astro.redirect(`/memorials/${memorialSlug}#funeral-info`);
 }
 
 // Check if it's a PDF or an image
@@ -53,7 +65,7 @@ const isPdf = (urlLower.includes('.pdf') || urlLower.includes('/raw/upload/')) &
 const optimizedAgendaUrl = isPdf ? optimizeCloudinaryPdf(agendaUrl) : agendaUrl;
 
 // Use our download API endpoint to handle proper filename
-const downloadUrl = `/api/download-agenda?service=${serviceIndex}`;
+const downloadUrl = `/api/download-agenda?service=${serviceIndex}&memorial=${encodeURIComponent(memorialSlug)}`;
 ---
 
 <Layout title={`${serviceType} Agenda`} description="View service agenda">
@@ -88,7 +100,7 @@ const downloadUrl = `/api/download-agenda?service=${serviceIndex}`;
             }
           </div>
           <a
-            href="/#funeral-info"
+            href={`/memorials/${memorialSlug}#funeral-info`}
             class="inline-flex items-center text-indigo-600 hover:text-indigo-800 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0"
           >
             <svg

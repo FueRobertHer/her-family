@@ -1,8 +1,9 @@
 import type { APIRoute } from 'astro';
-import { db, Comments, eq } from 'astro:db';
+import { db, Comments, eq, and } from 'astro:db';
 import { requireAuth } from '../../../lib/auth';
 import { successResponse, errorResponse, validationError } from '../../../lib/api-response';
 import { commentActionSchema, validateData } from '../../../lib/validation';
+import { getMemorialBySlug } from '../../../lib/memorial-context';
 
 export const prerender = false;
 
@@ -14,12 +15,25 @@ export const GET: APIRoute = async ({ request, cookies }) => {
     if (authError) return authError;
 
     const url = new URL(request.url);
+    const memorialSlug = url.searchParams.get('memorial')?.trim();
     const status = url.searchParams.get('status'); // 'pending', 'approved', 'rejected', 'all'
     const limit = parseInt(url.searchParams.get('limit') || '50');
     const offset = parseInt(url.searchParams.get('offset') || '0');
 
+    if (!memorialSlug) {
+      return validationError('memorial query parameter is required');
+    }
+
+    const memorial = await getMemorialBySlug(memorialSlug);
+    if (!memorial) {
+      return errorResponse('Memorial not found', 404);
+    }
+
     // Fetch all comments once for efficiency
-    const allComments = await db.select().from(Comments);
+    const allComments = await db
+      .select()
+      .from(Comments)
+      .where(eq(Comments.memorialId, memorial.id));
 
     // Calculate counts
     const counts = {
@@ -61,6 +75,15 @@ export const PATCH: APIRoute = async ({ request, cookies }) => {
     if (authError) return authError;
 
     const body = await request.json();
+    const memorialSlug = typeof body.memorialSlug === 'string' ? body.memorialSlug.trim() : '';
+    if (!memorialSlug) {
+      return validationError('memorialSlug is required');
+    }
+
+    const memorial = await getMemorialBySlug(memorialSlug);
+    if (!memorial) {
+      return errorResponse('Memorial not found', 404);
+    }
 
     // Validate input with Zod
     const validation = validateData(commentActionSchema, {
@@ -79,14 +102,14 @@ export const PATCH: APIRoute = async ({ request, cookies }) => {
       await db
         .update(Comments)
         .set({ status: 'approved', updatedAt: now })
-        .where(eq(Comments.id, commentId));
+        .where(and(eq(Comments.id, commentId), eq(Comments.memorialId, memorial.id)));
 
       return successResponse(undefined, 'Comment approved successfully');
     } else if (action === 'reject') {
       await db
         .update(Comments)
         .set({ status: 'rejected', updatedAt: now })
-        .where(eq(Comments.id, commentId));
+        .where(and(eq(Comments.id, commentId), eq(Comments.memorialId, memorial.id)));
 
       return successResponse(undefined, 'Comment rejected (kept for audit)');
     } else {

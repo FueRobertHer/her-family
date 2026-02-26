@@ -88,6 +88,7 @@ export type CommentActionInput = z.infer<typeof commentActionSchema>;
 
 // Gallery update order validation schema
 export const galleryUpdateOrderSchema = z.object({
+  memorialSlug: z.string().trim().min(1, 'Memorial slug is required'),
   imagePath: z.string().trim().min(1, 'Image path is required'),
 
   displayOrder: z.number().int().min(0, 'Display order must be a non-negative integer'),

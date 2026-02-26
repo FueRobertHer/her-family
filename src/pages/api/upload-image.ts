@@ -14,11 +14,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File;
-    const folder = (formData.get('folder') as string) || 'memorial';
+    const folder = (formData.get('folder') as string) || 'memorials/default/uploads';
 
     // Check authentication unless it's a comment upload
     const isAuthenticated = cookies.get('admin_auth')?.value === 'true';
-    const isCommentUpload = folder === 'memorial/comments';
+    const isCommentUpload = /^memorials\/[^/]+\/comments$/.test(folder);
 
     if (!isAuthenticated && !isCommentUpload) {
       return new Response(JSON.stringify({ error: 'Unauthorized - Please log in as admin' }), {

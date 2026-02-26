@@ -1,14 +1,21 @@
 import type { APIRoute } from 'astro';
 import { db, MemorialContent, eq, and } from 'astro:db';
+import { getMemorialBySlug } from '../../lib/memorial-context';
 
 export const prerender = false;
 
 export const GET: APIRoute = async ({ request }) => {
   const url = new URL(request.url);
   const serviceIndex = url.searchParams.get('service');
+  const memorialSlug = url.searchParams.get('memorial')?.trim() || '';
 
-  if (!serviceIndex) {
-    return new Response('Missing service parameter', { status: 400 });
+  if (!serviceIndex || !memorialSlug) {
+    return new Response('Missing service or memorial parameter', { status: 400 });
+  }
+
+  const memorial = await getMemorialBySlug(memorialSlug);
+  if (!memorial) {
+    return new Response('Memorial not found', { status: 404 });
   }
 
   try {
@@ -18,6 +25,7 @@ export const GET: APIRoute = async ({ request }) => {
       .from(MemorialContent)
       .where(
         and(
+          eq(MemorialContent.memorialId, memorial.id),
           eq(MemorialContent.section, 'funeral'),
           eq(MemorialContent.key, `service${serviceIndex}`)
         )
