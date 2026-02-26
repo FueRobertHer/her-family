@@ -27,6 +27,7 @@ const memorials = isAdmin
         {memorials.map((memorial) => (
           <a
             href={`/memorials/${memorial.slug}`}
+            transition:name={`memorial-card-${memorial.slug}`}
             class="block bg-white border border-warm-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow"
           >
             <h2 class="text-xl font-semibold text-warm-gray-900 flex items-center gap-2">

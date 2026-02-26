@@ -133,3 +133,7 @@ if (document.readyState === 'loading') {
 } else {
   initAllAdminToolbars();
 }
+
+// Re-initialize toolbars after Astro client-side route transitions.
+document.addEventListener('astro:page-load', initAllAdminToolbars);
+document.addEventListener('astro:after-swap', initAllAdminToolbars);
