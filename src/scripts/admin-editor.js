@@ -7,12 +7,14 @@ let contentData = {};
 let memorialData = {};
 let memorialDataLoaded = false;
 let draggedItem = null; // For gallery reordering
-const memorialSlug =
-  window.__MEMORIAL_SLUG__ ||
-  (() => {
-    const match = window.location.pathname.match(/^\/memorials\/([^/]+)/);
-    return match ? decodeURIComponent(match[1]) : 'default';
-  })();
+
+function getActiveMemorialSlug() {
+  if (window.__MEMORIAL_SLUG__) {
+    return window.__MEMORIAL_SLUG__;
+  }
+  const match = window.location.pathname.match(/^\/memorials\/([^/]+)/);
+  return match ? decodeURIComponent(match[1]) : 'default';
+}
 
 // --- Helper Functions ---
 
@@ -30,11 +32,11 @@ function createSlug(text) {
 // Generate agenda URL with memorial name and service type
 function generateAgendaUrl(serviceIndex, serviceType) {
   const memorialName = memorialData?.name || '';
-  const memorialSlug = createSlug(memorialName);
+  const memorialNameSlug = createSlug(memorialName);
   const serviceSlug = createSlug(serviceType);
 
   let url = `/agenda/${serviceIndex}`;
-  if (memorialSlug) url += `-${memorialSlug}`;
+  if (memorialNameSlug) url += `-${memorialNameSlug}`;
   if (serviceSlug) url += `-${serviceSlug}`;
 
   return url;
@@ -930,7 +932,9 @@ async function openEditModal(section) {
   }
 
   try {
-    const response = await fetch(`/api/admin/content?memorial=${encodeURIComponent(memorialSlug)}`);
+    const response = await fetch(
+      `/api/admin/content?memorial=${encodeURIComponent(getActiveMemorialSlug())}`
+    );
     const result = await response.json();
 
     if (result.success) {
@@ -1515,7 +1519,7 @@ async function uploadImageForField(inputId) {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('folder', `memorials/${memorialSlug}/portraits`);
+      formData.append('folder', `memorials/${getActiveMemorialSlug()}/portraits`);
 
       const response = await fetch('/api/upload-image', {
         method: 'POST',
@@ -1576,7 +1580,7 @@ async function uploadVideoForField(inputId) {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('folder', `memorials/${memorialSlug}/videos`);
+      formData.append('folder', `memorials/${getActiveMemorialSlug()}/videos`);
 
       const response = await fetch('/api/upload-image', {
         method: 'POST',
@@ -1640,7 +1644,7 @@ async function saveAllModalContent() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          memorialSlug,
+          memorialSlug: getActiveMemorialSlug(),
           section: 'funeral',
           key: `service${serviceIndex}`,
           value: JSON.stringify(serviceData),
@@ -1712,7 +1716,7 @@ async function saveAllModalContent() {
       const reorderData = Array.from(reorderItems).map((item, idx) => ({
         imagePath: item.dataset.imageUrl,
         displayOrder: idx,
-        memorialSlug,
+        memorialSlug: getActiveMemorialSlug(),
       }));
 
       // We'll save the reorder data separately
@@ -1746,7 +1750,7 @@ async function saveAllModalContent() {
           fetch('/api/admin/content', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...update, memorialSlug }),
+            body: JSON.stringify({ ...update, memorialSlug: getActiveMemorialSlug() }),
           }).then((r) => r.json())
         )
       );
@@ -1847,7 +1851,7 @@ async function uploadAgendaForField(inputId) {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('folder', `memorials/${memorialSlug}/agendas`); // Separate folder for organization
+      formData.append('folder', `memorials/${getActiveMemorialSlug()}/agendas`); // Separate folder for organization
 
       const response = await fetch('/api/upload-image', {
         // Re-using your existing upload endpoint
@@ -1886,9 +1890,17 @@ window.uploadAgendaForField = uploadAgendaForField;
 window.saveAllModalContent = saveAllModalContent;
 window.recheckBiographyTruncation = recheckBiographyTruncation;
 
-// Initialize when window loads
-window.addEventListener('load', function () {
+function initAdminEditor() {
+  const memorialDataScript = document.getElementById('memorial-data');
+  if (!memorialDataScript || memorialDataScript.dataset.initialized === 'true') {
+    return;
+  }
+  memorialDataScript.dataset.initialized = 'true';
+
   const editModeToggle = document.getElementById('editModeToggle');
+
+  memorialData = {};
+  memorialDataLoaded = false;
 
   // Try to load immediately
   loadMemorialData();
@@ -1918,7 +1930,16 @@ window.addEventListener('load', function () {
   }
 
   // Admin toolbar drag/minimize behavior is now shared via src/scripts/admin-toolbar.js
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initAdminEditor);
+} else {
+  initAdminEditor();
+}
+
+document.addEventListener('astro:page-load', initAdminEditor);
+document.addEventListener('astro:after-swap', initAdminEditor);
 
 // Close modal on Escape key
 document.addEventListener('keydown', (e) => {

@@ -1,7 +1,15 @@
-const dataScript = document.getElementById('home-editor-data');
-if (!dataScript) {
-  // Home editor is only rendered for authenticated admins.
-} else {
+function initHomeEditor() {
+  const dataScript = document.getElementById('home-editor-data');
+  if (!dataScript) {
+    // Home editor is only rendered for authenticated admins.
+    return;
+  }
+
+  if (dataScript.dataset.initialized === 'true') {
+    return;
+  }
+  dataScript.dataset.initialized = 'true';
+
   const initial = JSON.parse(dataScript.textContent || '{}');
   const memorialSlug = initial.memorialSlug;
 
@@ -110,3 +118,12 @@ if (!dataScript) {
     if (event.target === modal) setModalVisibility(false);
   });
 }
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initHomeEditor);
+} else {
+  initHomeEditor();
+}
+
+document.addEventListener('astro:page-load', initHomeEditor);
+document.addEventListener('astro:after-swap', initHomeEditor);
