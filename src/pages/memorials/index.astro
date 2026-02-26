@@ -5,7 +5,10 @@ export const prerender = false;
 import Layout from '../../layouts/Layout.astro';
 import { db, Memorials, eq } from 'astro:db';
 
-const memorials = await db.select().from(Memorials).where(eq(Memorials.status, 'active'));
+const isAdmin = Astro.cookies.get('admin_auth')?.value === 'true';
+const memorials = isAdmin
+  ? await db.select().from(Memorials)
+  : await db.select().from(Memorials).where(eq(Memorials.status, 'active'));
 ---
 
 <Layout title="Memorials" description="Browse memorial pages">
@@ -26,8 +29,17 @@ const memorials = await db.select().from(Memorials).where(eq(Memorials.status, '
             href={`/memorials/${memorial.slug}`}
             class="block bg-white border border-warm-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow"
           >
-            <h2 class="text-xl font-semibold text-warm-gray-900">{memorial.name}</h2>
-            <p class="mt-2 text-sm text-warm-gray-500">Open memorial</p>
+            <h2 class="text-xl font-semibold text-warm-gray-900 flex items-center gap-2">
+              <span>{memorial.name}</span>
+              {isAdmin && memorial.status !== 'active' && (
+                <span class="inline-flex items-center rounded-full bg-gray-200 px-2 py-0.5 text-xs text-gray-700">
+                  Hidden
+                </span>
+              )}
+            </h2>
+            <p class="mt-2 text-sm text-warm-gray-500">
+              {isAdmin && memorial.status !== 'active' ? 'Open hidden memorial' : 'Open memorial'}
+            </p>
           </a>
         ))}
       </div>

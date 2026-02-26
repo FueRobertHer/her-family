@@ -9,7 +9,7 @@ const authCookie = cookies.get('admin_auth');
 const isAuthenticated = authCookie?.value === 'true';
 const memorials = isAuthenticated ? await db.select().from(Memorials) : [];
 const selectedMemorialSlug =
-  Astro.url.searchParams.get('memorial') || memorials[0]?.slug || 'default';
+  Astro.url.searchParams.get('memorial') || 'all';
 
 // Handle logout
 if (Astro.url.searchParams.get('logout') === 'true') {
@@ -30,6 +30,26 @@ if (Astro.url.searchParams.get('logout') === 'true') {
   </style>
 </head>
 <body class="bg-gray-50">
+  <header class="sticky top-0 z-40 border-b border-gray-200/80 bg-white/90 backdrop-blur-sm">
+    <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+      <nav class="flex h-14 items-center justify-between" aria-label="Primary">
+        <a href="/" class="text-lg font-semibold text-gray-900 hover:text-gray-700 transition-colors">
+          The Her Family
+        </a>
+        <div class="flex items-center gap-2 sm:gap-3">
+          <a href="/" class="rounded-md px-3 py-1.5 text-sm transition-colors text-gray-700 hover:bg-gray-100">
+            Home
+          </a>
+          <a href="/memorials" class="rounded-md px-3 py-1.5 text-sm transition-colors text-gray-700 hover:bg-gray-100">
+            Memorials
+          </a>
+          <a href="/admin?logout=true" class="rounded-md px-3 py-1.5 text-sm transition-colors bg-red-600 text-white hover:bg-red-700">
+            Logout
+          </a>
+        </div>
+      </nav>
+    </div>
+  </header>
 
 {!isAuthenticated ? (
   <div class="min-h-screen flex items-center justify-center">
@@ -128,17 +148,34 @@ if (Astro.url.searchParams.get('logout') === 'true') {
   </div>
 ) : (
   <div class="min-h-screen bg-gray-50">
-    {/* Admin Dashboard */}
-    <header class="bg-white shadow">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between items-center py-6">
-          <div>
-            <h1 class="text-3xl font-bold text-gray-900">The Her Family Admin</h1>
-          </div>
-          <div class="flex items-center space-x-4">
+    {/* Main Content */}
+    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+      <div class="bg-white shadow rounded-lg mb-6">
+        <div class="border-b border-gray-200 px-6">
+          <nav class="-mb-px flex space-x-8 overflow-x-auto" aria-label="Admin sections">
+            <button
+              class="admin-section-tab border-indigo-500 text-indigo-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
+              data-section="comments"
+            >
+              Comments
+            </button>
+            <button
+              class="admin-section-tab border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
+              data-section="memorials"
+            >
+              Memorials
+            </button>
+          </nav>
+        </div>
+      </div>
+
+      <section id="commentsSection">
+        <div class="bg-white shadow rounded-lg mb-6">
+          <div class="px-6 py-4 flex items-center gap-4">
             <label class="text-sm text-gray-600">
               Memorial:
               <select id="memorialSelect" class="ml-2 border border-gray-300 rounded-md px-2 py-1">
+                <option value="all" selected={selectedMemorialSlug === 'all'}>All memorials</option>
                 {memorials.map((memorial) => (
                   <option value={memorial.slug} selected={memorial.slug === selectedMemorialSlug}>
                     {memorial.name}
@@ -146,66 +183,169 @@ if (Astro.url.searchParams.get('logout') === 'true') {
                 ))}
               </select>
             </label>
-            <a href={`/memorials/${selectedMemorialSlug}`} class="text-indigo-600 hover:text-indigo-900 font-medium">✏️ Edit Content</a>
-            <a href="/admin?logout=true" class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700">
-              Logout
-            </a>
           </div>
         </div>
-      </div>
-    </header>
-    {/* Main Content */}
-    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-      {/* Filter Tabs */}
-      <div class="bg-white shadow rounded-lg mb-6">
-        <div class="border-b border-gray-200">
-          <nav class="-mb-px flex space-x-8 px-6 overflow-x-auto" aria-label="Tabs">
-            <button
-              class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center"
-              data-tab="pending"
-            >
-              Pending Review
-              <span id="pendingCount" class="ml-2 bg-yellow-100 text-yellow-800 py-0.5 px-2 rounded-full text-xs">0</span>
-            </button>
-            <button
-              class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center"
-              data-tab="approved"
-            >
-              Approved
-              <span id="approvedCount" class="ml-2 bg-green-100 text-green-800 py-0.5 px-2 rounded-full text-xs">0</span>
-            </button>
-            <button
-              class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center"
-              data-tab="rejected"
-            >
-              Rejected
-              <span id="rejectedCount" class="ml-2 bg-red-100 text-red-800 py-0.5 px-2 rounded-full text-xs">0</span>
-            </button>
-            <button
-              class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center"
-              data-tab="all"
-            >
-              All Comments
-              <span id="totalCount" class="ml-2 bg-gray-100 text-gray-800 py-0.5 px-2 rounded-full text-xs">0</span>
-            </button>
-          </nav>
-        </div>
-      </div>
-      {/* Comments List */}
-      <div class="bg-white shadow rounded-lg">
-        <div class="px-6 py-4 border-b border-gray-200">
-          <h3 class="text-lg leading-6 font-medium text-gray-900" id="sectionTitle">
-            Loading comments...
-          </h3>
-        </div>
-        <div id="commentsContainer" class="divide-y divide-gray-200">
-          {/* Comments will be loaded here */}
-          <div class="p-6 text-center">
-            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
-            <p class="text-gray-600 mt-2">Loading comments...</p>
+
+        {/* Filter Tabs */}
+        <div class="bg-white shadow rounded-lg mb-6">
+          <div class="border-b border-gray-200">
+            <nav class="-mb-px flex space-x-8 px-6 overflow-x-auto" aria-label="Comment status tabs">
+              <button
+                class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center"
+                data-tab="pending"
+              >
+                Pending Review
+                <span id="pendingCount" class="ml-2 bg-yellow-100 text-yellow-800 py-0.5 px-2 rounded-full text-xs">0</span>
+              </button>
+              <button
+                class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center"
+                data-tab="approved"
+              >
+                Approved
+                <span id="approvedCount" class="ml-2 bg-green-100 text-green-800 py-0.5 px-2 rounded-full text-xs">0</span>
+              </button>
+              <button
+                class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center"
+                data-tab="rejected"
+              >
+                Rejected
+                <span id="rejectedCount" class="ml-2 bg-red-100 text-red-800 py-0.5 px-2 rounded-full text-xs">0</span>
+              </button>
+              <button
+                class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center"
+                data-tab="all"
+              >
+                All Comments
+                <span id="totalCount" class="ml-2 bg-gray-100 text-gray-800 py-0.5 px-2 rounded-full text-xs">0</span>
+              </button>
+            </nav>
           </div>
         </div>
-      </div>
+
+        {/* Comments List */}
+        <div class="bg-white shadow rounded-lg">
+          <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg leading-6 font-medium text-gray-900" id="sectionTitle">
+              Loading comments...
+            </h3>
+          </div>
+          <div id="commentsContainer" class="divide-y divide-gray-200">
+            {/* Comments will be loaded here */}
+            <div class="p-6 text-center">
+              <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
+              <p class="text-gray-600 mt-2">Loading comments...</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="memorialsSection" class="hidden">
+        <div class="bg-white shadow rounded-lg">
+          <div class="px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <h3 class="text-lg font-medium text-gray-900">Manage Memorials</h3>
+              <p class="text-sm text-gray-600 mt-1">Set visibility, edit slug, or remove a memorial.</p>
+            </div>
+            <button id="openCreateMemorialModalBtn" class="px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700 text-sm">
+              Add Memorial
+            </button>
+          </div>
+          <div id="memorialsContainer" class="divide-y divide-gray-200">
+            <div class="p-6 text-center text-gray-500">Loading memorials...</div>
+          </div>
+        </div>
+
+        <div id="createMemorialModal" class="hidden fixed inset-0 z-50 bg-black/50 p-4 pt-20">
+          <div class="w-full max-w-md mx-auto rounded-lg bg-white shadow-xl">
+            <div class="border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+              <h3 class="text-lg font-semibold text-gray-900">Create Memorial</h3>
+              <button id="closeCreateMemorialModalBtn" class="text-gray-500 hover:text-gray-700 text-2xl leading-none" aria-label="Close">&times;</button>
+            </div>
+            <form id="createMemorialForm" class="px-6 py-4 space-y-4">
+              <div>
+                <label for="memorialName" class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                <input id="memorialName" type="text" required class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="e.g. John Doe Memorial" />
+              </div>
+              <div>
+                <label for="memorialSlug" class="block text-sm font-medium text-gray-700 mb-1">Slug (optional)</label>
+                <input id="memorialSlug" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="john-doe-memorial" />
+              </div>
+              <p id="memorialCreateMessage" class="hidden text-sm"></p>
+              <div class="flex justify-end gap-3 border-t border-gray-200 bg-gray-50 -mx-6 -mb-4 mt-5 px-6 py-4 rounded-b-lg">
+                <button type="button" id="cancelCreateMemorialBtn" class="px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-100">
+                  Cancel
+                </button>
+                <button type="submit" id="createMemorialBtn" class="px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700">
+                  Create Memorial
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div id="deleteMemorialModal" class="hidden fixed inset-0 z-50 bg-black/50 p-4 pt-20">
+          <div class="w-full max-w-md mx-auto rounded-lg bg-white shadow-xl">
+            <div class="border-b border-gray-200 px-6 py-4">
+              <h3 class="text-lg font-semibold text-gray-900">Delete Memorial</h3>
+            </div>
+            <div class="px-6 py-4 space-y-3">
+              <p class="text-sm text-gray-700">
+                This action permanently deletes the memorial and all related content, comments, and gallery items.
+              </p>
+              <p class="text-sm text-gray-700">
+                Type <span id="deleteMemorialExpectedName" class="font-semibold"></span> to confirm.
+              </p>
+              <input
+                id="deleteMemorialConfirmInput"
+                type="text"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md"
+                placeholder="Type memorial name exactly"
+              />
+              <p id="deleteMemorialMessage" class="hidden text-sm text-red-600"></p>
+            </div>
+            <div class="flex justify-end gap-3 border-t border-gray-200 bg-gray-50 px-6 py-4">
+              <button id="cancelDeleteMemorialBtn" class="px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-100">
+                Cancel
+              </button>
+              <button id="confirmDeleteMemorialBtn" class="px-4 py-2 rounded-md bg-red-600 text-white hover:bg-red-700">
+                Delete Memorial
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div id="editSlugModal" class="hidden fixed inset-0 z-50 bg-black/50 p-4 pt-20">
+          <div class="w-full max-w-md mx-auto rounded-lg bg-white shadow-xl">
+            <div class="border-b border-gray-200 px-6 py-4">
+              <h3 class="text-lg font-semibold text-gray-900">Edit Memorial Slug</h3>
+            </div>
+            <div class="px-6 py-4 space-y-3">
+              <p class="text-sm text-gray-700">
+                This changes the memorial URL.
+              </p>
+              <p class="text-sm text-gray-700">
+                Current: <span id="editSlugCurrentValue" class="font-semibold"></span>
+              </p>
+              <label for="editSlugInput" class="block text-sm font-medium text-gray-700">New slug</label>
+              <input
+                id="editSlugInput"
+                type="text"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md"
+                placeholder="new-memorial-slug"
+              />
+              <p id="editSlugMessage" class="hidden text-sm text-red-600"></p>
+            </div>
+            <div class="flex justify-end gap-3 border-t border-gray-200 bg-gray-50 px-6 py-4">
+              <button id="cancelEditSlugBtn" class="px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-100">
+                Cancel
+              </button>
+              <button id="saveEditSlugBtn" class="px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700">
+                Save Slug
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
     </main>
   </div>
 )}
@@ -215,6 +355,9 @@ if (Astro.url.searchParams.get('logout') === 'true') {
   declare global {
     interface Window {
       moderateComment: (id: number, action: string) => Promise<void>;
+      toggleMemorialVisibility: (id: number, nextStatus: 'active' | 'hidden') => Promise<void>;
+      requestMemorialDelete: (id: number) => void;
+      requestMemorialSlugEdit: (id: number) => void;
     }
   }
 
@@ -222,6 +365,9 @@ if (Astro.url.searchParams.get('logout') === 'true') {
   if (document.querySelector('.tab-button')) {
     interface Comment {
       id: number;
+      memorialId: number;
+      memorialName?: string;
+      memorialSlug?: string;
       name: string;
       email?: string;
       relationship?: string;
@@ -239,11 +385,27 @@ if (Astro.url.searchParams.get('logout') === 'true') {
       total: number;
     }
 
+    interface Memorial {
+      id: number;
+      slug: string;
+      name: string;
+      status: 'active' | 'hidden' | string;
+      createdAt: string;
+      updatedAt: string;
+    }
+
     let currentTab = 'pending';
+    let currentSection: 'comments' | 'memorials' = 'comments';
     let comments: Comment[] = [];
+    let memorialList: Memorial[] = [];
+    let pendingDeleteMemorial: Memorial | null = null;
+    let pendingSlugEditMemorial: Memorial | null = null;
     let counts: Counts = { pending: 0, approved: 0, rejected: 0, total: 0 };
 
     // DOM elements
+    const sectionTabs = document.querySelectorAll('.admin-section-tab');
+    const commentsSection = document.getElementById('commentsSection');
+    const memorialsSection = document.getElementById('memorialsSection');
     const tabButtons = document.querySelectorAll('.tab-button');
     const commentsContainer = document.getElementById('commentsContainer');
     const sectionTitle = document.getElementById('sectionTitle');
@@ -252,7 +414,29 @@ if (Astro.url.searchParams.get('logout') === 'true') {
     const rejectedCount = document.getElementById('rejectedCount');
     const totalCount = document.getElementById('totalCount');
     const memorialSelect = document.getElementById('memorialSelect') as HTMLSelectElement | null;
-    let currentMemorialSlug = memorialSelect?.value || 'default';
+    const memorialsContainer = document.getElementById('memorialsContainer');
+    const createMemorialModal = document.getElementById('createMemorialModal');
+    const openCreateMemorialModalBtn = document.getElementById('openCreateMemorialModalBtn');
+    const closeCreateMemorialModalBtn = document.getElementById('closeCreateMemorialModalBtn');
+    const cancelCreateMemorialBtn = document.getElementById('cancelCreateMemorialBtn');
+    const createMemorialForm = document.getElementById('createMemorialForm') as HTMLFormElement | null;
+    const memorialNameInput = document.getElementById('memorialName') as HTMLInputElement | null;
+    const memorialSlugInput = document.getElementById('memorialSlug') as HTMLInputElement | null;
+    const memorialCreateMessage = document.getElementById('memorialCreateMessage');
+    const createMemorialBtn = document.getElementById('createMemorialBtn') as HTMLButtonElement | null;
+    const deleteMemorialModal = document.getElementById('deleteMemorialModal');
+    const deleteMemorialExpectedName = document.getElementById('deleteMemorialExpectedName');
+    const deleteMemorialConfirmInput = document.getElementById('deleteMemorialConfirmInput') as HTMLInputElement | null;
+    const deleteMemorialMessage = document.getElementById('deleteMemorialMessage');
+    const cancelDeleteMemorialBtn = document.getElementById('cancelDeleteMemorialBtn');
+    const confirmDeleteMemorialBtn = document.getElementById('confirmDeleteMemorialBtn') as HTMLButtonElement | null;
+    const editSlugModal = document.getElementById('editSlugModal');
+    const editSlugCurrentValue = document.getElementById('editSlugCurrentValue');
+    const editSlugInput = document.getElementById('editSlugInput') as HTMLInputElement | null;
+    const editSlugMessage = document.getElementById('editSlugMessage');
+    const cancelEditSlugBtn = document.getElementById('cancelEditSlugBtn');
+    const saveEditSlugBtn = document.getElementById('saveEditSlugBtn') as HTMLButtonElement | null;
+    let currentMemorialSlug = memorialSelect?.value || 'all';
 
     // Load comments
     async function loadComments(status: string = 'pending') {
@@ -317,6 +501,11 @@ if (Astro.url.searchParams.get('logout') === 'true') {
             <div class="flex-1">
               <div class="flex items-center mb-2">
                 <h4 class="text-lg font-medium text-gray-900">${escapeHtml(comment.name)}</h4>
+                ${
+                  comment.memorialName
+                    ? `<span class="ml-2 px-2 py-1 text-xs bg-indigo-50 text-indigo-700 rounded">${escapeHtml(comment.memorialName)}</span>`
+                    : ''
+                }
                 ${comment.relationship ? `<span class="ml-2 px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded">${escapeHtml(comment.relationship)}</span>` : ''}
                 <span class="ml-2 px-2 py-1 text-xs rounded ${
                   comment.status === 'approved' ? 'bg-green-100 text-green-800' : 
@@ -380,6 +569,214 @@ if (Astro.url.searchParams.get('logout') === 'true') {
       }
     }
 
+    async function loadMemorials() {
+      if (!memorialsContainer) return;
+      memorialsContainer.innerHTML = '<div class="p-6 text-center text-gray-500">Loading memorials...</div>';
+
+      try {
+        const response = await fetch('/api/admin/memorials');
+        const result = await response.json();
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to load memorials');
+        }
+
+        memorialList = result.data || [];
+        renderMemorials();
+        syncMemorialSelector();
+      } catch (error) {
+        console.error('Error loading memorials:', error);
+        memorialsContainer.innerHTML = `
+          <div class="p-6 text-center text-red-600">
+            <p>Error loading memorials. Please refresh the page.</p>
+          </div>
+        `;
+      }
+    }
+
+    function renderMemorials() {
+      if (!memorialsContainer) return;
+
+      if (memorialList.length === 0) {
+        memorialsContainer.innerHTML = `
+          <div class="p-6 text-center text-gray-500">
+            <p>No memorials found yet.</p>
+          </div>
+        `;
+        return;
+      }
+
+      memorialsContainer.innerHTML = memorialList
+        .map(
+          (memorial) => `
+          <div class="p-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div class="flex items-center gap-2">
+                <h4 class="text-base font-medium text-gray-900">${escapeHtml(memorial.name)}</h4>
+                <span class="px-2 py-0.5 text-xs rounded ${
+                  memorial.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-700'
+                }">
+                  ${memorial.status === 'active' ? 'Public' : 'Hidden'}
+                </span>
+              </div>
+              <p class="text-sm text-gray-600 mt-1">/${escapeHtml(memorial.slug)}</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <a
+                href="/memorials/${encodeURIComponent(memorial.slug)}"
+                class="px-3 py-1.5 rounded-md text-sm border border-gray-300 text-gray-700 hover:bg-gray-50"
+              >
+                Edit Content
+              </a>
+              <button
+                onclick="toggleMemorialVisibility(${memorial.id}, '${memorial.status === 'active' ? 'hidden' : 'active'}')"
+                class="px-3 py-1.5 rounded-md text-sm ${
+                  memorial.status === 'active'
+                    ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    : 'bg-green-600 text-white hover:bg-green-700'
+                }"
+              >
+                ${memorial.status === 'active' ? 'Hide' : 'Show Publicly'}
+              </button>
+              <button
+                onclick="requestMemorialSlugEdit(${memorial.id})"
+                class="px-3 py-1.5 rounded-md text-sm bg-indigo-600 text-white hover:bg-indigo-700"
+              >
+                Edit Slug
+              </button>
+              <button
+                onclick="requestMemorialDelete(${memorial.id})"
+                class="px-3 py-1.5 rounded-md text-sm bg-red-600 text-white hover:bg-red-700"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        `
+        )
+        .join('');
+    }
+
+    window.toggleMemorialVisibility = async function(id: number, nextStatus: 'active' | 'hidden') {
+      try {
+        const response = await fetch('/api/admin/memorials', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ id, status: nextStatus }),
+        });
+        const result = await response.json();
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to update memorial visibility');
+        }
+
+        showToast(result.message || 'Memorial updated');
+        await loadMemorials();
+      } catch (error) {
+        console.error('Error updating memorial visibility:', error);
+        alert('Error updating memorial visibility. Please try again.');
+      }
+    };
+
+    function showDeleteError(message: string) {
+      if (!deleteMemorialMessage) return;
+      if (!message) {
+        deleteMemorialMessage.classList.add('hidden');
+        deleteMemorialMessage.textContent = '';
+        return;
+      }
+      deleteMemorialMessage.classList.remove('hidden');
+      deleteMemorialMessage.textContent = message;
+    }
+
+    function closeDeleteModal() {
+      pendingDeleteMemorial = null;
+      showDeleteError('');
+      if (deleteMemorialConfirmInput) deleteMemorialConfirmInput.value = '';
+      deleteMemorialModal?.classList.add('hidden');
+      confirmDeleteMemorialBtn?.removeAttribute('disabled');
+      if (confirmDeleteMemorialBtn) confirmDeleteMemorialBtn.textContent = 'Delete Memorial';
+    }
+
+    window.requestMemorialDelete = function(id: number) {
+      const memorial = memorialList.find((item) => item.id === id);
+      if (!memorial) {
+        alert('Memorial not found');
+        return;
+      }
+      pendingDeleteMemorial = memorial;
+      if (deleteMemorialExpectedName) {
+        deleteMemorialExpectedName.textContent = memorial.name;
+      }
+      if (deleteMemorialConfirmInput) {
+        deleteMemorialConfirmInput.value = '';
+      }
+      showDeleteError('');
+      deleteMemorialModal?.classList.remove('hidden');
+      deleteMemorialConfirmInput?.focus();
+    };
+
+    function showEditSlugError(message: string) {
+      if (!editSlugMessage) return;
+      if (!message) {
+        editSlugMessage.classList.add('hidden');
+        editSlugMessage.textContent = '';
+        return;
+      }
+      editSlugMessage.classList.remove('hidden');
+      editSlugMessage.textContent = message;
+    }
+
+    function closeEditSlugModal() {
+      pendingSlugEditMemorial = null;
+      showEditSlugError('');
+      if (editSlugInput) editSlugInput.value = '';
+      editSlugModal?.classList.add('hidden');
+      saveEditSlugBtn?.removeAttribute('disabled');
+      if (saveEditSlugBtn) saveEditSlugBtn.textContent = 'Save Slug';
+    }
+
+    window.requestMemorialSlugEdit = function(id: number) {
+      const memorial = memorialList.find((item) => item.id === id);
+      if (!memorial) {
+        alert('Memorial not found');
+        return;
+      }
+      pendingSlugEditMemorial = memorial;
+      if (editSlugCurrentValue) {
+        editSlugCurrentValue.textContent = memorial.slug;
+      }
+      if (editSlugInput) {
+        editSlugInput.value = memorial.slug;
+      }
+      showEditSlugError('');
+      editSlugModal?.classList.remove('hidden');
+      editSlugInput?.focus();
+      editSlugInput?.select();
+    };
+
+    function syncMemorialSelector() {
+      if (!memorialSelect) return;
+
+      const memorialOptions = memorialList.map((memorial) => {
+          const selected = memorial.slug === currentMemorialSlug ? 'selected' : '';
+          return `<option value="${escapeHtml(memorial.slug)}" ${selected}>${escapeHtml(memorial.name)}</option>`;
+        });
+      const allOptionSelected = currentMemorialSlug === 'all' ? 'selected' : '';
+      const options = [`<option value="all" ${allOptionSelected}>All memorials</option>`, ...memorialOptions].join('');
+
+      memorialSelect.innerHTML = options;
+
+      if (
+        currentMemorialSlug !== 'all' &&
+        !memorialList.some((memorial) => memorial.slug === currentMemorialSlug) &&
+        memorialList.length > 0
+      ) {
+        currentMemorialSlug = memorialList[0].slug;
+        memorialSelect.value = currentMemorialSlug;
+      }
+    }
+
     // Moderate comment
     window.moderateComment = async function(id: number, action: string) {
       // Only confirm for reject action, not for approve
@@ -403,16 +800,8 @@ if (Astro.url.searchParams.get('logout') === 'true') {
         if (result.success) {
           // Reload comments to reflect changes
           loadComments(currentTab);
-          
-          // Show success message
-          const message = document.createElement('div');
-          message.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50';
-          message.textContent = result.message;
-          document.body.appendChild(message);
-          
-          setTimeout(() => {
-            document.body.removeChild(message);
-          }, 3000);
+
+          showToast(result.message || 'Comment updated');
         } else {
           throw new Error(result.error);
         }
@@ -422,7 +811,7 @@ if (Astro.url.searchParams.get('logout') === 'true') {
       }
     };
 
-    // Tab switching
+    // Comment status tab switching
     tabButtons.forEach(button => {
       button.addEventListener('click', () => {
         const tab = (button as HTMLElement).dataset.tab;
@@ -437,6 +826,31 @@ if (Astro.url.searchParams.get('logout') === 'true') {
         
         currentTab = tab || 'pending';
         loadComments(tab || 'pending');
+      });
+    });
+
+    // Admin section switching
+    sectionTabs.forEach((button) => {
+      button.addEventListener('click', () => {
+        const nextSection = ((button as HTMLElement).dataset.section || 'comments') as 'comments' | 'memorials';
+        currentSection = nextSection;
+
+        sectionTabs.forEach((tab) => {
+          tab.classList.remove('border-indigo-500', 'text-indigo-600');
+          tab.classList.add('border-transparent', 'text-gray-500');
+        });
+        button.classList.remove('border-transparent', 'text-gray-500');
+        button.classList.add('border-indigo-500', 'text-indigo-600');
+
+        if (currentSection === 'comments') {
+          commentsSection?.classList.remove('hidden');
+          memorialsSection?.classList.add('hidden');
+          loadComments(currentTab);
+        } else {
+          commentsSection?.classList.add('hidden');
+          memorialsSection?.classList.remove('hidden');
+          loadMemorials();
+        }
       });
     });
 
@@ -457,16 +871,209 @@ if (Astro.url.searchParams.get('logout') === 'true') {
       });
     }
 
+    function showToast(message: string) {
+      const toast = document.createElement('div');
+      toast.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50';
+      toast.textContent = message;
+      document.body.appendChild(toast);
+
+      setTimeout(() => {
+        if (toast.parentNode) {
+          toast.parentNode.removeChild(toast);
+        }
+      }, 3000);
+    }
+
+    function setCreateMessage(text: string, isError: boolean) {
+      if (!memorialCreateMessage) return;
+      memorialCreateMessage.classList.remove('hidden', 'text-red-600', 'text-green-600');
+      memorialCreateMessage.classList.add(isError ? 'text-red-600' : 'text-green-600');
+      memorialCreateMessage.textContent = text;
+    }
+
+    function openCreateMemorialModal() {
+      createMemorialModal?.classList.remove('hidden');
+      setCreateMessage('', false);
+      memorialCreateMessage?.classList.add('hidden');
+      memorialNameInput?.focus();
+    }
+
+    function closeCreateMemorialModal() {
+      createMemorialModal?.classList.add('hidden');
+      setCreateMessage('', false);
+      memorialCreateMessage?.classList.add('hidden');
+      if (memorialNameInput) memorialNameInput.value = '';
+      if (memorialSlugInput) memorialSlugInput.value = '';
+      if (createMemorialBtn) {
+        createMemorialBtn.disabled = false;
+        createMemorialBtn.textContent = 'Create Memorial';
+      }
+    }
+
+    createMemorialForm?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!memorialNameInput || !createMemorialBtn) return;
+
+      const name = memorialNameInput.value.trim();
+      const slug = memorialSlugInput?.value.trim() || '';
+      if (!name) {
+        setCreateMessage('Name is required', true);
+        return;
+      }
+
+      createMemorialBtn.disabled = true;
+      createMemorialBtn.textContent = 'Creating...';
+      setCreateMessage('', false);
+      memorialCreateMessage?.classList.add('hidden');
+
+      try {
+        const response = await fetch('/api/admin/memorials', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ name, slug }),
+        });
+        const result = await response.json();
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to create memorial');
+        }
+
+        memorialNameInput.value = '';
+        if (memorialSlugInput) memorialSlugInput.value = '';
+        setCreateMessage(result.message || 'Memorial created successfully', false);
+        showToast(result.message || 'Memorial created successfully');
+        await loadMemorials();
+        closeCreateMemorialModal();
+      } catch (error) {
+        console.error('Error creating memorial:', error);
+        setCreateMessage(error instanceof Error ? error.message : 'Failed to create memorial', true);
+      } finally {
+        createMemorialBtn.disabled = false;
+        createMemorialBtn.textContent = 'Create Memorial';
+      }
+    });
+
+    openCreateMemorialModalBtn?.addEventListener('click', openCreateMemorialModal);
+    closeCreateMemorialModalBtn?.addEventListener('click', closeCreateMemorialModal);
+    cancelCreateMemorialBtn?.addEventListener('click', closeCreateMemorialModal);
+
+    cancelDeleteMemorialBtn?.addEventListener('click', closeDeleteModal);
+    cancelEditSlugBtn?.addEventListener('click', closeEditSlugModal);
+
+    confirmDeleteMemorialBtn?.addEventListener('click', async () => {
+      if (!pendingDeleteMemorial) {
+        closeDeleteModal();
+        return;
+      }
+      if (!deleteMemorialConfirmInput) return;
+
+      const confirmationName = deleteMemorialConfirmInput.value.trim();
+      if (confirmationName !== pendingDeleteMemorial.name) {
+        showDeleteError('Name does not match. Please type it exactly.');
+        return;
+      }
+
+      confirmDeleteMemorialBtn.disabled = true;
+      confirmDeleteMemorialBtn.textContent = 'Deleting...';
+      showDeleteError('');
+
+      try {
+        const response = await fetch('/api/admin/memorials', {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            id: pendingDeleteMemorial.id,
+            confirmationName,
+          }),
+        });
+        const result = await response.json();
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to delete memorial');
+        }
+
+        const deletedSlug = pendingDeleteMemorial.slug;
+        closeDeleteModal();
+        showToast(result.message || 'Memorial deleted successfully');
+        await loadMemorials();
+        if (currentMemorialSlug === deletedSlug) {
+          loadComments(currentTab);
+        }
+      } catch (error) {
+        console.error('Error deleting memorial:', error);
+        showDeleteError(error instanceof Error ? error.message : 'Failed to delete memorial');
+        confirmDeleteMemorialBtn.disabled = false;
+        confirmDeleteMemorialBtn.textContent = 'Delete Memorial';
+      }
+    });
+
+    saveEditSlugBtn?.addEventListener('click', async () => {
+      if (!pendingSlugEditMemorial || !editSlugInput || !saveEditSlugBtn) {
+        closeEditSlugModal();
+        return;
+      }
+
+      const nextSlug = editSlugInput.value.trim();
+      if (!nextSlug) {
+        showEditSlugError('Slug is required');
+        return;
+      }
+
+      if (nextSlug === pendingSlugEditMemorial.slug) {
+        closeEditSlugModal();
+        return;
+      }
+
+      saveEditSlugBtn.disabled = true;
+      saveEditSlugBtn.textContent = 'Saving...';
+      showEditSlugError('');
+
+      try {
+        const response = await fetch('/api/admin/memorials', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            id: pendingSlugEditMemorial.id,
+            slug: nextSlug,
+          }),
+        });
+        const result = await response.json();
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to update memorial slug');
+        }
+
+        const previousSlug = pendingSlugEditMemorial.slug;
+        const updatedSlug = result.data?.slug || nextSlug;
+        if (currentMemorialSlug === previousSlug) {
+          currentMemorialSlug = updatedSlug;
+        }
+
+        closeEditSlugModal();
+        showToast(result.message || 'Memorial slug updated');
+        await loadMemorials();
+        loadComments(currentTab);
+      } catch (error) {
+        console.error('Error updating memorial slug:', error);
+        showEditSlugError(error instanceof Error ? error.message : 'Failed to update memorial slug');
+        saveEditSlugBtn.disabled = false;
+        saveEditSlugBtn.textContent = 'Save Slug';
+      }
+    });
+
     // Initial load
-    loadComments('pending');
+    loadMemorials();
 
     memorialSelect?.addEventListener('change', () => {
       const nextSlug = memorialSelect.value;
-      const nextUrl = `/admin?memorial=${encodeURIComponent(nextSlug)}`;
-      window.location.href = nextUrl;
+      currentMemorialSlug = nextSlug;
+      loadComments(currentTab);
     });
     
-    // Set initial active tab
+    // Set initial active comment tab
     const initialTab = document.querySelector('[data-tab="pending"]');
     if (initialTab) {
       (initialTab as HTMLElement).click();

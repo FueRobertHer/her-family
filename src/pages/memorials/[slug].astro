@@ -10,20 +10,23 @@ import Gallery from '../../components/Gallery.astro';
 import VideoPlayer from '../../components/VideoPlayer.astro';
 import Donations from '../../components/Donations.astro';
 import Comments from '../../components/Comments.astro';
+import AdminToolbar from '../../components/AdminToolbar.astro';
+import AdminModalShell from '../../components/AdminModalShell.astro';
 import { db, MemorialContent, GalleryImages, Memorials, eq, and } from 'astro:db';
 
 const slug = Astro.params.slug || '';
-const memorial = await db
-  .select()
-  .from(Memorials)
-  .where(and(eq(Memorials.slug, slug), eq(Memorials.status, 'active')))
-  .get();
+const isAdmin = Astro.cookies.get('admin_auth')?.value === 'true';
+const memorial = isAdmin
+  ? await db.select().from(Memorials).where(eq(Memorials.slug, slug)).get()
+  : await db
+      .select()
+      .from(Memorials)
+      .where(and(eq(Memorials.slug, slug), eq(Memorials.status, 'active')))
+      .get();
 
 if (!memorial) {
   Astro.response.status = 404;
 }
-
-const isAdmin = Astro.cookies.get('admin_auth')?.value === 'true';
 
 interface OrganizedContent {
   [section: string]: {
@@ -263,31 +266,13 @@ if (memorial) {
 
       <main>
         {isAdmin && (
-          <div id="adminToolbar" class="fixed top-4 left-4 z-50 transition-all duration-300 group cursor-move">
-            <div class="bg-indigo-600 text-white rounded-lg shadow-lg flex items-center overflow-hidden transition-all duration-300 w-auto" id="adminToolbarContent">
-              <div class="p-3 cursor-move flex items-center justify-center hover:bg-indigo-700" title="Drag to move">
-                <span class="text-lg">✏️</span>
-              </div>
-
-              <div class="flex items-center pr-4 space-x-4 whitespace-nowrap overflow-hidden max-w-[300px] transition-all duration-300 group-hover:max-w-[300px] pointer-events-auto" id="adminToolbarControls" style="touch-action: auto;">
-                <span class="text-sm font-medium">Edit Mode</span>
-                <label class="relative inline-flex items-center cursor-pointer pointer-events-auto" style="touch-action: auto;">
-                  <input type="checkbox" id="editModeToggle" class="sr-only peer pointer-events-auto" checked style="touch-action: auto;">
-                  <div class="w-9 h-5 bg-indigo-800 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-white rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500 pointer-events-auto"></div>
-                </label>
-                <div class="h-4 w-px bg-white/30"></div>
-                <a href={`/admin?memorial=${slug}`} class="text-xs bg-white/20 hover:bg-white/30 px-2 py-1 rounded transition-colors pointer-events-auto" style="touch-action: auto;">
-                  Admin
-                </a>
-              </div>
-
-              <button id="minimizeToolbarBtn" class="p-2 hover:bg-indigo-700 text-white/70 hover:text-white" title="Minimize/Maximize">
-                <svg class="w-4 h-4 transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                </svg>
-              </button>
-            </div>
-          </div>
+          <AdminToolbar draggable={true} showMinimize={true}>
+            <span class="text-sm font-medium">Edit Mode</span>
+            <label class="relative inline-flex items-center cursor-pointer pointer-events-auto" style="touch-action: auto;">
+              <input type="checkbox" id="editModeToggle" class="sr-only peer pointer-events-auto" checked style="touch-action: auto;">
+              <div class="w-9 h-5 bg-indigo-800 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-white rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500 pointer-events-auto"></div>
+            </label>
+          </AdminToolbar>
         )}
 
         <div id="hero-section" class="relative">
@@ -452,19 +437,15 @@ if (memorial) {
       </main>
 
       {isAdmin && (
-        <div id="editModal" class="hidden fixed inset-0 bg-black/50 z-50 items-center justify-center p-4">
-          <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-              <h2 id="modalTitle" class="text-xl font-semibold text-gray-900">Edit Content</h2>
-              <button onclick="closeEditModal()" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
-            </div>
-            <div id="modalContent" class="p-6 space-y-4"></div>
-            <div class="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-4 flex justify-end space-x-3">
-              <button onclick="closeEditModal()" class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">Cancel</button>
-              <button onclick="saveAllModalContent()" class="px-4 py-2 text-white bg-indigo-600 rounded-md hover:bg-indigo-700">Save Changes</button>
-            </div>
-          </div>
-        </div>
+        <AdminModalShell
+          modalId="editModal"
+          title="Edit Content"
+          titleId="modalTitle"
+          bodyId="modalContent"
+          closeOnClick="closeEditModal()"
+          cancelOnClick="closeEditModal()"
+          saveOnClick="saveAllModalContent()"
+        />
       )}
 
       {isAdmin && (

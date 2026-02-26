@@ -5,9 +5,16 @@ import Toast from '../components/Toast.astro';
 export interface Props {
   title: string;
   description?: string;
+  brandLabel?: string;
 }
 
-const { title, description = 'A memorial page to honor and remember a beloved life' } = Astro.props;
+const {
+  title,
+  description = 'A memorial page to honor and remember a beloved life',
+  brandLabel = 'The Her Family',
+} = Astro.props;
+const pathname = Astro.url.pathname;
+const isAdminAuthenticated = Astro.cookies.get('admin_auth')?.value === 'true';
 ---
 
 <!doctype html>
@@ -178,6 +185,49 @@ const { title, description = 'A memorial page to honor and remember a beloved li
     </style>
   </head>
   <body class="bg-warm-gray-50 text-warm-gray-900 antialiased">
+    <header class="sticky top-0 z-40 border-b border-warm-gray-200/80 bg-white/90 backdrop-blur-sm">
+      <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+        <nav class="flex h-14 items-center justify-between" aria-label="Primary">
+          <a href="/" class="text-lg font-semibold text-warm-gray-900 hover:text-warm-gray-700 transition-colors">
+            {brandLabel}
+          </a>
+          <div class="flex items-center gap-2 sm:gap-3">
+            <a
+              href="/"
+              class={`rounded-md px-3 py-1.5 text-sm transition-colors ${
+                pathname === '/'
+                  ? 'bg-warm-gray-800 text-white'
+                  : 'text-warm-gray-700 hover:bg-warm-gray-100'
+              }`}
+            >
+              Home
+            </a>
+            <a
+              href="/memorials"
+              class={`rounded-md px-3 py-1.5 text-sm transition-colors ${
+                pathname.startsWith('/memorials')
+                  ? 'bg-warm-gray-800 text-white'
+                  : 'text-warm-gray-700 hover:bg-warm-gray-100'
+              }`}
+            >
+              Memorials
+            </a>
+            {isAdminAuthenticated && (
+              <a
+                href="/admin"
+                class={`rounded-md px-3 py-1.5 text-sm transition-colors ${
+                  pathname.startsWith('/admin')
+                    ? 'bg-indigo-600 text-white'
+                    : 'text-indigo-700 hover:bg-indigo-50'
+                }`}
+              >
+                Admin
+              </a>
+            )}
+          </div>
+        </nav>
+      </div>
+    </header>
     <slot />
     <Toast />
 

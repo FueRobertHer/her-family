@@ -1,61 +1,158 @@
 ---
-// @ts-nocheck
 export const prerender = false;
 
 import Layout from '../layouts/Layout.astro';
-import { db, Memorials, eq } from 'astro:db';
+import AdminToolbar from '../components/AdminToolbar.astro';
+import AdminModalShell from '../components/AdminModalShell.astro';
+import { db, Memorials, MemorialContent, eq, and } from 'astro:db';
 
-const memorials = await db.select().from(Memorials).where(eq(Memorials.status, 'active'));
-const featuredMemorial = memorials[0];
+const isAdmin = Astro.cookies.get('admin_auth')?.value === 'true';
+const defaultMemorial = await db.select().from(Memorials).where(eq(Memorials.status, 'active')).get();
+const memorialSlug = defaultMemorial?.slug || '';
+
+let homeContent: Record<string, string> = {};
+if (defaultMemorial) {
+  const rows = await db
+    .select()
+    .from(MemorialContent)
+    .where(and(eq(MemorialContent.memorialId, defaultMemorial.id), eq(MemorialContent.section, 'home')));
+
+  homeContent = rows.reduce<Record<string, string>>((acc, row) => {
+    acc[row.key] = row.value;
+    return acc;
+  }, {});
+}
+
+const getContent = (key: string, fallback: string) => homeContent[key] ?? fallback;
+const homeEyebrow = getContent('eyebrow', 'Welcome');
+const homeTitle = getContent('title', 'Welcome');
+const homeDescription = getContent(
+  'description',
+  'A quiet space to remember, reflect, and celebrate the lives that shaped our family.'
+);
 ---
 
-<Layout title="Her Family" description="Family hub for updates, memorials, and shared moments">
-  <main class="min-h-screen bg-warm-gray-50">
-    <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-12">
-      <p class="text-sm uppercase tracking-[0.18em] text-warm-gray-500">Her Family</p>
-      <h1 class="mt-3 font-display text-4xl sm:text-5xl text-warm-gray-900">Family Hub</h1>
-      <p class="mt-6 max-w-2xl text-lg text-warm-gray-600">
-        A shared home for family updates, important dates, resources, and memorials.
-      </p>
-      <div class="mt-8 flex flex-wrap gap-3">
-        <a
-          href="/memorials"
-          class="px-5 py-3 rounded-lg bg-warm-gray-800 text-white hover:bg-warm-gray-700 transition-colors"
-        >
-          Browse Memorials
-        </a>
-        {featuredMemorial && (
-          <a
-            href={`/memorials/${featuredMemorial.slug}`}
-            class="px-5 py-3 rounded-lg border border-warm-gray-300 text-warm-gray-700 hover:bg-white transition-colors"
-          >
-            Open Featured Memorial
-          </a>
-        )}
-      </div>
-    </section>
+<Layout title={homeTitle} brandLabel={homeTitle} description="A place to honor and remember loved ones.">
+  <main class="relative isolate overflow-hidden min-h-[calc(100vh-3.5rem)] bg-warm-gray-50 flex items-start">
+    <div
+      aria-hidden="true"
+      class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(99,102,241,0.10),transparent_55%)]"
+    ></div>
+    <div
+      aria-hidden="true"
+      class="pointer-events-none absolute -top-20 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-white/60 blur-3xl"
+    ></div>
 
-    <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
-      <div class="grid md:grid-cols-3 gap-6">
-        <a href="/memorials" class="bg-white border border-warm-gray-200 rounded-xl p-6 hover:shadow-md">
-          <h2 class="text-xl font-semibold text-warm-gray-900">Memorials</h2>
-          <p class="mt-2 text-warm-gray-600 text-sm">
-            Visit and manage memorial pages for loved ones.
-          </p>
-        </a>
-        <div class="bg-white border border-warm-gray-200 rounded-xl p-6">
-          <h2 class="text-xl font-semibold text-warm-gray-900">Events</h2>
-          <p class="mt-2 text-warm-gray-600 text-sm">
-            Coming soon: shared family calendar and service events.
-          </p>
-        </div>
-        <div class="bg-white border border-warm-gray-200 rounded-xl p-6">
-          <h2 class="text-xl font-semibold text-warm-gray-900">Resources</h2>
-          <p class="mt-2 text-warm-gray-600 text-sm">
-            Coming soon: documents, links, and support information.
-          </p>
-        </div>
-      </div>
+    {isAdmin && memorialSlug && (
+      <AdminToolbar
+        toolbarId="homeAdminToolbar"
+        contentId="homeAdminToolbarContent"
+        controlsId="homeAdminToolbarControls"
+        draggable={true}
+        showMinimize={true}
+        minimizeButtonId="homeMinimizeToolbarBtn"
+      >
+        <button
+          id="openHomeEditor"
+          class="text-xs bg-white/20 hover:bg-white/30 px-2 py-1 rounded transition-colors"
+        >
+          Edit Home
+        </button>
+      </AdminToolbar>
+    )}
+
+    <section class="relative z-10 w-full max-w-4xl mx-auto px-6 pt-28 sm:pt-32 pb-24 text-center">
+      <p
+        id="homeEyebrow"
+        class="home-fade-1 text-xs sm:text-sm uppercase tracking-[0.14em] text-warm-gray-500"
+      >
+        {homeEyebrow}
+      </p>
+      <h1
+        id="homeTitle"
+        class="home-fade-2 mt-5 font-display text-5xl sm:text-6xl leading-tight text-warm-gray-900"
+      >
+        {homeTitle}
+      </h1>
+      <p
+        id="homeDescription"
+        class="home-fade-3 mt-7 max-w-2xl mx-auto text-lg leading-8 text-warm-gray-600"
+      >
+        {homeDescription}
+      </p>
+      <div class="home-fade-3 mt-9 mx-auto h-px w-28 bg-gradient-to-r from-transparent via-warm-gray-300 to-transparent"></div>
     </section>
   </main>
+
+  {isAdmin && memorialSlug && (
+    <>
+      <script
+        id="home-editor-data"
+        type="application/json"
+        is:inline
+        set:html={JSON.stringify({ memorialSlug, homeEyebrow, homeTitle, homeDescription })}
+      />
+      <AdminModalShell
+        modalId="homeEditorModal"
+        title="Edit Home Content"
+        closeButtonId="closeHomeEditor"
+        cancelButtonId="cancelHomeEditor"
+        saveButtonId="saveHomeEditor"
+        saveLabel="Save"
+      >
+        <div>
+          <label for="home-eyebrow-input" class="block text-sm font-medium text-gray-700 mb-2">Top Label</label>
+          <input id="home-eyebrow-input" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900" />
+        </div>
+        <div>
+          <label for="home-title-input" class="block text-sm font-medium text-gray-700 mb-2">Title</label>
+          <input id="home-title-input" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900" />
+        </div>
+        <div>
+          <label for="home-description-input" class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+          <textarea id="home-description-input" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900"></textarea>
+        </div>
+        <p id="homeEditorMessage" class="text-sm hidden"></p>
+      </AdminModalShell>
+
+      <script>
+        import '../scripts/home-editor.js';
+      </script>
+    </>
+  )}
 </Layout>
+
+<style>
+  .home-fade-1,
+  .home-fade-2,
+  .home-fade-3 {
+    animation: homeFadeIn 520ms ease-out both;
+  }
+
+  .home-fade-2 {
+    animation-delay: 80ms;
+  }
+
+  .home-fade-3 {
+    animation-delay: 160ms;
+  }
+
+  @keyframes homeFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .home-fade-1,
+    .home-fade-2,
+    .home-fade-3 {
+      animation: none;
+    }
+  }
+</style>

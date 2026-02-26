@@ -1,0 +1,76 @@
+---
+export interface Props {
+  toolbarId?: string;
+  contentId?: string;
+  controlsId?: string;
+  draggable?: boolean;
+  showMinimize?: boolean;
+  minimizeButtonId?: string;
+  class?: string;
+}
+
+const {
+  toolbarId = 'adminToolbar',
+  contentId = 'adminToolbarContent',
+  controlsId = 'adminToolbarControls',
+  draggable = false,
+  showMinimize = false,
+  minimizeButtonId = 'minimizeToolbarBtn',
+  class: className = '',
+} = Astro.props;
+---
+
+<div
+  id={toolbarId}
+  data-admin-toolbar="true"
+  data-toolbar-draggable={String(draggable)}
+  data-toolbar-controls-id={controlsId}
+  data-toolbar-minimize-id={minimizeButtonId}
+  class={`fixed top-4 left-4 z-50 transition-all duration-300 ${draggable ? 'group cursor-move' : ''} ${className}`}
+>
+  <div
+    id={contentId}
+    class="bg-indigo-600 text-white rounded-lg shadow-lg flex items-center overflow-hidden transition-all duration-300 w-auto"
+  >
+    <div
+      class={`p-3 flex items-center justify-center hover:bg-indigo-700 ${draggable ? 'cursor-move' : ''}`}
+      title={draggable ? 'Drag to move' : 'Admin controls'}
+    >
+      <span class="text-lg">✏️</span>
+    </div>
+
+    <div
+      id={controlsId}
+    data-admin-toolbar-controls="true"
+      class={`flex items-center pr-4 space-x-4 whitespace-nowrap overflow-hidden pointer-events-auto ${
+        draggable ? 'max-w-[300px] transition-all duration-300 group-hover:max-w-[300px]' : ''
+      }`}
+      style="touch-action: auto;"
+    >
+      <slot />
+    </div>
+
+    {showMinimize && (
+      <button
+        id={minimizeButtonId}
+        data-admin-toolbar-minimize="true"
+        class="p-2 hover:bg-indigo-700 text-white/70 hover:text-white"
+        title="Minimize/Maximize"
+      >
+        <svg
+          class="w-4 h-4 transform transition-transform duration-300"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"
+          ></path>
+        </svg>
+      </button>
+    )}
+  </div>
+</div>
+
+<script>
+  import '../scripts/admin-toolbar.js';
+</script>

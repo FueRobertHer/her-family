@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { db, Comments, eq, and } from 'astro:db';
+import { db, Comments, Memorials, eq, and } from 'astro:db';
 import { requireAuth } from '../../../lib/auth';
 import { successResponse, errorResponse, validationError } from '../../../lib/api-response';
 import { commentActionSchema, validateData } from '../../../lib/validation';
@@ -20,20 +20,22 @@ export const GET: APIRoute = async ({ request, cookies }) => {
     const limit = parseInt(url.searchParams.get('limit') || '50');
     const offset = parseInt(url.searchParams.get('offset') || '0');
 
-    if (!memorialSlug) {
-      return validationError('memorial query parameter is required');
+    let allComments;
+    if (!memorialSlug || memorialSlug === 'all') {
+      allComments = await db.select().from(Comments);
+    } else {
+      const memorial = await getMemorialBySlug(memorialSlug);
+      if (!memorial) {
+        return errorResponse('Memorial not found', 404);
+      }
+      allComments = await db
+        .select()
+        .from(Comments)
+        .where(eq(Comments.memorialId, memorial.id));
     }
 
-    const memorial = await getMemorialBySlug(memorialSlug);
-    if (!memorial) {
-      return errorResponse('Memorial not found', 404);
-    }
-
-    // Fetch all comments once for efficiency
-    const allComments = await db
-      .select()
-      .from(Comments)
-      .where(eq(Comments.memorialId, memorial.id));
+    const memorialRecords = await db.select().from(Memorials);
+    const memorialMap = new Map(memorialRecords.map((memorial) => [memorial.id, memorial]));
 
     // Calculate counts
     const counts = {
@@ -55,7 +57,14 @@ export const GET: APIRoute = async ({ request, cookies }) => {
     );
 
     // Apply pagination
-    const comments = filteredComments.slice(offset, offset + limit);
+    const comments = filteredComments.slice(offset, offset + limit).map((comment) => {
+      const memorial = memorialMap.get(comment.memorialId);
+      return {
+        ...comment,
+        memorialName: memorial?.name || 'Unknown memorial',
+        memorialSlug: memorial?.slug || '',
+      };
+    });
 
     return successResponse({
       comments,
@@ -76,13 +85,13 @@ export const PATCH: APIRoute = async ({ request, cookies }) => {
 
     const body = await request.json();
     const memorialSlug = typeof body.memorialSlug === 'string' ? body.memorialSlug.trim() : '';
-    if (!memorialSlug) {
-      return validationError('memorialSlug is required');
-    }
-
-    const memorial = await getMemorialBySlug(memorialSlug);
-    if (!memorial) {
-      return errorResponse('Memorial not found', 404);
+    let memorialIdFilter: number | null = null;
+    if (memorialSlug && memorialSlug !== 'all') {
+      const memorial = await getMemorialBySlug(memorialSlug);
+      if (!memorial) {
+        return errorResponse('Memorial not found', 404);
+      }
+      memorialIdFilter = memorial.id;
     }
 
     // Validate input with Zod
@@ -99,17 +108,21 @@ export const PATCH: APIRoute = async ({ request, cookies }) => {
     const now = new Date().toISOString();
 
     if (action === 'approve') {
-      await db
+      const updateQuery = db
         .update(Comments)
-        .set({ status: 'approved', updatedAt: now })
-        .where(and(eq(Comments.id, commentId), eq(Comments.memorialId, memorial.id)));
+        .set({ status: 'approved', updatedAt: now });
+      await (memorialIdFilter !== null
+        ? updateQuery.where(and(eq(Comments.id, commentId), eq(Comments.memorialId, memorialIdFilter)))
+        : updateQuery.where(eq(Comments.id, commentId)));
 
       return successResponse(undefined, 'Comment approved successfully');
     } else if (action === 'reject') {
-      await db
+      const updateQuery = db
         .update(Comments)
-        .set({ status: 'rejected', updatedAt: now })
-        .where(and(eq(Comments.id, commentId), eq(Comments.memorialId, memorial.id)));
+        .set({ status: 'rejected', updatedAt: now });
+      await (memorialIdFilter !== null
+        ? updateQuery.where(and(eq(Comments.id, commentId), eq(Comments.memorialId, memorialIdFilter)))
+        : updateQuery.where(eq(Comments.id, commentId)));
 
       return successResponse(undefined, 'Comment rejected (kept for audit)');
     } else {
