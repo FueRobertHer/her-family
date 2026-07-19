@@ -12,7 +12,7 @@ export const commentSchema = z.object({
     .min(1, 'Name is required')
     .max(100, 'Name must be less than 100 characters'),
 
-  email: z.string().trim().email('Invalid email format').optional().or(z.literal('')),
+  email: z.email('Invalid email format').trim().optional().or(z.literal('')),
 
   relationship: z
     .string()
@@ -27,7 +27,7 @@ export const commentSchema = z.object({
     .min(1, 'Message is required')
     .max(1000, 'Message must be less than 1000 characters'),
 
-  imageUrl: z.string().url('Invalid image URL').optional().or(z.literal('')),
+  imageUrl: z.url('Invalid image URL').optional().or(z.literal('')),
 });
 
 export type CommentInput = z.infer<typeof commentSchema>;
@@ -80,7 +80,7 @@ export const commentActionSchema = z.object({
   id: z.number().int().positive('Invalid comment ID'),
 
   action: z.enum(['approve', 'reject'], {
-    errorMap: () => ({ message: 'Action must be "approve" or "reject"' }),
+    error: 'Action must be "approve" or "reject"',
   }),
 });
 
@@ -111,7 +111,7 @@ export function validateData<T>(
   }
 
   // Extract user-friendly error messages
-  const errorMessages = result.error.errors.map((err) => {
+  const errorMessages = result.error.issues.map((err) => {
     const path = err.path.join('.');
     return path ? `${path}: ${err.message}` : err.message;
   });
