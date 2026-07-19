@@ -335,7 +335,7 @@ function updateHighlightsSection(updates) {
         .map(
           (highlight) => `
         <div class="flex items-start space-x-3">
-          <div class="flex-shrink-0 w-2 h-2 bg-warm-gray-400 rounded-full mt-3"></div>
+          <div class="shrink-0 w-2 h-2 bg-warm-gray-400 rounded-full mt-3"></div>
           <p class="text-warm-gray-700">${escapeHtml(highlight.trim())}</p>
         </div>
       `
@@ -1034,7 +1034,7 @@ function renderModalContent(section) {
               class="min-w-0 flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900"
               placeholder="https://...">
             <button type="button" onclick="uploadAgendaForField('service-agendaUrl')"
-              class="flex-shrink-0 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors flex items-center whitespace-nowrap">
+              class="shrink-0 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors flex items-center whitespace-nowrap">
               <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
               </svg>
@@ -1347,7 +1347,7 @@ function renderModalContent(section) {
             ${value === 'true' || value === true ? 'checked' : ''}
             data-section="${dataSectionAttr}"
             data-key="${field.key}"
-            class="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+            class="w-5 h-5 text-indigo-600 border-gray-300 rounded-sm focus:ring-indigo-500"
           />
           <label for="${inputId}" class="ml-3 text-sm font-medium text-gray-700">
             ${escapeHtml(field.label)}

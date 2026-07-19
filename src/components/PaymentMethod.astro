@@ -78,8 +78,8 @@ const getIconColorClass = () => {
 
 const iconClass =
   icon === 'cashapp'
-    ? 'flex-shrink-0 w-16 h-16 flex items-center justify-center mr-4 bg-white rounded-lg p-2'
-    : 'flex-shrink-0 w-16 h-16 flex items-center justify-center mr-4';
+    ? 'shrink-0 w-16 h-16 flex items-center justify-center mr-4 bg-white rounded-lg p-2'
+    : 'shrink-0 w-16 h-16 flex items-center justify-center mr-4';
 
 // Generate dynamic data attributes
 const containerAttrs = { [`data-${dataPrefix}-container`]: '' };
@@ -114,7 +114,7 @@ const emailAttrs = { [`data-${dataPrefix}-email`]: '' };
       </button>
     ) : name === 'Zelle' ? (
       <div class="flex items-center p-6 border-2 border-warm-gray-200 rounded-lg h-32">
-        <div class="flex-shrink-0 w-16 h-16 flex items-center justify-center mr-4">
+        <div class="shrink-0 w-16 h-16 flex items-center justify-center mr-4">
           <svg class="w-full h-full" viewBox={getIconViewBox()} set:html={getIconSvg()} />
         </div>
         <div class="flex-1 min-w-0">

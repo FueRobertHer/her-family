@@ -21,7 +21,7 @@ const optimizedMainImage = optimizeCloudinaryUrl(mainImage, CloudinaryPresets.he
 ---
 
 <section
-  class="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-100 to-purple-100"
+  class="relative min-h-screen flex items-center justify-center bg-linear-to-br from-indigo-100 to-purple-100"
 >
   <!-- Background Image with Overlay -->
   <div class="absolute inset-0 z-0">
@@ -36,7 +36,7 @@ const optimizedMainImage = optimizeCloudinaryUrl(mainImage, CloudinaryPresets.he
       decoding="async"
       data-hero-background
     />
-    <div class="absolute inset-0 bg-gradient-to-t from-warm-gray-900/10 to-transparent"></div>
+    <div class="absolute inset-0 bg-linear-to-t from-warm-gray-900/10 to-transparent"></div>
   </div>
 
   <!-- Content -->
@@ -73,7 +73,7 @@ const optimizedMainImage = optimizeCloudinaryUrl(mainImage, CloudinaryPresets.he
       data-hero-dates
     >
       <time datetime={birthDate}>{new Date(birthDate).getFullYear()}</time>
-      <span class="w-8 h-1 bg-warm-gray-50 rounded-full shadow-sm"></span>
+      <span class="w-8 h-1 bg-warm-gray-50 rounded-full shadow-xs"></span>
       <time datetime={deathDate}>{new Date(deathDate).getFullYear()}</time>
     </div>
 
@@ -108,7 +108,7 @@ const optimizedMainImage = optimizeCloudinaryUrl(mainImage, CloudinaryPresets.he
           window.scrollBy({ top: window.innerHeight, behavior: 'smooth' }); 
         }
       "
-      class="animate-bounce p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors duration-300 backdrop-blur-sm"
+      class="animate-bounce p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors duration-300 backdrop-blur-xs"
       aria-label="Scroll to content"
     >
       <svg class="w-6 h-6 text-warm-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">

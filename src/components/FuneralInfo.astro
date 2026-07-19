@@ -96,7 +96,7 @@ function formatTime(timeString: string) {
       {
         services.map((service, index) => (
           <div
-            class="bg-warm-gray-50 rounded-xl p-8 shadow-sm border border-warm-gray-100 relative group"
+            class="bg-warm-gray-50 rounded-xl p-8 shadow-xs border border-warm-gray-100 relative group"
             data-service-index={index}
           >
             {isAdmin && (
@@ -114,7 +114,7 @@ function formatTime(timeString: string) {
               >
                 {service.type}
               </h3>
-              <div class="flex-shrink-0 w-12 h-12 bg-warm-gray-200 rounded-lg flex items-center justify-center">
+              <div class="shrink-0 w-12 h-12 bg-warm-gray-200 rounded-lg flex items-center justify-center">
                 <svg
                   class="w-6 h-6 text-warm-gray-600"
                   fill="none"
@@ -287,7 +287,7 @@ function formatTime(timeString: string) {
             {isAdmin && (
               <div class="absolute top-4 right-4 flex gap-2">
                 {!specialInstructionsVisible && (
-                  <span class="hidden-badge text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">
+                  <span class="hidden-badge text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded-sm">
                     Hidden
                   </span>
                 )}
@@ -326,7 +326,7 @@ function formatTime(timeString: string) {
             {isAdmin && (
               <div class="absolute top-4 right-4 flex gap-2">
                 {!flowersInfoVisible && (
-                  <span class="hidden-badge text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">
+                  <span class="hidden-badge text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded-sm">
                     Hidden
                   </span>
                 )}
@@ -367,7 +367,7 @@ function formatTime(timeString: string) {
           {isAdmin && (
             <div class="absolute top-4 right-4 flex gap-2">
               {!receptionVisible && (
-                <span class="hidden-badge text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded self-center">
+                <span class="hidden-badge text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded-sm self-center">
                   Hidden
                 </span>
               )}

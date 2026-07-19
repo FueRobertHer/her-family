@@ -270,7 +270,7 @@ if (memorial) {
             <span class="text-sm font-medium">Edit Mode</span>
             <label class="relative inline-flex items-center cursor-pointer pointer-events-auto" style="touch-action: auto;">
               <input type="checkbox" id="editModeToggle" class="sr-only peer pointer-events-auto" checked style="touch-action: auto;">
-              <div class="w-9 h-5 bg-indigo-800 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-white rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500 pointer-events-auto"></div>
+              <div class="w-9 h-5 bg-indigo-800 peer-focus:outline-hidden peer-focus:ring-2 peer-focus:ring-white rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500 pointer-events-auto"></div>
             </label>
           </AdminToolbar>
         )}
@@ -294,7 +294,7 @@ if (memorial) {
           )}
         </div>
 
-        <nav class="sticky top-0 z-40 bg-white/95 backdrop-blur-sm border-b border-warm-gray-200">
+        <nav class="sticky top-0 z-40 bg-white/95 backdrop-blur-xs border-b border-warm-gray-200">
           <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-center space-x-4 py-4 flex-wrap">
               {(memorialData.biographyVisible || isAdmin) && <a href="#biography" class="text-warm-gray-600 hover:text-warm-gray-900 font-medium transition-colors">Life Story</a>}
@@ -458,7 +458,7 @@ if (memorial) {
     <main class="min-h-[60vh] max-w-3xl mx-auto px-4 py-20 text-center">
       <h1 class="text-3xl font-semibold text-warm-gray-900">Memorial Not Found</h1>
       <p class="mt-4 text-warm-gray-600">This memorial does not exist or is no longer active.</p>
-      <a href="/memorials" class="inline-block mt-8 px-4 py-2 rounded bg-indigo-600 text-white">Back to Memorials</a>
+      <a href="/memorials" class="inline-block mt-8 px-4 py-2 rounded-sm bg-indigo-600 text-white">Back to Memorials</a>
     </main>
   )}
 </Layout>
