@@ -63,7 +63,7 @@ if (Astro.url.searchParams.get('logout') === 'true') {
   </style>
 </head>
 <body class="bg-warm-gray-50 text-warm-gray-900 antialiased">
-  <header class="sticky top-0 z-40 border-b border-warm-gray-200/80 bg-white/90 backdrop-blur-sm">
+  <header class="sticky top-0 z-40 border-b border-warm-gray-200/80 bg-white/90 backdrop-blur-xs">
     <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
       <nav class="flex h-14 items-center justify-between" aria-label="Primary">
         <a href="/" class="text-lg font-semibold text-warm-gray-900 hover:text-warm-gray-700 transition-colors">
@@ -113,7 +113,7 @@ if (Astro.url.searchParams.get('logout') === 'true') {
             name="password"
             type="password"
             required
-            class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+            class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
             placeholder="Admin password"
           />
         </div>
@@ -122,7 +122,7 @@ if (Astro.url.searchParams.get('logout') === 'true') {
           <button
             type="submit"
             id="loginButton"
-            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
           >
             Sign in
           </button>
@@ -192,7 +192,7 @@ if (Astro.url.searchParams.get('logout') === 'true') {
   <div class="min-h-screen bg-gray-50">
     {/* Main Content */}
     <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-      <div class="bg-white shadow rounded-lg mb-6">
+      <div class="bg-white shadow-sm rounded-lg mb-6">
         <div class="border-b border-gray-200 px-6">
           <nav class="-mb-px flex space-x-8 overflow-x-auto" aria-label="Admin sections">
             <button
@@ -212,7 +212,7 @@ if (Astro.url.searchParams.get('logout') === 'true') {
       </div>
 
       <section id="commentsSection">
-        <div class="bg-white shadow rounded-lg mb-6">
+        <div class="bg-white shadow-sm rounded-lg mb-6">
           <div class="px-6 py-4 flex items-center gap-4">
             <label class="text-sm text-gray-600">
               Memorial:
@@ -229,7 +229,7 @@ if (Astro.url.searchParams.get('logout') === 'true') {
         </div>
 
         {/* Filter Tabs */}
-        <div class="bg-white shadow rounded-lg mb-6">
+        <div class="bg-white shadow-sm rounded-lg mb-6">
           <div class="border-b border-gray-200">
             <nav class="-mb-px flex space-x-8 px-6 overflow-x-auto" aria-label="Comment status tabs">
               <button
@@ -265,7 +265,7 @@ if (Astro.url.searchParams.get('logout') === 'true') {
         </div>
 
         {/* Comments List */}
-        <div class="bg-white shadow rounded-lg">
+        <div class="bg-white shadow-sm rounded-lg">
           <div class="px-6 py-4 border-b border-gray-200">
             <h3 class="text-lg leading-6 font-medium text-gray-900" id="sectionTitle">
               Loading comments...
@@ -282,7 +282,7 @@ if (Astro.url.searchParams.get('logout') === 'true') {
       </section>
 
       <section id="memorialsSection" class="hidden">
-        <div class="bg-white shadow rounded-lg">
+        <div class="bg-white shadow-sm rounded-lg">
           <div class="px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <h3 class="text-lg font-medium text-gray-900">Manage Memorials</h3>
@@ -546,10 +546,10 @@ if (Astro.url.searchParams.get('logout') === 'true') {
                 <h4 class="text-lg font-medium text-gray-900">${escapeHtml(comment.name)}</h4>
                 ${
                   comment.memorialName
-                    ? `<span class="ml-2 px-2 py-1 text-xs bg-indigo-50 text-indigo-700 rounded">${escapeHtml(comment.memorialName)}</span>`
+                    ? `<span class="ml-2 px-2 py-1 text-xs bg-indigo-50 text-indigo-700 rounded-sm">${escapeHtml(comment.memorialName)}</span>`
                     : ''
                 }
-                ${comment.relationship ? `<span class="ml-2 px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded">${escapeHtml(comment.relationship)}</span>` : ''}
+                ${comment.relationship ? `<span class="ml-2 px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-sm">${escapeHtml(comment.relationship)}</span>` : ''}
                 <span class="ml-2 px-2 py-1 text-xs rounded ${
                   comment.status === 'approved' ? 'bg-green-100 text-green-800' : 
                   comment.status === 'rejected' ? 'bg-red-100 text-red-800' : 
@@ -572,31 +572,31 @@ if (Astro.url.searchParams.get('logout') === 'true') {
                 ${comment.updatedAt !== comment.createdAt ? ` • Updated: ${formatDate(comment.updatedAt)}` : ''}
               </p>
             </div>
-            <div class="ml-4 flex-shrink-0">
+            <div class="ml-4 shrink-0">
               ${comment.status === 'pending' ? `
                 <button
                   onclick="moderateComment(${comment.id}, 'approve')"
-                  class="mr-2 bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700"
+                  class="mr-2 bg-green-600 text-white px-3 py-1 rounded-sm text-sm hover:bg-green-700"
                 >
                   Approve
                 </button>
                 <button
                   onclick="moderateComment(${comment.id}, 'reject')"
-                  class="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700"
+                  class="bg-red-600 text-white px-3 py-1 rounded-sm text-sm hover:bg-red-700"
                 >
                   Reject
                 </button>
               ` : comment.status === 'approved' ? `
                 <button
                   onclick="moderateComment(${comment.id}, 'reject')"
-                  class="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700"
+                  class="bg-red-600 text-white px-3 py-1 rounded-sm text-sm hover:bg-red-700"
                 >
                   Reject
                 </button>
               ` : comment.status === 'rejected' ? `
                 <button
                   onclick="moderateComment(${comment.id}, 'approve')"
-                  class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700"
+                  class="bg-green-600 text-white px-3 py-1 rounded-sm text-sm hover:bg-green-700"
                 >
                   Approve
                 </button>
@@ -917,7 +917,7 @@ if (Astro.url.searchParams.get('logout') === 'true') {
 
     function showToast(message: string) {
       const toast = document.createElement('div');
-      toast.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50';
+      toast.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-sm shadow-lg z-50';
       toast.textContent = message;
       document.body.appendChild(toast);
 

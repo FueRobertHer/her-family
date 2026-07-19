@@ -89,7 +89,7 @@ const optimizedImages = images.map((img) => ({
           {
             optimizedImages.map((image, index) => (
               <div
-                class="carousel-item flex-shrink-0 w-full sm:w-1/2 lg:w-1/3 xl:w-1/4"
+                class="carousel-item shrink-0 w-full sm:w-1/2 lg:w-1/3 xl:w-1/4"
                 data-index={index}
                 data-image-url={image.src}
                 data-full-url={image.fullSrc}
@@ -175,11 +175,11 @@ const optimizedImages = images.map((img) => ({
 <!-- Lightbox Modal -->
 <div
   id="lightbox"
-  class="fixed inset-0 bg-black bg-opacity-95 z-[100] hidden items-center justify-center p-4"
+  class="fixed inset-0 bg-black bg-opacity-95 z-100 hidden items-center justify-center p-4"
 >
   <button
     id="closeLightbox"
-    class="absolute top-4 right-4 text-white hover:text-warm-gray-300 transition-colors p-2 z-[101] bg-black/50 rounded-full hover:bg-black/70"
+    class="absolute top-4 right-4 text-white hover:text-warm-gray-300 transition-colors p-2 z-101 bg-black/50 rounded-full hover:bg-black/70"
     aria-label="Close lightbox"
   >
     <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">

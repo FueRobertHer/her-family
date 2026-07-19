@@ -30,7 +30,7 @@ const {
     <div class="flex flex-col gap-16">
       <!-- Comment Form -->
       <div
-        class="w-full max-w-2xl mx-auto bg-warm-gray-50 rounded-xl p-8 shadow-sm border border-warm-gray-100"
+        class="w-full max-w-2xl mx-auto bg-warm-gray-50 rounded-xl p-8 shadow-xs border border-warm-gray-100"
       >
         <h3 class="text-xl font-semibold text-warm-gray-900 mb-6 text-center">Share a Memory</h3>
 
@@ -160,7 +160,7 @@ const {
           <div class="flex gap-2">
             <button
               id="prevCommentBtn"
-              class="p-2 rounded-full bg-white border border-warm-gray-200 text-warm-gray-600 hover:bg-warm-gray-50 hover:text-warm-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+              class="p-2 rounded-full bg-white border border-warm-gray-200 text-warm-gray-600 hover:bg-warm-gray-50 hover:text-warm-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-xs"
               aria-label="Previous memories"
               disabled
             >
@@ -174,7 +174,7 @@ const {
             </button>
             <button
               id="nextCommentBtn"
-              class="p-2 rounded-full bg-white border border-warm-gray-200 text-warm-gray-600 hover:bg-warm-gray-50 hover:text-warm-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+              class="p-2 rounded-full bg-white border border-warm-gray-200 text-warm-gray-600 hover:bg-warm-gray-50 hover:text-warm-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-xs"
               aria-label="Next memories"
             >
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -204,11 +204,11 @@ const {
   <!-- Comment Image Lightbox -->
   <div
     id="commentLightbox"
-    class="fixed inset-0 bg-black bg-opacity-95 z-[100] hidden items-center justify-center p-4"
+    class="fixed inset-0 bg-black bg-opacity-95 z-100 hidden items-center justify-center p-4"
   >
     <button
       id="closeCommentLightbox"
-      class="absolute top-4 right-4 text-white hover:text-warm-gray-300 transition-colors p-2 z-[101] bg-black/50 rounded-full hover:bg-black/70"
+      class="absolute top-4 right-4 text-white hover:text-warm-gray-300 transition-colors p-2 z-101 bg-black/50 rounded-full hover:bg-black/70"
       aria-label="Close lightbox"
     >
       <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -351,10 +351,10 @@ const {
     comments.forEach((comment) => {
       const slide = document.createElement('div');
       // Responsive width: 1 on mobile, 2 on tablet, 3 on desktop
-      slide.className = 'flex-shrink-0 w-full md:w-[calc(50%-12px)] xl:w-[calc(33.333%-16px)]';
+      slide.className = 'shrink-0 w-full md:w-[calc(50%-12px)] xl:w-[calc(33.333%-16px)]';
 
       slide.innerHTML = `
-        <div class="bg-white rounded-xl p-6 shadow-sm border border-warm-gray-100 h-full flex flex-col">
+        <div class="bg-white rounded-xl p-6 shadow-xs border border-warm-gray-100 h-full flex flex-col">
           <div class="flex items-start justify-between mb-4">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-full bg-warm-gray-100 flex items-center justify-center text-warm-gray-500 font-bold text-lg">
@@ -370,7 +370,7 @@ const {
             </time>
           </div>
           
-          <div class="flex-grow space-y-4">
+          <div class="grow space-y-4">
              ${
                comment.imageUrl
                  ? `

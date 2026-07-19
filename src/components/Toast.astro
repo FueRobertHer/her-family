@@ -5,7 +5,7 @@
 
 <div
   id="toast-container"
-  class="fixed top-4 right-4 z-[9999] flex flex-col gap-3 pointer-events-none"
+  class="fixed top-4 right-4 z-9999 flex flex-col gap-3 pointer-events-none"
 >
   <!-- Toast notifications will be inserted here -->
 </div>
@@ -85,14 +85,14 @@
 
     toast.innerHTML = `
       <div class="${bgColor} ${borderColor} border rounded-lg shadow-lg p-4 flex items-start gap-3 min-w-[300px] max-w-md">
-        <div class="${iconColor} flex-shrink-0">
+        <div class="${iconColor} shrink-0">
           ${icon}
         </div>
         <div class="flex-1">
           <p class="text-sm font-medium text-gray-900">${escapeHtml(message)}</p>
         </div>
         <button 
-          class="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors toast-close-btn"
+          class="shrink-0 text-gray-400 hover:text-gray-600 transition-colors toast-close-btn"
           aria-label="Close"
         >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
