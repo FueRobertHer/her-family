@@ -139,7 +139,7 @@ const {
             <p class="text-xs text-warm-gray-500 mt-1">Max 5MB. JPEG, PNG, WebP supported.</p>
           </div>
 
-          <div id="formMessage" class="hidden text-sm p-3 rounded-lg"></div>
+          <div id="formMessage" role="status" aria-live="polite" class="hidden text-sm p-3 rounded-lg"></div>
 
           <button
             type="submit"
@@ -204,7 +204,10 @@ const {
   <!-- Comment Image Lightbox -->
   <div
     id="commentLightbox"
-    class="fixed inset-0 bg-black bg-opacity-95 z-100 hidden items-center justify-center p-4"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Memory photo viewer"
+    class="fixed inset-0 bg-black/95 z-100 hidden items-center justify-center p-4"
   >
     <button
       id="closeCommentLightbox"

@@ -13,7 +13,10 @@ const titleId = `${id}-title`;
 
 <div
   id={containerId}
-  class="fixed inset-0 bg-black bg-opacity-90 z-100 hidden flex items-center justify-center p-4 transition-opacity duration-300 opacity-0 pointer-events-none"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Image viewer"
+  class="fixed inset-0 bg-black/90 z-100 hidden flex items-center justify-center p-4 transition-opacity duration-300 opacity-0 pointer-events-none"
 >
   <div
     id={contentId}

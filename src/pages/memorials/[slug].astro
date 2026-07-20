@@ -156,17 +156,18 @@ let memorialData: MemorialData = {
 };
 
 if (memorial) {
-  const contentRows = await db
-    .select()
-    .from(MemorialContent)
-    .where(eq(MemorialContent.memorialId, memorial.id));
-  const galleryRows = await db
-    .select()
-    .from(GalleryImages)
-    .where(eq(GalleryImages.memorialId, memorial.id))
-    .orderBy(asc(GalleryImages.displayOrder));
+  // Content and gallery are independent — fetch them concurrently to save a
+  // serial DB round-trip on every server-rendered page view. isActive is
+  // filtered in SQL rather than in JS.
+  const [contentRows, galleryImages] = await Promise.all([
+    db.select().from(MemorialContent).where(eq(MemorialContent.memorialId, memorial.id)),
+    db
+      .select()
+      .from(GalleryImages)
+      .where(and(eq(GalleryImages.memorialId, memorial.id), eq(GalleryImages.isActive, true)))
+      .orderBy(asc(GalleryImages.displayOrder)),
+  ]);
 
-  const galleryImages = galleryRows.filter((img) => img.isActive);
   const organizedContent = contentRows.reduce<OrganizedContent>((acc, item) => {
     if (!acc[item.section]) acc[item.section] = {};
     acc[item.section][item.key] = item.value;
