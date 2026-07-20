@@ -5,9 +5,12 @@ import Layout from '../layouts/Layout.astro';
 import AdminToolbar from '../components/AdminToolbar.astro';
 import AdminModalShell from '../components/AdminModalShell.astro';
 import { db, Memorials, MemorialContent, eq, and } from 'astro:db';
+import { isAuthenticated } from '../lib/auth';
+import { embedJson } from '../lib/embed-json';
 
-const isAdmin = Astro.cookies.get('admin_auth')?.value === 'true';
-const defaultMemorial = await db.select().from(Memorials).where(eq(Memorials.status, 'active')).get();
+const isAdmin = isAuthenticated(Astro.cookies);
+const activeMemorials = await db.select().from(Memorials).where(eq(Memorials.status, 'active'));
+const defaultMemorial = activeMemorials[0];
 const memorialSlug = defaultMemorial?.slug || '';
 
 let homeContent: Record<string, string> = {};
@@ -24,7 +27,8 @@ if (defaultMemorial) {
 }
 
 const getContent = (key: string, fallback: string) => homeContent[key] ?? fallback;
-const homeEyebrow = getContent('eyebrow', 'Welcome');
+// Eyebrow and title used to both default to "Welcome", reading like a bug.
+const homeEyebrow = getContent('eyebrow', 'In Loving Memory');
 const homeTitle = getContent('title', 'Welcome');
 const homeDescription = getContent(
   'description',
@@ -32,7 +36,7 @@ const homeDescription = getContent(
 );
 ---
 
-<Layout title={homeTitle} brandLabel={homeTitle} description="A place to honor and remember loved ones.">
+<Layout title={homeTitle} description="A place to honor and remember loved ones.">
   <main class="relative overflow-hidden min-h-[calc(100vh-3.5rem)] bg-warm-gray-50 flex items-start">
     <div
       aria-hidden="true"
@@ -84,6 +88,34 @@ const homeDescription = getContent(
         {homeDescription}
       </p>
       <div class="home-fade-3 mt-9 mx-auto h-px w-28 bg-linear-to-r from-transparent via-warm-gray-300 to-transparent"></div>
+
+      {activeMemorials.length > 0 && (
+        <div class="home-fade-3 mt-12 text-left">
+          <div class="grid gap-6 sm:grid-cols-2">
+            {activeMemorials.map((memorial) => (
+              <a
+                href={`/memorials/${memorial.slug}`}
+                transition:name={`memorial-card-${memorial.slug}`}
+                class="block bg-white border border-warm-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow"
+              >
+                <h2 class="text-xl font-semibold text-warm-gray-900">{memorial.name}</h2>
+                <p class="mt-2 text-sm text-warm-gray-500">Open memorial</p>
+              </a>
+            ))}
+          </div>
+          <div class="mt-8 text-center">
+            <a
+              href="/memorials"
+              class="inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium text-warm-gray-700 hover:bg-warm-gray-100 transition-colors"
+            >
+              View all memorials
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              </svg>
+            </a>
+          </div>
+        </div>
+      )}
     </section>
   </main>
 
@@ -93,7 +125,7 @@ const homeDescription = getContent(
         id="home-editor-data"
         type="application/json"
         is:inline
-        set:html={JSON.stringify({ memorialSlug, homeEyebrow, homeTitle, homeDescription })}
+        set:html={embedJson({ memorialSlug, homeEyebrow, homeTitle, homeDescription })}
       />
       <AdminModalShell
         modalId="homeEditorModal"

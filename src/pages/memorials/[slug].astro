@@ -1,5 +1,4 @@
 ---
-// @ts-nocheck
 export const prerender = false;
 
 import Layout from '../../layouts/Layout.astro';
@@ -12,10 +11,14 @@ import Donations from '../../components/Donations.astro';
 import Comments from '../../components/Comments.astro';
 import AdminToolbar from '../../components/AdminToolbar.astro';
 import AdminModalShell from '../../components/AdminModalShell.astro';
-import { db, MemorialContent, GalleryImages, Memorials, eq, and } from 'astro:db';
+import EditButton from '../../components/EditButton.astro';
+import { db, MemorialContent, GalleryImages, Memorials, eq, and, asc } from 'astro:db';
+import { isAuthenticated } from '../../lib/auth';
+import { embedJson } from '../../lib/embed-json';
+import type { Props as FuneralInfoProps } from '../../components/FuneralInfo.astro';
 
 const slug = Astro.params.slug || '';
-const isAdmin = Astro.cookies.get('admin_auth')?.value === 'true';
+const isAdmin = isAuthenticated(Astro.cookies);
 const memorial = isAdmin
   ? await db.select().from(Memorials).where(eq(Memorials.slug, slug)).get()
   : await db
@@ -32,6 +35,19 @@ interface OrganizedContent {
   [section: string]: {
     [key: string]: string;
   };
+}
+
+type ServiceInfo = FuneralInfoProps['services'][number];
+
+/** Parse a JSON content value without letting bad data crash the page render. */
+function parseJsonContent<T>(raw: string | undefined, label: string): T | null {
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as T;
+  } catch (error) {
+    console.error(`Invalid JSON in memorial content (${label}):`, error);
+    return null;
+  }
 }
 
 interface MemorialData {
@@ -72,7 +88,7 @@ interface MemorialData {
     visible: boolean;
     sectionTitle: string;
     subtitle: string;
-    services: any[];
+    services: ServiceInfo[];
     specialInstructionsVisible: boolean;
     flowersInfoVisible: boolean;
     receptionVisible: boolean;
@@ -147,7 +163,8 @@ if (memorial) {
   const galleryRows = await db
     .select()
     .from(GalleryImages)
-    .where(eq(GalleryImages.memorialId, memorial.id));
+    .where(eq(GalleryImages.memorialId, memorial.id))
+    .orderBy(asc(GalleryImages.displayOrder));
 
   const galleryImages = galleryRows.filter((img) => img.isActive);
   const organizedContent = contentRows.reduce<OrganizedContent>((acc, item) => {
@@ -159,15 +176,13 @@ if (memorial) {
   const getContent = (section: string, key: string, fallback: string) =>
     organizedContent[section]?.[key] ?? fallback;
 
-  const services = [];
+  const services: ServiceInfo[] = [];
   for (let i = 0; i < 10; i++) {
-    const serviceRaw = organizedContent.funeral?.[`service${i}`];
-    if (!serviceRaw) continue;
-    try {
-      services.push(JSON.parse(serviceRaw));
-    } catch (error) {
-      console.error('Invalid service entry', error);
-    }
+    const service = parseJsonContent<ServiceInfo>(
+      organizedContent.funeral?.[`service${i}`],
+      `service${i}`
+    );
+    if (service) services.push(service);
   }
 
   memorialData = {
@@ -181,19 +196,16 @@ if (memorial) {
     biography: getContent('biography', 'content', memorialData.biography),
     biographyTitle: getContent('biography', 'title', memorialData.biographyTitle),
     biographyVisible: organizedContent.biography?.visible !== 'false',
-    highlights: organizedContent.biography?.highlights
-      ? JSON.parse(organizedContent.biography.highlights)
-      : [],
+    highlights:
+      parseJsonContent<string[]>(organizedContent.biography?.highlights, 'highlights') ?? [],
     highlightsVisible: organizedContent.highlights?.visible !== 'false',
     galleryVisible: organizedContent.gallery?.visible !== 'false',
     galleryTitle: getContent('gallery', 'sectionTitle', memorialData.galleryTitle),
-    images: galleryImages
-      .sort((a, b) => a.displayOrder - b.displayOrder)
-      .map((img) => ({
-        src: img.imagePath,
-        alt: img.caption || 'Memorial photo',
-        caption: img.caption || undefined,
-      })),
+    images: galleryImages.map((img) => ({
+      src: img.imagePath,
+      alt: img.caption || 'Memorial photo',
+      caption: img.caption || undefined,
+    })),
     videoUrl: getContent('video', 'videoUrl', memorialData.videoUrl),
     posterImage: getContent('video', 'posterImage', memorialData.posterImage),
     videoSectionTitle: getContent('video', 'sectionTitle', memorialData.videoSectionTitle),
@@ -261,7 +273,7 @@ if (memorial) {
 <Layout title={`${memorialData.name} - Memorial`} description={`Remembering ${memorialData.name}`}>
   {memorial ? (
     <>
-      <script id="memorial-data" type="application/json" is:inline set:html={JSON.stringify(memorialData)} />
+      <script id="memorial-data" type="application/json" is:inline set:html={embedJson(memorialData)} />
       <script is:inline define:vars={{ slug }}>window.__MEMORIAL_SLUG__ = slug;</script>
 
       <main>
@@ -284,19 +296,15 @@ if (memorial) {
             backgroundImage={memorialData.backgroundImage}
             subtitle={memorialData.subtitle}
           />
-          {isAdmin && (
-            <button
-              onclick="openEditModal('hero')"
-              class="absolute top-4 right-4 bg-white/90 hover:bg-white text-indigo-600 px-3 py-2 rounded-lg shadow-md text-sm font-medium transition-all edit-button"
-            >
-              ✏️ Edit Hero
-            </button>
-          )}
+          {isAdmin && <EditButton section="hero" label="Edit Hero" positionClass="absolute top-4 right-4" />}
         </div>
 
-        <nav class="sticky top-0 z-40 bg-white/95 backdrop-blur-xs border-b border-warm-gray-200">
+        <nav
+          class="sticky top-14 z-30 bg-white/95 backdrop-blur-xs border-b border-warm-gray-200"
+          aria-label="Memorial sections"
+        >
           <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-center space-x-4 py-4 flex-wrap">
+            <div class="flex gap-x-6 py-4 overflow-x-auto whitespace-nowrap no-scrollbar justify-start sm:justify-center">
               {(memorialData.biographyVisible || isAdmin) && <a href="#biography" class="text-warm-gray-600 hover:text-warm-gray-900 font-medium transition-colors">Life Story</a>}
               {(memorialData.funeralInfo.visible || isAdmin) && <a href="#funeral-info" class="text-warm-gray-600 hover:text-warm-gray-900 font-medium transition-colors">Services</a>}
               {(memorialData.galleryVisible || isAdmin) && <a href="#gallery" class="text-warm-gray-600 hover:text-warm-gray-900 font-medium transition-colors">Gallery</a>}
@@ -317,11 +325,7 @@ if (memorial) {
               highlightsVisible={memorialData.highlightsVisible}
               isAdmin={isAdmin}
             />
-            {isAdmin && (
-              <button onclick="openEditModal('biography')" class="absolute top-8 right-8 bg-white/90 hover:bg-white text-indigo-600 px-3 py-2 rounded-lg shadow-md text-sm font-medium transition-all edit-button">
-                ✏️ Edit Biography
-              </button>
-            )}
+            {isAdmin && <EditButton section="biography" label="Edit Biography" />}
           </div>
         )}
 
@@ -342,11 +346,7 @@ if (memorial) {
               flowersInfoVisible={memorialData.funeralInfo.flowersInfoVisible}
               receptionVisible={memorialData.funeralInfo.receptionVisible}
             />
-            {isAdmin && (
-              <button onclick="openEditModal('funeral')" class="absolute top-8 right-8 bg-white/90 hover:bg-white text-indigo-600 px-3 py-2 rounded-lg shadow-md text-sm font-medium transition-all edit-button">
-                ✏️ Edit Funeral Info
-              </button>
-            )}
+            {isAdmin && <EditButton section="funeral" label="Edit Funeral Info" />}
           </div>
         )}
 
@@ -354,11 +354,7 @@ if (memorial) {
           <div id="gallery-section" class={`relative ${!memorialData.galleryVisible && isAdmin ? 'opacity-70 border-2 border-dashed border-gray-300' : ''}`}>
             {isAdmin && !memorialData.galleryVisible && <div class="absolute top-0 left-0 bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-br z-20 hidden-badge">Hidden from public</div>}
             <Gallery images={memorialData.images} isAdmin={isAdmin} title={memorialData.galleryTitle} memorialSlug={slug} />
-            {isAdmin && (
-              <button onclick="openEditModal('gallery')" class="absolute top-8 right-8 bg-white/90 hover:bg-white text-indigo-600 px-3 py-2 rounded-lg shadow-md text-sm font-medium transition-all edit-button">
-                ✏️ Edit Gallery
-              </button>
-            )}
+            {isAdmin && <EditButton section="gallery" label="Edit Gallery" />}
           </div>
         )}
 
@@ -371,11 +367,7 @@ if (memorial) {
               title={memorialData.videoSectionTitle}
               description={memorialData.videoDescription}
             />
-            {isAdmin && (
-              <button onclick="openEditModal('video')" class="absolute top-8 right-8 bg-white/90 hover:bg-white text-indigo-600 px-3 py-2 rounded-lg shadow-md text-sm font-medium transition-all edit-button">
-                ✏️ Edit Video
-              </button>
-            )}
+            {isAdmin && <EditButton section="video" label="Edit Video" />}
           </div>
         )}
 
@@ -383,11 +375,7 @@ if (memorial) {
           <div id="comments-section" class={`relative ${!memorialData.commentsVisible && isAdmin ? 'opacity-70 border-2 border-dashed border-gray-300' : ''}`}>
             {isAdmin && !memorialData.commentsVisible && <div class="absolute top-0 left-0 bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-br z-20 hidden-badge">Hidden from public</div>}
             <Comments title={memorialData.commentsTitle} subtitle={memorialData.commentsSubtitle} memorialSlug={slug} />
-            {isAdmin && (
-              <button onclick="openEditModal('comments')" class="absolute top-8 right-8 bg-white/90 hover:bg-white text-indigo-600 px-3 py-2 rounded-lg shadow-md text-sm font-medium transition-all edit-button">
-                ✏️ Edit Memories
-              </button>
-            )}
+            {isAdmin && <EditButton section="comments" label="Edit Memories" />}
           </div>
         )}
 
@@ -404,11 +392,7 @@ if (memorial) {
               zelleImage={memorialData.donations.zelleImage}
               customMessage={memorialData.donations.customMessage}
             />
-            {isAdmin && (
-              <button onclick="openEditModal('donations')" class="absolute top-8 right-8 bg-white/90 hover:bg-white text-indigo-600 px-3 py-2 rounded-lg shadow-md text-sm font-medium transition-all edit-button">
-                ✏️ Edit Donations
-              </button>
-            )}
+            {isAdmin && <EditButton section="donations" label="Edit Donations" />}
           </div>
         )}
 
@@ -427,11 +411,7 @@ if (memorial) {
                 <p class="text-sm text-warm-gray-500" data-footer-credit>{memorialData.footerCredit}</p>
               </div>
             </div>
-            {isAdmin && (
-              <button onclick="openEditModal('footer')" class="absolute top-4 right-4 bg-white/90 hover:bg-white text-indigo-600 px-3 py-2 rounded-lg shadow-md text-sm font-medium transition-all edit-button">
-                ✏️ Edit Footer
-              </button>
-            )}
+            {isAdmin && <EditButton section="footer" label="Edit Footer" positionClass="absolute top-4 right-4" />}
           </footer>
         )}
       </main>

@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { db, Comments, GalleryImages, MemorialContent, Memorials, eq } from 'astro:db';
+import { db, Comments, GalleryImages, MemorialContent, Memorials, eq, desc } from 'astro:db';
 import { z } from 'zod';
 import { requireAuth } from '../../../lib/auth';
 import { errorResponse, successResponse, validationError } from '../../../lib/api-response';
@@ -44,11 +44,9 @@ export const GET: APIRoute = async ({ cookies }) => {
   if (authError) return authError;
 
   try {
-    const memorials = await db.select().from(Memorials);
-    const sorted = memorials.sort(
-      (a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime()
-    );
-    return successResponse(sorted);
+    // ISO-8601 strings sort correctly as text, so order in SQL
+    const memorials = await db.select().from(Memorials).orderBy(desc(Memorials.updatedAt));
+    return successResponse(memorials);
   } catch (error) {
     console.error('Error loading memorials:', error);
     return errorResponse('Failed to load memorials');

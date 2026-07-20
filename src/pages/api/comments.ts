@@ -1,8 +1,13 @@
 import type { APIRoute } from 'astro';
-import { db, Comments, MemorialContent, eq, and } from 'astro:db';
+import { db, Comments, MemorialContent, eq, and, desc } from 'astro:db';
 import { successResponse, errorResponse, validationError } from '../../lib/api-response';
 import { commentSchema, validateData } from '../../lib/validation';
 import { getMemorialBySlug } from '../../lib/memorial-context';
+import { checkRateLimit, getClientIdentifier } from '../../lib/rate-limiter';
+
+// Public endpoint: cap comment submissions per client to curb spam flooding
+// the moderation queue. Best-effort (see rate-limiter serverless caveat).
+const COMMENTS_PER_HOUR = 15;
 
 export const prerender = false;
 
@@ -11,8 +16,8 @@ export const GET: APIRoute = async ({ request }) => {
   try {
     const url = new URL(request.url);
     const memorialSlug = url.searchParams.get('memorial')?.trim();
-    const limit = parseInt(url.searchParams.get('limit') || '50');
-    const offset = parseInt(url.searchParams.get('offset') || '0');
+    const limit = Math.min(Math.max(parseInt(url.searchParams.get('limit') || '50') || 50, 1), 100);
+    const offset = Math.max(parseInt(url.searchParams.get('offset') || '0') || 0, 0);
 
     if (!memorialSlug) {
       return validationError('memorial query parameter is required');
@@ -23,17 +28,14 @@ export const GET: APIRoute = async ({ request }) => {
       return errorResponse('Memorial not found', 404);
     }
 
-    // Get approved comments with ORDER BY and LIMIT in SQL for better performance
-    const allApprovedComments = await db
+    // Sort and paginate in SQL so we never pull the full comment set into memory
+    const approvedComments = await db
       .select()
       .from(Comments)
-      .where(and(eq(Comments.status, 'approved'), eq(Comments.memorialId, memorial.id)));
-
-    // Sort in memory (Astro DB doesn't support ORDER BY directly yet)
-    // Paginate using slice for now
-    const approvedComments = allApprovedComments
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-      .slice(offset, offset + limit);
+      .where(and(eq(Comments.status, 'approved'), eq(Comments.memorialId, memorial.id)))
+      .orderBy(desc(Comments.createdAt))
+      .limit(limit)
+      .offset(offset);
 
     return successResponse(approvedComments);
   } catch (error) {
@@ -43,8 +45,15 @@ export const GET: APIRoute = async ({ request }) => {
 };
 
 // POST - Create a new comment
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async (context) => {
+  const { request } = context;
   try {
+    const clientId = getClientIdentifier(context);
+    const rateLimit = checkRateLimit(`comment:${clientId}`, COMMENTS_PER_HOUR, 60 * 60 * 1000);
+    if (!rateLimit.allowed) {
+      return errorResponse('Too many comments submitted. Please try again later.', 429);
+    }
+
     const body = await request.json();
     const memorialSlug = typeof body.memorialSlug === 'string' ? body.memorialSlug.trim() : '';
 

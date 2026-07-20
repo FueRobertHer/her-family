@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { v2 as cloudinary } from 'cloudinary';
+import { isAuthenticated as checkAuth } from '../../lib/auth';
 
 export const prerender = false;
 
@@ -13,9 +14,7 @@ cloudinary.config({
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
     // Check admin authentication
-    const isAuthenticated = cookies.get('admin_auth')?.value === 'true';
-
-    if (!isAuthenticated) {
+    if (!checkAuth(cookies)) {
       return new Response(JSON.stringify({ error: 'Unauthorized - Please log in as admin' }), {
         status: 401,
         headers: { 'Content-Type': 'application/json' },

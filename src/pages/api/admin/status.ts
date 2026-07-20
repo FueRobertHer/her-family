@@ -1,10 +1,10 @@
 import type { APIRoute } from 'astro';
+import { isAuthenticated as checkAuth } from '../../../lib/auth';
 
 export const prerender = false;
 
 export const GET: APIRoute = async ({ cookies }) => {
-  const authCookie = cookies.get('admin_auth');
-  const isAuthenticated = authCookie?.value === 'true';
+  const isAuthenticated = checkAuth(cookies);
 
   return new Response(
     JSON.stringify({

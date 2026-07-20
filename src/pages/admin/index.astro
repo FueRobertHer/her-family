@@ -2,18 +2,20 @@
 // @ts-nocheck
 export const prerender = false;
 import { db, Memorials } from 'astro:db';
+import { isAuthenticated as checkAuth } from '../../lib/auth';
+import { clearSessionCookie } from '../../lib/session';
+import '../../styles/global.css';
 
 // Check for authentication
 const cookies = Astro.cookies;
-const authCookie = cookies.get('admin_auth');
-const isAuthenticated = authCookie?.value === 'true';
+const isAuthenticated = checkAuth(cookies);
 const memorials = isAuthenticated ? await db.select().from(Memorials) : [];
 const selectedMemorialSlug =
   Astro.url.searchParams.get('memorial') || 'all';
 
 // Handle logout
 if (Astro.url.searchParams.get('logout') === 'true') {
-  cookies.delete('admin_auth');
+  clearSessionCookie(cookies);
   return Astro.redirect('/admin');
 }
 ---
@@ -24,7 +26,6 @@ if (Astro.url.searchParams.get('logout') === 'true') {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin - Memorial Page</title>
-  <script src="https://cdn.tailwindcss.com"></script>
   <style>
     @font-face {
       font-family: 'Inter';
@@ -394,15 +395,7 @@ if (Astro.url.searchParams.get('logout') === 'true') {
 )}
 
 <script>
-  // Global type declarations
-  declare global {
-    interface Window {
-      moderateComment: (id: number, action: string) => Promise<void>;
-      toggleMemorialVisibility: (id: number, nextStatus: 'active' | 'hidden') => Promise<void>;
-      requestMemorialDelete: (id: number) => void;
-      requestMemorialEdit: (id: number) => void;
-    }
-  }
+  import { escapeHtml } from '../../scripts/lib/escape-html.js';
 
   // Admin dashboard functionality
   if (document.querySelector('.tab-button')) {
@@ -899,12 +892,6 @@ if (Astro.url.searchParams.get('logout') === 'true') {
     });
 
     // Utility functions
-    function escapeHtml(text: string) {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
-    }
-
     function formatDate(dateString: string) {
       return new Date(dateString).toLocaleDateString('en-US', {
         year: 'numeric',

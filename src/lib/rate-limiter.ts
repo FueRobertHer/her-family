@@ -1,6 +1,12 @@
 /**
- * Simple in-memory rate limiter for API endpoints
- * with automatic cleanup and memory leak prevention
+ * Simple in-memory rate limiter for API endpoints.
+ *
+ * LIMITATION: state lives in the memory of a single serverless instance.
+ * On Vercel, concurrent or cold-started invocations each get their own
+ * store, so this is best-effort protection only — it slows abuse from a
+ * single warm instance but is not a hard guarantee. For a hard limit,
+ * back this with a shared store (e.g. Vercel KV / Upstash Redis) behind
+ * the same function signatures.
  */
 
 interface RateLimitEntry {
@@ -10,10 +16,13 @@ interface RateLimitEntry {
 
 const rateLimitStore = new Map<string, RateLimitEntry>();
 const MAX_STORE_SIZE = 10000; // Prevent unbounded memory growth
+const CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
+
+let lastCleanup = Date.now();
 
 /**
  * Check if a request should be rate limited
- * @param identifier - Unique identifier (e.g., IP address, user ID)
+ * @param identifier - Unique identifier (e.g., "login:<ip>")
  * @param maxAttempts - Maximum number of attempts allowed in the window
  * @param windowMs - Time window in milliseconds
  * @returns Object with allowed status and remaining attempts
@@ -25,9 +34,12 @@ export function checkRateLimit(
 ): { allowed: boolean; remaining: number; resetTime: number } {
   const now = Date.now();
 
-  // Prevent unbounded memory growth
-  if (rateLimitStore.size > MAX_STORE_SIZE) {
+  // Lazy cleanup: piggyback on request traffic instead of a timer.
+  // (setInterval is pointless in serverless — instances are frozen between
+  // invocations, so a timer would rarely fire and only pins memory.)
+  if (now - lastCleanup > CLEANUP_INTERVAL_MS || rateLimitStore.size > MAX_STORE_SIZE) {
     cleanupRateLimits();
+    lastCleanup = now;
   }
 
   const entry = rateLimitStore.get(identifier);
@@ -66,7 +78,7 @@ export function resetRateLimit(identifier: string): void {
 }
 
 /**
- * Clean up expired entries (call periodically to prevent memory leak)
+ * Clean up expired entries
  * @returns Number of entries cleaned up
  */
 export function cleanupRateLimits(): number {
@@ -90,45 +102,22 @@ export function getRateLimitStoreSize(): number {
   return rateLimitStore.size;
 }
 
-// Auto-cleanup every 5 minutes (only in non-edge runtime environments)
-if (typeof setInterval !== 'undefined') {
-  setInterval(
-    () => {
-      if (rateLimitStore.size > 0) {
-        const cleaned = cleanupRateLimits();
-        if (cleaned > 0) {
-          console.warn(`Cleaned up ${cleaned} expired rate limit entries`);
-        }
-      }
-    },
-    5 * 60 * 1000
-  );
-}
-
 /**
- * Get client identifier from request (IP address)
- * @param request - The request object
+ * Get a client identifier for rate limiting.
+ *
+ * Uses Astro's `clientAddress` (derived by the platform from the connection,
+ * e.g. Vercel's verified client IP) rather than reading `x-forwarded-for`
+ * ourselves — that header is client-controlled, so trusting it would let an
+ * attacker mint a fresh rate-limit bucket per request.
+ *
+ * @param context - Object exposing Astro's clientAddress (APIContext / Astro global)
  * @returns Client IP address or 'unknown'
  */
-export function getClientIdentifier(request: Request): string {
-  // Try to get real IP from common headers (Vercel, Cloudflare, etc.)
-  const forwarded = request.headers.get('x-forwarded-for');
-  if (forwarded) {
-    // Take the first IP in the chain
-    return forwarded.split(',')[0].trim();
+export function getClientIdentifier(context: { clientAddress?: string }): string {
+  try {
+    return context.clientAddress || 'unknown';
+  } catch {
+    // Astro throws if the adapter doesn't support clientAddress (e.g. prerendered pages)
+    return 'unknown';
   }
-
-  const realIp = request.headers.get('x-real-ip');
-  if (realIp) {
-    return realIp;
-  }
-
-  // Cloudflare
-  const cfConnectingIp = request.headers.get('cf-connecting-ip');
-  if (cfConnectingIp) {
-    return cfConnectingIp;
-  }
-
-  // Fallback for development or unknown scenarios
-  return 'unknown';
 }

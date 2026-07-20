@@ -1,5 +1,8 @@
 import type { APIRoute } from 'astro';
 import { v2 as cloudinary } from 'cloudinary';
+import { isAuthenticated as checkAuth } from '../../lib/auth';
+import { checkRateLimit, getClientIdentifier } from '../../lib/rate-limiter';
+import { getMemorialBySlug } from '../../lib/memorial-context';
 
 export const prerender = false;
 
@@ -10,45 +13,63 @@ cloudinary.config({
   api_secret: import.meta.env.CLOUDINARY_API_SECRET,
 });
 
-export const POST: APIRoute = async ({ request, cookies }) => {
+// Unauthenticated (comment) uploads: images only, small, rate limited.
+const COMMENT_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+const COMMENT_UPLOADS_PER_HOUR = 10;
+
+function jsonError(error: string, status: number, details?: string): Response {
+  return new Response(JSON.stringify(details ? { error, details } : { error }), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+export const POST: APIRoute = async (context) => {
+  const { request, cookies } = context;
+
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const folder = (formData.get('folder') as string) || 'memorials/default/uploads';
 
-    // Check authentication unless it's a comment upload
-    const isAuthenticated = cookies.get('admin_auth')?.value === 'true';
-    const isCommentUpload = /^memorials\/[^/]+\/comments$/.test(folder);
+    const isAdmin = checkAuth(cookies);
+    const commentFolderMatch = folder.match(/^memorials\/([^/]+)\/comments$/);
 
-    if (!isAuthenticated && !isCommentUpload) {
-      return new Response(JSON.stringify({ error: 'Unauthorized - Please log in as admin' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' },
-      });
+    if (!isAdmin && !commentFolderMatch) {
+      return jsonError('Unauthorized - Please log in as admin', 401);
     }
 
     if (!file) {
-      return new Response(JSON.stringify({ error: 'No file provided' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return jsonError('No file provided', 400);
     }
 
-    // Validate file size (max 5MB for images, 100MB for videos)
-    const isVideo = file.type.startsWith('video/');
+    if (!isAdmin && commentFolderMatch) {
+      // Public comment upload: throttle per client and only accept small images
+      // for memorials that actually exist, so this can't be used as free
+      // arbitrary file hosting against our Cloudinary quota.
+      const clientId = getClientIdentifier(context);
+      const rateLimit = checkRateLimit(`upload:${clientId}`, COMMENT_UPLOADS_PER_HOUR, 60 * 60 * 1000);
+      if (!rateLimit.allowed) {
+        return jsonError('Too many uploads. Please try again later.', 429);
+      }
+
+      if (!COMMENT_IMAGE_TYPES.has(file.type)) {
+        return jsonError('Only JPEG, PNG, WebP, or GIF images are allowed', 400);
+      }
+
+      const memorial = await getMemorialBySlug(commentFolderMatch[1]);
+      if (!memorial || memorial.status !== 'active') {
+        return jsonError('Memorial not found', 404);
+      }
+    }
+
+    // Validate file size (max 5MB for images, 100MB for videos — videos are admin-only)
+    const isVideo = isAdmin && file.type.startsWith('video/');
     const isPdf = file.type === 'application/pdf';
     const maxSize = isVideo ? 100 * 1024 * 1024 : 5 * 1024 * 1024;
 
     if (file.size > maxSize) {
-      return new Response(
-        JSON.stringify({
-          error: `File size too large (max ${isVideo ? '100MB' : '5MB'})`,
-        }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      return jsonError(`File size too large (max ${isVideo ? '100MB' : '5MB'})`, 400);
     }
 
     // Check if Cloudinary is configured
@@ -57,16 +78,10 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const apiSecret = import.meta.env.CLOUDINARY_API_SECRET;
 
     if (!cloudName || !apiKey || !apiSecret) {
-      return new Response(
-        JSON.stringify({
-          error: 'Cloudinary not configured',
-          details:
-            'Please add CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET to your .env file',
-        }),
-        {
-          status: 500,
-          headers: { 'Content-Type': 'application/json' },
-        }
+      return jsonError(
+        'Cloudinary not configured',
+        500,
+        'Please add CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET to your .env file'
       );
     }
 
@@ -83,6 +98,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       access_mode?: string;
       use_filename?: boolean;
       unique_filename?: boolean;
+      allowed_formats?: string[];
       transformation?: Array<{
         width?: number;
         height?: number;
@@ -94,8 +110,15 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     const uploadOptions: CloudinaryUploadOptions = {
       folder: folder,
-      resource_type: 'auto',
+      // Public comment uploads are validated as images above; only admins get auto detection.
+      resource_type: isAdmin ? 'auto' : 'image',
     };
+
+    if (!isAdmin) {
+      // Don't trust the client-declared file.type: have Cloudinary reject
+      // anything whose actual decoded content isn't one of these raster formats.
+      uploadOptions.allowed_formats = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+    }
 
     // For PDFs, ensure they're accessible and can be embedded
     if (isPdf) {
@@ -130,15 +153,6 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     );
   } catch (error) {
     console.error('Upload error:', error);
-    return new Response(
-      JSON.stringify({
-        error: 'Failed to upload image',
-        details: error instanceof Error ? error.message : 'Unknown error',
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    return jsonError('Failed to upload image', 500, error instanceof Error ? error.message : 'Unknown error');
   }
 };

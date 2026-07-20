@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { db, Comments, Memorials, eq, and } from 'astro:db';
+import { db, Comments, Memorials, eq, and, desc } from 'astro:db';
 import { requireAuth } from '../../../lib/auth';
 import { successResponse, errorResponse, validationError } from '../../../lib/api-response';
 import { commentActionSchema, validateData } from '../../../lib/validation';
@@ -17,47 +17,50 @@ export const GET: APIRoute = async ({ request, cookies }) => {
     const url = new URL(request.url);
     const memorialSlug = url.searchParams.get('memorial')?.trim();
     const status = url.searchParams.get('status'); // 'pending', 'approved', 'rejected', 'all'
-    const limit = parseInt(url.searchParams.get('limit') || '50');
-    const offset = parseInt(url.searchParams.get('offset') || '0');
+    const limit = Math.min(Math.max(parseInt(url.searchParams.get('limit') || '50') || 50, 1), 100);
+    const offset = Math.max(parseInt(url.searchParams.get('offset') || '0') || 0, 0);
 
-    let allComments;
-    if (!memorialSlug || memorialSlug === 'all') {
-      allComments = await db.select().from(Comments);
-    } else {
+    let memorialIdFilter: number | null = null;
+    if (memorialSlug && memorialSlug !== 'all') {
       const memorial = await getMemorialBySlug(memorialSlug);
       if (!memorial) {
         return errorResponse('Memorial not found', 404);
       }
-      allComments = await db
-        .select()
-        .from(Comments)
-        .where(eq(Comments.memorialId, memorial.id));
+      memorialIdFilter = memorial.id;
     }
+
+    // Counts need every status regardless of the active filter, so pull just
+    // the status column instead of full rows.
+    const statusRows =
+      memorialIdFilter !== null
+        ? await db
+            .select({ status: Comments.status })
+            .from(Comments)
+            .where(eq(Comments.memorialId, memorialIdFilter))
+        : await db.select({ status: Comments.status }).from(Comments);
+
+    const counts = {
+      pending: statusRows.filter((c) => c.status === 'pending').length,
+      approved: statusRows.filter((c) => c.status === 'approved').length,
+      rejected: statusRows.filter((c) => c.status === 'rejected').length,
+      total: statusRows.length,
+    };
+
+    // Filter, sort and paginate the page of comments in SQL
+    const conditions = [];
+    if (memorialIdFilter !== null) conditions.push(eq(Comments.memorialId, memorialIdFilter));
+    if (status && status !== 'all') conditions.push(eq(Comments.status, status));
+
+    const baseQuery = db.select().from(Comments);
+    const pageRows = await (conditions.length > 0 ? baseQuery.where(and(...conditions)) : baseQuery)
+      .orderBy(desc(Comments.createdAt))
+      .limit(limit)
+      .offset(offset);
 
     const memorialRecords = await db.select().from(Memorials);
     const memorialMap = new Map(memorialRecords.map((memorial) => [memorial.id, memorial]));
 
-    // Calculate counts
-    const counts = {
-      pending: allComments.filter((c) => c.status === 'pending').length,
-      approved: allComments.filter((c) => c.status === 'approved').length,
-      rejected: allComments.filter((c) => c.status === 'rejected').length,
-      total: allComments.length,
-    };
-
-    // Filter comments based on status
-    let filteredComments = allComments;
-    if (status && status !== 'all') {
-      filteredComments = allComments.filter((c) => c.status === status);
-    }
-
-    // Sort by creation date (newest first)
-    filteredComments.sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
-
-    // Apply pagination
-    const comments = filteredComments.slice(offset, offset + limit).map((comment) => {
+    const comments = pageRows.map((comment) => {
       const memorial = memorialMap.get(comment.memorialId);
       return {
         ...comment,
