@@ -1,12 +1,13 @@
 import type { AstroCookies } from 'astro';
+import { verifySessionToken, SESSION_COOKIE } from './session';
 
 /**
- * Checks if the current request is from an authenticated admin user
+ * Checks if the current request carries a valid signed admin session
  * @param cookies - Astro cookies object
  * @returns true if authenticated, false otherwise
  */
 export function isAuthenticated(cookies: AstroCookies): boolean {
-  return cookies.get('admin_auth')?.value === 'true';
+  return verifySessionToken(cookies.get(SESSION_COOKIE)?.value);
 }
 
 /**

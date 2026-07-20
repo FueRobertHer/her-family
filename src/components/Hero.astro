@@ -27,7 +27,7 @@ const optimizedMainImage = optimizeCloudinaryUrl(mainImage, CloudinaryPresets.he
   <div class="absolute inset-0 z-0">
     <img
       src={optimizedBgImage}
-      alt="Background"
+      alt=""
       class="w-full h-full object-cover opacity-90 mix-blend-overlay"
       width="1920"
       height="1080"
@@ -35,6 +35,7 @@ const optimizedMainImage = optimizeCloudinaryUrl(mainImage, CloudinaryPresets.he
       fetchpriority="high"
       decoding="async"
       data-hero-background
+      data-fallback="hide"
     />
     <div class="absolute inset-0 bg-linear-to-t from-warm-gray-900/10 to-transparent"></div>
   </div>
@@ -56,6 +57,7 @@ const optimizedMainImage = optimizeCloudinaryUrl(mainImage, CloudinaryPresets.he
           fetchpriority="high"
           decoding="async"
           data-hero-image
+          data-fallback="portrait"
         />
       </div>
     </div>
@@ -92,22 +94,7 @@ const optimizedMainImage = optimizeCloudinaryUrl(mainImage, CloudinaryPresets.he
   <!-- Scroll Indicator - positioned relative to the entire hero section -->
   <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20">
     <button
-      onclick="
-        const sections = ['#biography', '#funeral-info', '#gallery', '#video', '#memories', '#donations', 'footer'];
-        let target = null;
-        for (const selector of sections) {
-          const el = document.querySelector(selector);
-          if (el && el.offsetParent !== null) { // check if visible
-            target = el;
-            break;
-          }
-        }
-        if(target) { 
-          target.scrollIntoView({ behavior: 'smooth' }); 
-        } else { 
-          window.scrollBy({ top: window.innerHeight, behavior: 'smooth' }); 
-        }
-      "
+      data-hero-scroll-cue
       class="animate-bounce p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors duration-300 backdrop-blur-xs"
       aria-label="Scroll to content"
     >
@@ -121,3 +108,29 @@ const optimizedMainImage = optimizeCloudinaryUrl(mainImage, CloudinaryPresets.he
     </button>
   </div>
 </section>
+
+<script>
+  // Scroll cue: jump to the first visible content section below the hero.
+  // Event delegation on document survives view transitions without re-init.
+  document.addEventListener('click', (e) => {
+    const button = (e.target as HTMLElement).closest('[data-hero-scroll-cue]');
+    if (!button) return;
+
+    const sections = ['#biography', '#funeral-info', '#gallery', '#video', '#memories', '#donations', 'footer'];
+    let target: Element | null = null;
+    for (const selector of sections) {
+      const el = document.querySelector(selector);
+      // offsetParent is null for display:none sections (hidden from public)
+      if (el instanceof HTMLElement && el.offsetParent !== null) {
+        target = el;
+        break;
+      }
+    }
+
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      window.scrollBy({ top: window.innerHeight, behavior: 'smooth' });
+    }
+  });
+</script>

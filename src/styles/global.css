@@ -34,4 +34,50 @@
   ::file-selector-button {
     border-color: var(--color-gray-200, currentcolor);
   }
+
+  /*
+    Anchor targets scroll behind the sticky header (3.5rem) + memorial
+    sub-nav (~3.75rem). scroll-margin keeps headings visible after #hash
+    jumps; it also applies to scrollIntoView. Slightly generous is harmless
+    on pages with only the header.
+  */
+  [id] {
+    scroll-margin-top: 8rem;
+  }
+
+  /*
+    Designed focus ring matching the warm-gray palette instead of the
+    browser default. :focus-visible only — mouse clicks don't show it.
+  */
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 2px solid var(--color-warm-gray-600);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  /*
+    Respect reduced-motion for decorative animations (e.g. hero scroll cue).
+    animate-spin is deliberately kept — it communicates loading state.
+  */
+  @media (prefers-reduced-motion: reduce) {
+    .animate-bounce,
+    .animate-pulse {
+      animation: none;
+    }
+  }
+}
+
+@utility no-scrollbar {
+  /* Hide scrollbars on intentionally-scrollable horizontal rows */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }

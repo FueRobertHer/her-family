@@ -10,7 +10,9 @@
   <!-- Toast notifications will be inserted here -->
 </div>
 
-<script is:inline>
+<script>
+  import { escapeHtml } from '../scripts/lib/escape-html.js';
+
   /**
    * Shows a toast notification
    * @param {string} message - The message to display
@@ -27,8 +29,8 @@
       'pointer-events-auto transform transition-all duration-300 translate-x-full opacity-0';
 
     // Store timeout IDs for cleanup
-    let autoCloseTimeout;
-    let animationTimeout;
+    let autoCloseTimeout: ReturnType<typeof setTimeout> | undefined;
+    let animationTimeout: ReturnType<typeof setTimeout> | undefined;
 
     // Cleanup function to clear all timeouts and remove toast
     const cleanup = () => {
@@ -76,13 +78,6 @@
         </svg>`;
     }
 
-    // Escape HTML helper
-    function escapeHtml(text) {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
-    }
-
     toast.innerHTML = `
       <div class="${bgColor} ${borderColor} border rounded-lg shadow-lg p-4 flex items-start gap-3 min-w-[300px] max-w-md">
         <div class="${iconColor} shrink-0">
@@ -125,12 +120,6 @@
     }, duration);
   };
 
-  // Legacy compatibility - map old showToast calls if they exist
-  if (!window.showToast) {
-    window.showToast = function (message, type) {
-      window.showToast(message, type);
-    };
-  }
 </script>
 
 <style>

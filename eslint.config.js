@@ -43,6 +43,8 @@ export default [
         File: 'readonly',
         FormData: 'readonly',
         Blob: 'readonly',
+        HTMLElement: 'readonly',
+        HTMLImageElement: 'readonly',
       },
     },
     rules: {

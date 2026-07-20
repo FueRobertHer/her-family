@@ -2,6 +2,7 @@
 import Analytics from '@vercel/analytics/astro';
 import { ClientRouter } from 'astro:transitions';
 import Toast from '../components/Toast.astro';
+import { isAuthenticated } from '../lib/auth';
 import '../styles/global.css';
 
 export interface Props {
@@ -16,7 +17,7 @@ const {
   brandLabel = 'The Her Family',
 } = Astro.props;
 const pathname = Astro.url.pathname;
-const isAdminAuthenticated = Astro.cookies.get('admin_auth')?.value === 'true';
+const isAdminAuthenticated = isAuthenticated(Astro.cookies);
 ---
 
 <!doctype html>
@@ -256,6 +257,10 @@ const isAdminAuthenticated = Astro.cookies.get('admin_auth')?.value === 'true';
     </header>
     <slot />
     <Toast />
+
+    <script>
+      import '../scripts/image-fallbacks.js';
+    </script>
 
     <!-- Smooth scroll behavior -->
     <script>

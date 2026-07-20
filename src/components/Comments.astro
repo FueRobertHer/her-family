@@ -240,6 +240,7 @@ const {
 
 <script>
   // Client-side JavaScript for comment functionality
+  import { escapeHtml } from '../scripts/lib/escape-html.js';
 
   interface Comment {
     id: number;
@@ -374,11 +375,12 @@ const {
              ${
                comment.imageUrl
                  ? `
-              <div class="relative group cursor-pointer overflow-hidden rounded-lg mb-3" onclick="openCommentLightbox('${escapeHtml(comment.imageUrl)}', 'Photo from ${escapeHtml(comment.name)}')">
-                <img 
-                  src="${escapeHtml(comment.imageUrl)}" 
+              <div class="relative group cursor-pointer overflow-hidden rounded-lg mb-3" data-lightbox-trigger data-lightbox-url="${escapeHtml(comment.imageUrl)}" data-lightbox-title="Photo from ${escapeHtml(comment.name)}">
+                <img
+                  src="${escapeHtml(comment.imageUrl)}"
                   alt="Memory photo"
                   class="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
+                  data-fallback="photo"
                 />
                 <div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
                   <svg class="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -398,6 +400,16 @@ const {
 
     commentsTrack.appendChild(fragment);
   }
+
+  // Delegated lightbox opener. Data flows through data-* attributes (correctly
+  // HTML-attribute-escaped) instead of an inline onclick, which would run
+  // attacker-controlled comment text in a JS-string context after the HTML
+  // parser decoded the entities.
+  commentsTrack.addEventListener('click', (e) => {
+    const trigger = (e.target as HTMLElement).closest<HTMLElement>('[data-lightbox-trigger]');
+    if (!trigger) return;
+    window.openCommentLightbox(trigger.dataset.lightboxUrl || '', trigger.dataset.lightboxTitle || '');
+  });
 
   function updateCarousel(animate = true) {
     if (!commentsTrack) return;
@@ -609,13 +621,6 @@ const {
   });
 
   // Utility functions
-  function escapeHtml(text: string) {
-    if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
-
   function formatDate(dateString: string) {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -630,14 +635,8 @@ const {
   const commentLightboxCaption = document.getElementById('commentLightboxCaption');
   const closeCommentLightbox = document.getElementById('closeCommentLightbox');
 
-  // Expose openCommentLightbox globally with proper typing
-  declare global {
-    interface Window {
-      openCommentLightbox: (url: string, caption: string) => void;
-    }
-  }
-
-  window.openCommentLightbox = (url: string, caption: string) => {
+  // Expose openCommentLightbox globally (typed in src/env.d.ts)
+  window.openCommentLightbox = (url: string, caption?: string) => {
     if (commentLightboxImage) commentLightboxImage.src = url;
     if (commentLightboxCaption) commentLightboxCaption.textContent = caption || '';
     if (commentLightbox) {
