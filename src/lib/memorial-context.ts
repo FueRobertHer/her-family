@@ -14,16 +14,3 @@ export async function getMemorialBySlug(slug: string): Promise<MemorialRecord | 
   const memorial = await db.select().from(Memorials).where(eq(Memorials.slug, slug)).get();
   return (memorial as MemorialRecord | undefined) ?? null;
 }
-
-export async function getActiveMemorials(): Promise<MemorialRecord[]> {
-  const memorials = await db
-    .select()
-    .from(Memorials)
-    .where(eq(Memorials.status, 'active'));
-  return memorials as MemorialRecord[];
-}
-
-export async function getDefaultMemorial(): Promise<MemorialRecord | null> {
-  const memorials = await getActiveMemorials();
-  return memorials[0] ?? null;
-}
