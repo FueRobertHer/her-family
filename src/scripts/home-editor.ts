@@ -10,7 +10,7 @@ function initHomeEditor() {
   }
   dataScript.dataset.initialized = 'true';
 
-  const initial = JSON.parse(dataScript.textContent || '{}');
+  const initial: Record<string, any> = JSON.parse(dataScript.textContent || '{}');
   const memorialSlug = initial.memorialSlug;
 
   const openBtn = document.getElementById('openHomeEditor');
@@ -20,15 +20,15 @@ function initHomeEditor() {
   const saveBtn = document.getElementById('saveHomeEditor');
   const messageEl = document.getElementById('homeEditorMessage');
 
-  const eyebrowInput = document.getElementById('home-eyebrow-input');
-  const titleInput = document.getElementById('home-title-input');
-  const descriptionInput = document.getElementById('home-description-input');
+  const eyebrowInput = document.getElementById('home-eyebrow-input') as HTMLInputElement | null;
+  const titleInput = document.getElementById('home-title-input') as HTMLInputElement | null;
+  const descriptionInput = document.getElementById('home-description-input') as HTMLTextAreaElement | null;
 
   const eyebrowEl = document.getElementById('homeEyebrow');
   const titleEl = document.getElementById('homeTitle');
   const descriptionEl = document.getElementById('homeDescription');
 
-  function setModalVisibility(show) {
+  function setModalVisibility(show: boolean) {
     if (!modal) return;
     if (show) {
       modal.classList.remove('hidden');
@@ -39,7 +39,7 @@ function initHomeEditor() {
     }
   }
 
-  function setMessage(text, isError = false) {
+  function setMessage(text: string, isError = false) {
     if (!messageEl) return;
     messageEl.textContent = text;
     messageEl.classList.remove('hidden', 'text-red-600', 'text-green-600');
@@ -53,7 +53,7 @@ function initHomeEditor() {
     if (messageEl) messageEl.classList.add('hidden');
   }
 
-  async function saveField(key, value) {
+  async function saveField(key: string, value: string) {
     const response = await fetch('/api/admin/content', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

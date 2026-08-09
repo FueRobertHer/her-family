@@ -1,23 +1,16 @@
 import type { APIRoute } from 'astro';
 import { isAuthenticated as checkAuth } from '../../../lib/auth';
+import { successResponse } from '../../../lib/api-response';
 
 export const prerender = false;
 
 export const GET: APIRoute = async ({ cookies }) => {
   const isAuthenticated = checkAuth(cookies);
 
-  return new Response(
-    JSON.stringify({
-      success: true,
-      isAuthenticated,
-      // Only return minimal info
-      status: isAuthenticated ? 'authenticated' : 'unauthenticated',
-    }),
-    {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    }
-  );
+  return successResponse({
+    isAuthenticated,
+    // Only return minimal info
+    status: isAuthenticated ? 'authenticated' : 'unauthenticated',
+  });
 };
+

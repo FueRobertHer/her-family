@@ -10,7 +10,7 @@ const originalItems = document.querySelectorAll('.carousel-item');
 
 let currentIndex = 0;
 let realIndex = 0;
-let autoPlayInterval = null;
+let autoPlayInterval: ReturnType<typeof setInterval> | null = null;
 let isTransitioning = false;
 const totalImages = originalItems.length;
 
@@ -22,7 +22,7 @@ function initInfiniteCarousel() {
 
   // Clone last images and prepend them
   for (let i = totalImages - cloneCount; i < totalImages; i++) {
-    const clone = originalItems[i].cloneNode(true);
+    const clone = originalItems[i].cloneNode(true) as HTMLElement;
     clone.classList.add('clone');
     // Remove the delete button from clones to avoid confusion
     const deleteBtn = clone.querySelector('.delete-gallery-image');
@@ -32,7 +32,7 @@ function initInfiniteCarousel() {
 
   // Clone first images and append them
   for (let i = 0; i < cloneCount; i++) {
-    const clone = originalItems[i].cloneNode(true);
+    const clone = originalItems[i].cloneNode(true) as HTMLElement;
     clone.classList.add('clone');
     // Remove the delete button from clones to avoid confusion
     const deleteBtn = clone.querySelector('.delete-gallery-image');
@@ -54,7 +54,7 @@ function initInfiniteCarousel() {
     if (imgContainer) {
       imgContainer.addEventListener('click', (e) => {
         // Don't open lightbox if clicking on delete button
-        if (e.target.closest('.delete-gallery-image')) {
+        if ((e.target as HTMLElement).closest('.delete-gallery-image')) {
           return;
         }
 
@@ -71,16 +71,16 @@ function initInfiniteCarousel() {
 }
 
 // Cache carousel items to avoid repeated queries
-let cachedCarouselItems = null;
+let cachedCarouselItems: NodeListOf<HTMLElement> | null = null;
 
 function getCachedCarouselItems() {
   if (!cachedCarouselItems) {
-    cachedCarouselItems = carouselTrack?.querySelectorAll('.carousel-item');
+    cachedCarouselItems = carouselTrack?.querySelectorAll<HTMLElement>('.carousel-item') || null;
   }
   return cachedCarouselItems;
 }
 
-function updateCarousel(animate = true) {
+function updateCarousel(animate: boolean = true) {
   if (!carouselTrack) return;
 
   const allItems = getCachedCarouselItems();
@@ -131,7 +131,7 @@ function handleTransitionEnd() {
 
 carouselTrack?.addEventListener('transitionend', handleTransitionEnd);
 
-function goToSlide(direction) {
+function goToSlide(direction: number) {
   if (isTransitioning) return;
 
   isTransitioning = true;
@@ -142,7 +142,7 @@ function goToSlide(direction) {
   resetAutoPlay();
 }
 
-function jumpToSlide(index) {
+function jumpToSlide(index: number) {
   if (isTransitioning) return;
 
   isTransitioning = true;
@@ -229,7 +229,7 @@ carouselTrack?.addEventListener('mouseenter', () => {
 carouselTrack?.addEventListener('mouseleave', resetAutoPlay);
 
 // Debounced resize handler for performance
-let resizeTimeout;
+let resizeTimeout: ReturnType<typeof setTimeout>;
 window.addEventListener(
   'resize',
   () => {
@@ -243,7 +243,7 @@ window.addEventListener(
 
 // ============ LIGHTBOX FUNCTIONALITY ============
 const lightbox = document.getElementById('lightbox');
-const lightboxImage = document.getElementById('lightboxImage');
+const lightboxImage = document.getElementById('lightboxImage') as HTMLImageElement | null;
 const lightboxCaption = document.getElementById('lightboxCaption');
 const closeLightbox = document.getElementById('closeLightbox');
 const prevImage = document.getElementById('prevImage');
@@ -251,10 +251,10 @@ const nextImageBtn = document.getElementById('nextImage');
 
 let lightboxIndex = 0;
 
-function openLightbox(index) {
+function openLightbox(index: number) {
   lightboxIndex = index;
-  const item = originalItems[index];
-  const img = item.querySelector('img');
+  const item = originalItems[index] as HTMLElement;
+  const img = item.querySelector('img') as HTMLImageElement | null;
   const caption = item.querySelector('p');
 
   if (lightboxImage && img) {
@@ -283,8 +283,8 @@ function closeLightboxFn() {
 
 function showNextLightboxImage() {
   lightboxIndex = (lightboxIndex + 1) % totalImages;
-  const item = originalItems[lightboxIndex];
-  const img = item.querySelector('img');
+  const item = originalItems[lightboxIndex] as HTMLElement;
+  const img = item.querySelector('img') as HTMLImageElement | null;
   const caption = item.querySelector('p');
 
   if (lightboxImage && img) {
@@ -301,8 +301,8 @@ function showNextLightboxImage() {
 
 function showPrevLightboxImage() {
   lightboxIndex = (lightboxIndex - 1 + totalImages) % totalImages;
-  const item = originalItems[lightboxIndex];
-  const img = item.querySelector('img');
+  const item = originalItems[lightboxIndex] as HTMLElement;
+  const img = item.querySelector('img') as HTMLImageElement | null;
   const caption = item.querySelector('p');
 
   if (lightboxImage && img) {

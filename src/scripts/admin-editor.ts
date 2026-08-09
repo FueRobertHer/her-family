@@ -7,13 +7,13 @@
 //   modal.js         edit modal rendering, uploads, save
 // This file wires window globals (used by inline onclick handlers) and init.
 
-import { state, loadMemorialData } from './admin-editor/state.js';
+import { state, loadMemorialData } from './admin-editor/state.ts';
 import {
   toggleEditButtons,
   restoreHiddenSections,
   initNavLinksVisibility,
-} from './admin-editor/helpers.js';
-import { recheckBiographyTruncation } from './admin-editor/page-updaters.js';
+} from './admin-editor/helpers.ts';
+import { recheckBiographyTruncation } from './admin-editor/page-updaters.ts';
 import {
   openEditModal,
   closeEditModal,
@@ -21,7 +21,7 @@ import {
   uploadVideoForField,
   uploadAgendaForField,
   saveAllModalContent,
-} from './admin-editor/modal.js';
+} from './admin-editor/modal.ts';
 
 // --- Event Listeners & Initialization ---
 
@@ -43,7 +43,7 @@ function initAdminEditor() {
   }
   memorialDataScript.dataset.initialized = 'true';
 
-  const editModeToggle = document.getElementById('editModeToggle');
+  const editModeToggle = document.getElementById('editModeToggle') as HTMLInputElement | null;
 
   state.memorialData = {};
   state.memorialDataLoaded = false;
@@ -71,7 +71,7 @@ function initAdminEditor() {
         toggleEditButtons(false);
       }
 
-      localStorage.setItem('editModeEnabled', isEnabled);
+      localStorage.setItem('editModeEnabled', String(isEnabled));
     });
   }
 
@@ -96,7 +96,7 @@ document.addEventListener('keydown', (e) => {
 
 // Close modal when clicking outside
 document.getElementById('editModal')?.addEventListener('click', (e) => {
-  if (e.target.id === 'editModal') {
+  if ((e.target as HTMLElement).id === 'editModal') {
     closeEditModal();
   }
 });

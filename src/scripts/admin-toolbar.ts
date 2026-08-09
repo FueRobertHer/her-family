@@ -1,4 +1,4 @@
-function initAdminToolbar(toolbar) {
+function initAdminToolbar(toolbar: HTMLElement) {
   if (!toolbar || toolbar.dataset.toolbarInitialized === 'true') return;
   toolbar.dataset.toolbarInitialized = 'true';
 
@@ -8,10 +8,10 @@ function initAdminToolbar(toolbar) {
   const draggable = toolbar.dataset.toolbarDraggable === 'true';
   const controls =
     (controlsId && document.getElementById(controlsId)) ||
-    toolbar.querySelector('[data-admin-toolbar-controls="true"]');
+    toolbar.querySelector<HTMLElement>('[data-admin-toolbar-controls="true"]');
   const minimizeBtn =
     (minimizeId && document.getElementById(minimizeId)) ||
-    toolbar.querySelector('[data-admin-toolbar-minimize="true"]');
+    toolbar.querySelector<HTMLElement>('[data-admin-toolbar-minimize="true"]');
 
   const xKey = `toolbar:${toolbarId}:x`;
   const yKey = `toolbar:${toolbarId}:y`;
@@ -31,22 +31,24 @@ function initAdminToolbar(toolbar) {
     let currentY = yOffset;
 
     toolbar.style.userSelect = 'none';
-    toolbar.style.webkitUserSelect = 'none';
+    (toolbar.style as any).webkitUserSelect = 'none';
     toolbar.style.cursor = 'move';
     toolbar.style.touchAction = 'none';
     toolbar.style.transition = 'none';
 
-    const getCoordinates = (event) => {
+    const getCoordinates = (event: Event) => {
       if (event.type.includes('touch')) {
+        const e = event as TouchEvent;
         return {
-          clientX: event.touches?.[0]?.clientX || event.changedTouches?.[0]?.clientX || 0,
-          clientY: event.touches?.[0]?.clientY || event.changedTouches?.[0]?.clientY || 0,
+          clientX: e.touches?.[0]?.clientX || e.changedTouches?.[0]?.clientX || 0,
+          clientY: e.touches?.[0]?.clientY || e.changedTouches?.[0]?.clientY || 0,
         };
       }
-      return { clientX: event.clientX, clientY: event.clientY };
+      const e = event as MouseEvent;
+      return { clientX: e.clientX, clientY: e.clientY };
     };
 
-    const drag = (event) => {
+    const drag = (event: Event) => {
       if (event.type === 'touchmove') event.preventDefault();
       const coords = getCoordinates(event);
       currentX = coords.clientX - initialX;
@@ -69,21 +71,21 @@ function initAdminToolbar(toolbar) {
       document.removeEventListener('mouseup', dragEnd);
       document.removeEventListener('touchend', dragEnd);
       document.body.style.userSelect = '';
-      document.body.style.webkitUserSelect = '';
+      (document.body.style as any).webkitUserSelect = '';
       toolbar.style.willChange = 'auto';
       localStorage.setItem(xKey, String(xOffset));
       localStorage.setItem(yKey, String(yOffset));
     };
 
-    const dragStart = (event) => {
-      if (event.target.closest('button, input, a, label')) return;
-      if (controls && event.type === 'touchstart' && event.target.closest(`#${controls.id}`)) return;
+    const dragStart = (event: Event) => {
+      if ((event.target as HTMLElement).closest('button, input, a, label')) return;
+      if (controls && event.type === 'touchstart' && (event.target as HTMLElement).closest(`#${controls.id}`)) return;
       const coords = getCoordinates(event);
       initialX = coords.clientX - xOffset;
       initialY = coords.clientY - yOffset;
       toolbar.style.willChange = 'transform';
       document.body.style.userSelect = 'none';
-      document.body.style.webkitUserSelect = 'none';
+      (document.body.style as any).webkitUserSelect = 'none';
       document.addEventListener('mousemove', drag, { passive: true });
       document.addEventListener('touchmove', drag, { passive: false });
       document.addEventListener('mouseup', dragEnd);
@@ -124,7 +126,7 @@ function initAdminToolbar(toolbar) {
 }
 
 function initAllAdminToolbars() {
-  const toolbars = document.querySelectorAll('[data-admin-toolbar="true"]');
+  const toolbars = document.querySelectorAll<HTMLElement>('[data-admin-toolbar="true"]');
   toolbars.forEach((toolbar) => initAdminToolbar(toolbar));
 }
 

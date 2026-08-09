@@ -1,11 +1,11 @@
 // Functions that push saved content back into the live page DOM.
-import { state } from './state.js';
-import { escapeHtml } from '../lib/escape-html.js';
-import { updateNavLinkVisibility, showToast, generateAgendaUrl } from './helpers.js';
+import { state } from './state.ts';
+import { escapeHtml } from '../lib/escape-html.ts';
+import { updateNavLinkVisibility, showToast, generateAgendaUrl } from './helpers.ts';
 
 // --- Section Update Functions ---
 
-export function updateHeroSection(updates) {
+export function updateHeroSection(updates: Record<string, any>) {
   const heroSection = document.getElementById('hero-section');
   if (!heroSection) return;
 
@@ -23,8 +23,9 @@ export function updateHeroSection(updates) {
   }
 
   if (updates.birthDate || updates.deathDate) {
-    const birthDate = updates.birthDate || state.contentData.hero?.birthDate?.value;
-    const deathDate = updates.deathDate || state.contentData.hero?.deathDate?.value;
+    const cd = state.contentData as any;
+    const birthDate = updates.birthDate || cd.hero?.birthDate?.value;
+    const deathDate = updates.deathDate || cd.hero?.deathDate?.value;
 
     const datesEl = heroSection.querySelector('[data-hero-dates]');
     if (datesEl && birthDate && deathDate) {
@@ -38,25 +39,26 @@ export function updateHeroSection(updates) {
   }
 
   if (updates.mainImage !== undefined) {
-    const imgEls = heroSection.querySelectorAll('[data-hero-image], img[data-hero-image]');
+    const imgEls = heroSection.querySelectorAll<HTMLImageElement>('[data-hero-image], img[data-hero-image]');
     imgEls.forEach((img) => {
       img.src = updates.mainImage;
     });
 
     // Also update background if no specific background image is set
-    if (!updates.backgroundImage && !state.contentData.hero?.backgroundImage?.value) {
-      const bgImg = heroSection.querySelector('[data-hero-background]');
+    const cd = state.contentData as any;
+    if (!updates.backgroundImage && !cd.hero?.backgroundImage?.value) {
+      const bgImg = heroSection.querySelector<HTMLImageElement>('[data-hero-background]');
       if (bgImg) bgImg.src = updates.mainImage;
     }
   }
 
   if (updates.backgroundImage !== undefined) {
-    const bgImg = heroSection.querySelector('[data-hero-background]');
+    const bgImg = heroSection.querySelector<HTMLImageElement>('[data-hero-background]');
     if (bgImg) bgImg.src = updates.backgroundImage;
   }
 }
 
-export function updateBiographySection(updates) {
+export function updateBiographySection(updates: Record<string, any>) {
   const bioSection = document.getElementById('biography-section');
   if (!bioSection) return;
 
@@ -73,8 +75,8 @@ export function updateBiographySection(updates) {
   if (updates.content !== undefined) {
     const contentEl = bioSection.querySelector('[data-bio-content]');
     if (contentEl) {
-      const paragraphs = updates.content.split('\n\n').filter((p) => p.trim());
-      contentEl.innerHTML = paragraphs.map((p) => `<p class="mb-6">${escapeHtml(p)}</p>`).join('');
+      const paragraphs = updates.content.split('\n\n').filter((p: string) => p.trim());
+      contentEl.innerHTML = paragraphs.map((p: string) => `<p class="mb-6">${escapeHtml(p)}</p>`).join('');
 
       // Re-check if truncation button should be visible after content update
       recheckBiographyTruncation();
@@ -123,11 +125,11 @@ export function recheckBiographyTruncation() {
   chevronUp?.classList.add('hidden');
 }
 
-export function updateHighlightsSection(updates) {
+export function updateHighlightsSection(updates: Record<string, any>) {
   const bioSection = document.getElementById('biography');
   if (!bioSection) return;
 
-  const highlightsContainer = bioSection.querySelector('[data-bio-highlights]')?.closest('.mt-12');
+  const highlightsContainer = bioSection.querySelector('[data-bio-highlights]')?.closest('.mt-12') as HTMLElement | null;
 
   if (highlightsContainer && updates.visible !== undefined) {
     toggleSectionVisibility(highlightsContainer, updates.visible);
@@ -150,15 +152,15 @@ export function updateHighlightsSection(updates) {
         }
       } else {
         // It's a newline-separated string, split it
-        highlightsArray = updates.highlights.split('\n').filter((h) => h.trim());
+        highlightsArray = updates.highlights.split('\n').filter((h: string) => h.trim());
       }
 
       highlightsEl.innerHTML = highlightsArray
         .map(
-          (highlight) => `
+          (highlight: string) => `
         <div class="flex items-start space-x-3">
-          <div class="shrink-0 w-2 h-2 bg-warm-gray-400 rounded-full mt-3"></div>
-          <p class="text-warm-gray-700">${escapeHtml(highlight.trim())}</p>
+           <div class="shrink-0 w-2 h-2 bg-warm-gray-400 rounded-full mt-3"></div>
+           <p class="text-warm-gray-700">${escapeHtml(highlight.trim())}</p>
         </div>
       `
         )
@@ -167,7 +169,7 @@ export function updateHighlightsSection(updates) {
   }
 }
 
-export function updateVideoSection(updates) {
+export function updateVideoSection(updates: Record<string, any>) {
   const videoSection = document.getElementById('video-section');
   if (!videoSection) return;
 
@@ -187,8 +189,8 @@ export function updateVideoSection(updates) {
   }
 
   if (updates.videoUrl !== undefined) {
-    const videoSource = videoSection.querySelector('[data-video-source]');
-    const videoEl = videoSection.querySelector('[data-video-element]');
+    const videoSource = videoSection.querySelector<HTMLSourceElement>('[data-video-source]');
+    const videoEl = videoSection.querySelector<HTMLVideoElement>('[data-video-element]');
     if (videoSource && videoEl) {
       videoSource.src = updates.videoUrl;
       videoEl.load();
@@ -196,12 +198,12 @@ export function updateVideoSection(updates) {
   }
 
   if (updates.posterImage !== undefined) {
-    const videoEl = videoSection.querySelector('[data-video-element]');
+    const videoEl = videoSection.querySelector<HTMLVideoElement>('[data-video-element]');
     if (videoEl) videoEl.poster = updates.posterImage;
   }
 }
 
-export function updateDonationsSection(updates) {
+export function updateDonationsSection(updates: Record<string, any>) {
   const donationsSection = document.getElementById('donations-section');
   if (!donationsSection) return;
 
@@ -231,17 +233,17 @@ export function updateDonationsSection(updates) {
 
   // Helper to update payment method visibility and content
   const updatePaymentMethod = (
-    key,
-    containerSelector,
-    valueSelector,
-    linkSelector,
-    formatValue,
-    formatLink
+    key: string,
+    containerSelector: string,
+    valueSelector: string,
+    linkSelector: string | null,
+    formatValue: (v: string) => string,
+    formatLink: (v: string) => string
   ) => {
     if (updates[key] !== undefined) {
       const container = donationsSection.querySelector(containerSelector);
       const valueEl = donationsSection.querySelector(valueSelector);
-      const linkEl = linkSelector ? donationsSection.querySelector(linkSelector) : null;
+      const linkEl = linkSelector ? donationsSection.querySelector<HTMLAnchorElement>(linkSelector) : null;
 
       const value = updates[key];
 
@@ -263,8 +265,8 @@ export function updateDonationsSection(updates) {
     '[data-venmo-container]',
     '[data-venmo-username]',
     '[data-venmo-link]',
-    (v) => `@${v}`,
-    (v) => `https://venmo.com/${v}`
+    (v: string) => `@${v}`,
+    (v: string) => `https://venmo.com/${v}`
   );
 
   updatePaymentMethod(
@@ -272,8 +274,8 @@ export function updateDonationsSection(updates) {
     '[data-cashapp-container]',
     '[data-cashapp-username]',
     '[data-cashapp-link]',
-    (v) => `${v}`,
-    (v) => `https://cash.app/${v}`
+    (v: string) => `${v}`,
+    (v: string) => `https://cash.app/${v}`
   );
 
   updatePaymentMethod(
@@ -281,12 +283,12 @@ export function updateDonationsSection(updates) {
     '[data-zelle-container]',
     '[data-zelle-email]',
     null,
-    (v) => v,
-    (_v) => '#'
+    (v: string) => v,
+    (_v: string) => '#'
   );
 }
 
-export function updateFuneralSection(updates) {
+export function updateFuneralSection(updates: Record<string, any>) {
   const funeralSection = document.getElementById('funeral-section');
   if (!funeralSection) return;
 
@@ -305,7 +307,7 @@ export function updateFuneralSection(updates) {
   }
 }
 
-export function updateSpecialInstructionsSection(updates) {
+export function updateSpecialInstructionsSection(updates: Record<string, any>) {
   const sectionEl = document.getElementById('special-instructions-section');
   if (!sectionEl) return;
 
@@ -319,7 +321,7 @@ export function updateSpecialInstructionsSection(updates) {
   }
 }
 
-export function updateFlowersInfoSection(updates) {
+export function updateFlowersInfoSection(updates: Record<string, any>) {
   const sectionEl = document.getElementById('flowers-info-section');
   if (!sectionEl) return;
 
@@ -333,14 +335,14 @@ export function updateFlowersInfoSection(updates) {
   }
 }
 
-export function updateServiceOnPage(serviceIndex, serviceData) {
+export function updateServiceOnPage(serviceIndex: string | number, serviceData: Record<string, any>) {
   const serviceCard = document.querySelector(`[data-service-index="${serviceIndex}"]`);
   if (!serviceCard) {
     console.error(`Service card not found for index ${serviceIndex}`);
     return;
   }
 
-  const formatDate = (dateStr) => {
+  const formatDate = (dateStr: string) => {
     if (!dateStr) return '';
     const date = new Date(dateStr);
     return date.toLocaleDateString('en-US', {
@@ -351,7 +353,7 @@ export function updateServiceOnPage(serviceIndex, serviceData) {
     });
   };
 
-  const formatTime = (timeStr) => {
+  const formatTime = (timeStr: string) => {
     if (!timeStr) return '';
     const [hours, minutes] = timeStr.split(':');
     const hour = parseInt(hours);
@@ -415,7 +417,7 @@ export function updateServiceOnPage(serviceIndex, serviceData) {
     }
 
     if (serviceData.location.phone !== undefined) {
-      const phoneEl = serviceCard.querySelector(`[data-service-location-phone="${serviceIndex}"]`);
+      const phoneEl = serviceCard.querySelector<HTMLAnchorElement>(`[data-service-location-phone="${serviceIndex}"]`);
       if (phoneEl) {
         phoneEl.textContent = serviceData.location.phone;
         phoneEl.href = `tel:${serviceData.location.phone}`;
@@ -423,7 +425,7 @@ export function updateServiceOnPage(serviceIndex, serviceData) {
     }
 
     if (serviceData.location.website !== undefined) {
-      const websiteEl = serviceCard.querySelector(
+      const websiteEl = serviceCard.querySelector<HTMLAnchorElement>(
         `[data-service-location-website="${serviceIndex}"]`
       );
       if (websiteEl) {
@@ -471,7 +473,7 @@ export function updateServiceOnPage(serviceIndex, serviceData) {
         serviceCard.appendChild(newContainer);
       } else {
         // Update existing link
-        const agendaLink = serviceCard.querySelector(
+        const agendaLink = serviceCard.querySelector<HTMLAnchorElement>(
           `[data-service-agenda-link="${serviceIndex}"]`
         );
         if (agendaLink) {
@@ -485,7 +487,7 @@ export function updateServiceOnPage(serviceIndex, serviceData) {
   }
 }
 
-export function updateGallerySection(updates) {
+export function updateGallerySection(updates: Record<string, any>) {
   const gallerySection = document.getElementById('gallery-section');
   if (!gallerySection) return;
 
@@ -501,7 +503,7 @@ export function updateGallerySection(updates) {
   showToast('Gallery updated successfully.', 'success');
 }
 
-export function updateCommentsSection(updates) {
+export function updateCommentsSection(updates: Record<string, any>) {
   const commentsSection = document.getElementById('comments-section');
   if (!commentsSection) return;
 
@@ -521,7 +523,7 @@ export function updateCommentsSection(updates) {
   }
 }
 
-export function updateFooterSection(updates) {
+export function updateFooterSection(updates: Record<string, any>) {
   const footerSection = document.querySelector('footer');
   if (!footerSection) return;
 
@@ -540,7 +542,7 @@ export function updateFooterSection(updates) {
   }
 }
 
-export function updateReceptionSection(updates) {
+export function updateReceptionSection(updates: Record<string, any>) {
   const receptionSection = document.getElementById('reception-section');
   if (!receptionSection) return;
 
@@ -575,7 +577,7 @@ export function updateReceptionSection(updates) {
   }
 }
 
-export function toggleSectionVisibility(element, isVisible, darkTheme = false) {
+export function toggleSectionVisibility(element: HTMLElement | null, isVisible: any, darkTheme = false) {
   if (!element) return;
 
   const isHidden = isVisible === false || isVisible === 'false';
@@ -610,7 +612,7 @@ export function toggleSectionVisibility(element, isVisible, darkTheme = false) {
   }
 }
 
-export function updatePageContent(section, updates) {
+export function updatePageContent(section: string, updates: Record<string, any>) {
   if (!updates) return;
 
   switch (section) {
@@ -655,4 +657,5 @@ export function updatePageContent(section, updates) {
       break;
   }
 }
+
 

@@ -1,10 +1,10 @@
 // Stateless-ish DOM/utility helpers for the admin editor.
-import { state } from './state.js';
+import { state } from './state.ts';
 
 // --- Helper Functions ---
 
 // Create URL-friendly slug
-export function createSlug(text) {
+export function createSlug(text: string | null | undefined): string {
   if (!text) return '';
   return text
     .toLowerCase()
@@ -15,8 +15,8 @@ export function createSlug(text) {
 }
 
 // Generate agenda URL with memorial name and service type
-export function generateAgendaUrl(serviceIndex, serviceType) {
-  const memorialName = state.memorialData?.name || '';
+export function generateAgendaUrl(serviceIndex: string | number, serviceType: string): string {
+  const memorialName = (state.memorialData as any)?.name || '';
   const memorialNameSlug = createSlug(memorialName);
   const serviceSlug = createSlug(serviceType);
 
@@ -27,8 +27,8 @@ export function generateAgendaUrl(serviceIndex, serviceType) {
   return url;
 }
 
-export function updateNavLinkVisibility(href, isVisible) {
-  const link = document.querySelector(`nav a[href="${href}"]`);
+export function updateNavLinkVisibility(href: string, isVisible: boolean | string) {
+  const link = document.querySelector<HTMLElement>(`nav a[href="${href}"]`);
   if (!link) return;
 
   const isHidden = isVisible === false || isVisible === 'false';
@@ -50,10 +50,10 @@ export function updateNavLinkVisibility(href, isVisible) {
   }
 }
 
-export function toggleEditButtons(show) {
+export function toggleEditButtons(show?: boolean) {
   const body = document.body;
-  const sections = document.querySelectorAll('[class*="border-dashed"]');
-  const hiddenLinks = document.querySelectorAll('.is-hidden-section');
+  const sections = document.querySelectorAll<HTMLElement>('[class*="border-dashed"]');
+  const hiddenLinks = document.querySelectorAll<HTMLElement>('.is-hidden-section');
 
   if (show) {
     body.classList.remove('hide-edit-buttons');
@@ -61,7 +61,7 @@ export function toggleEditButtons(show) {
     sections.forEach((section) => {
       section.classList.add('opacity-60', 'opacity-70', 'border-2', 'border-dashed');
       // Add back 'Hidden from public' badge if it was hidden
-      const badge = section.querySelector('.hidden-badge');
+      const badge = section.querySelector<HTMLElement>('.hidden-badge');
       if (badge) badge.style.display = 'block';
     });
 
@@ -90,7 +90,7 @@ export function toggleEditButtons(show) {
 }
 
 export function restoreHiddenSections() {
-  const hiddenSections = document.querySelectorAll('.hidden-in-preview');
+  const hiddenSections = document.querySelectorAll<HTMLElement>('.hidden-in-preview');
   hiddenSections.forEach((section) => {
     section.style.display = ''; // Restore default display
     section.classList.remove('hidden-in-preview');
@@ -101,14 +101,15 @@ export function restoreHiddenSections() {
 export function initNavLinksVisibility() {
   if (!state.memorialData) return;
 
+  const md = state.memorialData as any;
   // Map of section hrefs to their visibility property in state.memorialData
   const links = [
-    { href: '#biography', visible: state.memorialData.biographyVisible },
-    { href: '#funeral-info', visible: state.memorialData.funeralInfo?.visible },
-    { href: '#gallery', visible: state.memorialData.galleryVisible },
-    { href: '#video', visible: state.memorialData.videoVisible },
-    { href: '#memories', visible: state.memorialData.commentsVisible },
-    { href: '#donations', visible: state.memorialData.donations?.visible },
+    { href: '#biography', visible: md.biographyVisible },
+    { href: '#funeral-info', visible: md.funeralInfo?.visible },
+    { href: '#gallery', visible: md.galleryVisible },
+    { href: '#video', visible: md.videoVisible },
+    { href: '#memories', visible: md.commentsVisible },
+    { href: '#donations', visible: md.donations?.visible },
   ];
 
   links.forEach((item) => {
@@ -118,7 +119,7 @@ export function initNavLinksVisibility() {
   });
 }
 
-export function showToast(message, type) {
+export function showToast(message: string, type: 'success' | 'error' | 'info' = 'info') {
   const toast = document.createElement('div');
   toast.className = `fixed top-20 right-4 z-50 px-6 py-3 rounded-lg shadow-lg text-white ${
     type === 'success' ? 'bg-green-500' : 'bg-red-500'

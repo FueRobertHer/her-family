@@ -24,15 +24,14 @@ A family-focused app built with Astro.js. It now supports multiple memorials und
 
 ### Prerequisites
 
-- Node.js 18.20.8 or higher
-- npm or yarn
+- Bun (latest version)
 
 ### Installation
 
 1. Clone or download this project
 2. Install dependencies:
    ```bash
-   npm install
+   bun install
    ```
 3. Create a `.env` file in your project root with your Cloudinary credentials (see [Configuration](#configuration)):
    ```bash
@@ -41,13 +40,13 @@ A family-focused app built with Astro.js. It now supports multiple memorials und
 4. Initialize the database with default content:
 
    ```bash
-   npx astro db push
-   npx astro db execute "db/seed.ts"
+   bunx astro db push
+   bunx astro db execute "db/seed.ts"
    ```
 
 5. Start the development server:
    ```bash
-   npm run dev
+   bun run dev
    ```
 6. Open your browser to `http://localhost:4321`
 
@@ -61,14 +60,14 @@ A family-focused app built with Astro.js. It now supports multiple memorials und
 ### Development Scripts
 
 ```bash
-npm run dev            # Start development server
-npm run build          # Build for production
-npm run preview        # Preview production build
-npm run check          # Run TypeScript type checking
-npm run lint           # Check code for issues
-npm run lint:fix       # Auto-fix linting issues
-npm run format         # Format code with Prettier
-npm run format:check   # Check formatting without changes
+bun run dev            # Start development server
+bun run build          # Build for production
+bun run preview        # Preview production build
+bun run check          # Run TypeScript type checking
+bun run lint           # Check code for issues
+bun run lint:fix       # Auto-fix linting issues
+bun run format         # Format code with Prettier
+bun run format:check   # Check formatting without changes
 ```
 
 ### Configuration
@@ -139,7 +138,7 @@ Visit `/admin` to approve or reject memories shared by visitors for the selected
 
 ### Other Static Hosts
 
-Run `npm run build` to generate the `dist/` folder and upload it to any static host (Netlify, GitHub Pages, etc.).
+Run `bun run build` to generate the `dist/` folder and upload it to any static host (Netlify, GitHub Pages, etc.).
 **Important**: Dynamic features like Comments and Admin Panel require a backend (SSR), so Vercel or similar adapter-supported platforms are strongly recommended.
 
 ## Technical Details
