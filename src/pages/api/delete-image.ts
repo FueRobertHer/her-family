@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { cloudinary } from '../../lib/cloudinary';
+import { MediaService } from '../../lib/services/media.service.ts';
 import { requireAuth } from '../../lib/auth';
 import { successResponse, errorResponse, validationError } from '../../lib/api-response';
 
@@ -18,11 +18,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     }
 
     // Delete from Cloudinary
-    const result = await cloudinary.uploader.destroy(publicId);
+    const isDeleted = await MediaService.deleteMedia(publicId);
 
     return successResponse({
-      success: result.result === 'ok',
-      result: result.result,
+      success: isDeleted,
+      result: isDeleted ? 'ok' : 'failed',
     });
   } catch (error) {
     console.error('Delete error:', error);

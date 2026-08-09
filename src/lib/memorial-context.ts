@@ -1,5 +1,5 @@
-import { db, Memorials, eq } from 'astro:db';
 import { errorResponse, validationError } from './api-response';
+import { MemorialService } from './services/memorial.service.ts';
 
 export interface MemorialRecord {
   id: number;
@@ -12,7 +12,7 @@ export interface MemorialRecord {
 
 export async function getMemorialBySlug(slug: string): Promise<MemorialRecord | null> {
   if (!slug) return null;
-  const memorial = await db.select().from(Memorials).where(eq(Memorials.slug, slug)).get();
+  const memorial = await MemorialService.getMemorialBySlug(slug, true);
   return (memorial as MemorialRecord | undefined) ?? null;
 }
 

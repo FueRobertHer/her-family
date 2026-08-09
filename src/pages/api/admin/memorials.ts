@@ -1,5 +1,4 @@
 import type { APIRoute } from 'astro';
-import { db, Memorials, eq } from 'astro:db';
 import { z } from 'zod';
 import { requireAuth } from '../../../lib/auth';
 import { errorResponse, successResponse, validationError } from '../../../lib/api-response';
@@ -72,7 +71,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       return validationError('Unable to generate a valid slug');
     }
 
-    const existing = await db.select().from(Memorials).where(eq(Memorials.slug, baseSlug)).get();
+    const existing = await MemorialService.getMemorialBySlug(baseSlug, true);
     if (existing) {
       return validationError('A memorial with this slug already exists');
     }
@@ -112,7 +111,7 @@ export const PATCH: APIRoute = async ({ request, cookies }) => {
       return validationError('Nothing to update');
     }
 
-    const existing = await db.select().from(Memorials).where(eq(Memorials.id, id)).get();
+    const existing = await MemorialService.getMemorialById(id);
     if (!existing) {
       return errorResponse('Memorial not found', 404);
     }
@@ -125,7 +124,7 @@ export const PATCH: APIRoute = async ({ request, cookies }) => {
       }
 
       if (nextSlug !== existing.slug) {
-        const slugMatch = await db.select().from(Memorials).where(eq(Memorials.slug, nextSlug)).get();
+        const slugMatch = await MemorialService.getMemorialBySlug(nextSlug, true);
         if (slugMatch) {
           return validationError('A memorial with this slug already exists');
         }
@@ -160,7 +159,7 @@ export const DELETE: APIRoute = async ({ request, cookies }) => {
     }
 
     const { id, confirmationName } = validation.data;
-    const existing = await db.select().from(Memorials).where(eq(Memorials.id, id)).get();
+    const existing = await MemorialService.getMemorialById(id);
     if (!existing) {
       return errorResponse('Memorial not found', 404);
     }
@@ -169,7 +168,7 @@ export const DELETE: APIRoute = async ({ request, cookies }) => {
       return validationError('Confirmation name does not match memorial name');
     }
 
-    const allMemorials = await db.select().from(Memorials);
+    const allMemorials = await MemorialService.getAllMemorialsAdmin();
     if (allMemorials.length <= 1) {
       return validationError('Cannot delete the last memorial');
     }

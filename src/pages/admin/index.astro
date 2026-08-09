@@ -1,6 +1,6 @@
 ---
 export const prerender = false;
-import { db, Memorials } from 'astro:db';
+import { MemorialService } from '../../lib/services/memorial.service.ts';
 import { isAuthenticated as checkAuth } from '../../lib/auth';
 import { clearSessionCookie } from '../../lib/session';
 import Layout from '../../layouts/Layout.astro';
@@ -9,7 +9,7 @@ import '../../styles/global.css';
 // Check for authentication
 const cookies = Astro.cookies;
 const isAuthenticated = checkAuth(cookies);
-const memorials = isAuthenticated ? await db.select().from(Memorials) : [];
+const memorials = isAuthenticated ? await MemorialService.getAllMemorialsAdmin() : [];
 const selectedMemorialSlug =
   Astro.url.searchParams.get('memorial') || 'all';
 
