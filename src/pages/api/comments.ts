@@ -1,9 +1,9 @@
 import type { APIRoute } from 'astro';
-import { db, Comments, MemorialContent, eq, and, desc } from 'astro:db';
 import { successResponse, errorResponse, validationError } from '../../lib/api-response';
 import { commentSchema, validateData } from '../../lib/validation';
 import { getMemorialBySlug } from '../../lib/memorial-context';
 import { checkRateLimit, getClientIdentifier } from '../../lib/rate-limiter';
+import { CommentService } from '../../lib/services/comment.service.ts';
 
 // Public endpoint: cap comment submissions per client to curb spam flooding
 // the moderation queue. Best-effort (see rate-limiter serverless caveat).
@@ -28,14 +28,8 @@ export const GET: APIRoute = async ({ request }) => {
       return errorResponse('Memorial not found', 404);
     }
 
-    // Sort and paginate in SQL so we never pull the full comment set into memory
-    const approvedComments = await db
-      .select()
-      .from(Comments)
-      .where(and(eq(Comments.status, 'approved'), eq(Comments.memorialId, memorial.id)))
-      .orderBy(desc(Comments.createdAt))
-      .limit(limit)
-      .offset(offset);
+    // Sort and paginate in SQL via the service
+    const approvedComments = await CommentService.getApprovedComments(memorial.id, limit, offset);
 
     return successResponse(approvedComments);
   } catch (error) {
@@ -74,34 +68,13 @@ export const POST: APIRoute = async (context) => {
 
     const { name, email, relationship, message, imageUrl } = validation.data;
 
-    // Check auto-approve setting with better error handling
-    let status: 'pending' | 'approved' = 'pending';
-    try {
-      const settings = await db
-        .select()
-        .from(MemorialContent)
-        .where(
-          and(
-            eq(MemorialContent.memorialId, memorial.id),
-            eq(MemorialContent.section, 'comments'),
-            eq(MemorialContent.key, 'autoApprove')
-          )
-        );
-
-      // Only approve automatically if the setting explicitly exists and is set to 'true'
-      if (settings.length > 0 && settings[0].value === 'true') {
-        status = 'approved';
-      }
-      // If setting doesn't exist or is 'false', default to 'pending' (safer approach)
-    } catch (settingsError) {
-      console.error('Error checking auto-approve setting:', settingsError);
-      // Default to pending on error - safer approach
-    }
+    // Check auto-approve setting
+    const isAutoApprove = await CommentService.getAutoApproveSetting(memorial.id);
+    const status = isAutoApprove ? 'approved' : 'pending';
 
     // Insert new comment with proper error handling
-    const now = new Date().toISOString();
     try {
-      const result = await db.insert(Comments).values({
+      const commentId = await CommentService.createComment({
         memorialId: memorial.id,
         name: name.trim(),
         email: email?.trim() || null,
@@ -109,8 +82,6 @@ export const POST: APIRoute = async (context) => {
         message: message.trim(),
         imageUrl: imageUrl?.trim() || null,
         status: status,
-        createdAt: now,
-        updatedAt: now,
       });
 
       const responseMessage =
@@ -118,7 +89,7 @@ export const POST: APIRoute = async (context) => {
           ? 'Comment submitted successfully.'
           : 'Comment submitted successfully. It will be reviewed before appearing on the page.';
 
-      return successResponse({ id: Number(result.lastInsertRowid), status }, responseMessage, 201);
+      return successResponse({ id: commentId, status }, responseMessage, 201);
     } catch (dbError) {
       console.error('Database error creating comment:', dbError);
       return errorResponse('Failed to save comment. Please try again.', 500);

@@ -4,26 +4,18 @@ export const prerender = false;
 import Layout from '../layouts/Layout.astro';
 import AdminToolbar from '../components/AdminToolbar.astro';
 import AdminModalShell from '../components/AdminModalShell.astro';
-import { db, Memorials, MemorialContent, eq, and } from 'astro:db';
+import { MemorialService } from '../lib/services/memorial.service.ts';
 import { isAuthenticated } from '../lib/auth';
 import { embedJson } from '../lib/embed-json';
 
 const isAdmin = isAuthenticated(Astro.cookies);
-const activeMemorials = await db.select().from(Memorials).where(eq(Memorials.status, 'active'));
+const activeMemorials = await MemorialService.getActiveMemorials();
 const defaultMemorial = activeMemorials[0];
 const memorialSlug = defaultMemorial?.slug || '';
 
 let homeContent: Record<string, string> = {};
 if (defaultMemorial) {
-  const rows = await db
-    .select()
-    .from(MemorialContent)
-    .where(and(eq(MemorialContent.memorialId, defaultMemorial.id), eq(MemorialContent.section, 'home')));
-
-  homeContent = rows.reduce<Record<string, string>>((acc, row) => {
-    acc[row.key] = row.value;
-    return acc;
-  }, {});
+  homeContent = await MemorialService.getMemorialContent(defaultMemorial.id, 'home');
 }
 
 const getContent = (key: string, fallback: string) => homeContent[key] ?? fallback;

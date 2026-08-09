@@ -77,6 +77,28 @@ export function parseJsonContent<T>(raw: string | undefined, label: string): T |
 
 export class MemorialService {
   /**
+   * Retrieves all active memorials
+   */
+  static async getActiveMemorials() {
+    return await db.select().from(Memorials).where(eq(Memorials.status, 'active'));
+  }
+
+  /**
+   * Retrieves content for a specific memorial section
+   */
+  static async getMemorialContent(memorialId: number, section: string) {
+    const rows = await db
+      .select()
+      .from(MemorialContent)
+      .where(and(eq(MemorialContent.memorialId, memorialId), eq(MemorialContent.section, section)));
+
+    return rows.reduce<Record<string, string>>((acc, row) => {
+      acc[row.key] = row.value;
+      return acc;
+    }, {});
+  }
+
+  /**
    * Fetches a memorial by slug and determines if it should be visible based on admin status.
    */
   static async getMemorialBySlug(slug: string, isAdmin: boolean) {

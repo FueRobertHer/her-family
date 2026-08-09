@@ -1,9 +1,9 @@
 import type { APIRoute } from 'astro';
-import { db, MemorialContent, eq, and } from 'astro:db';
 import { requireAuth } from '../../../lib/auth';
 import { successResponse, errorResponse, validationError } from '../../../lib/api-response';
 import { memorialContentSchema, validateData } from '../../../lib/validation';
 import { getMemorialBySlug } from '../../../lib/memorial-context';
+import { ContentService } from '../../../lib/services/content.service.ts';
 
 export const prerender = false;
 
@@ -30,10 +30,7 @@ export const GET: APIRoute = async ({ request }) => {
       return errorResponse('Memorial not found', 404);
     }
 
-    const content = await db
-      .select()
-      .from(MemorialContent)
-      .where(eq(MemorialContent.memorialId, memorial.id));
+    const content = await ContentService.getAllContent(memorial.id);
 
     // Organize content by section for easier use
     const organizedContent = content.reduce((acc, item) => {
@@ -82,40 +79,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     const { section, key, value, type } = validation.data;
 
-    // Check if content already exists (optimized query)
-    const existing = await db
-      .select()
-      .from(MemorialContent)
-      .where(
-        and(
-          eq(MemorialContent.memorialId, memorial.id),
-          eq(MemorialContent.section, section),
-          eq(MemorialContent.key, key)
-        )
-      )
-      .limit(1);
-
-    if (existing.length > 0) {
-      // Update existing content using proper SQL update
-      await db
-        .update(MemorialContent)
-        .set({
-          value: String(value),
-          type,
-          updatedAt: new Date().toISOString(),
-        })
-        .where(eq(MemorialContent.id, existing[0].id));
-    } else {
-      // Insert new content
-      await db.insert(MemorialContent).values({
-        memorialId: memorial.id,
-        section,
-        key,
-        value: String(value),
-        type,
-        updatedAt: new Date().toISOString(),
-      });
-    }
+    await ContentService.upsertContent(memorial.id, section, key, value, type);
 
     return successResponse(undefined, 'Content updated successfully');
   } catch (error) {
