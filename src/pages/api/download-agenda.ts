@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
-import { db, MemorialContent, eq, and } from 'astro:db';
 import { getMemorialBySlug } from '../../lib/memorial-context';
+import { ContentService } from '../../lib/services/content.service.ts';
 
 export const prerender = false;
 
@@ -20,17 +20,7 @@ export const GET: APIRoute = async ({ request }) => {
 
   try {
     // Fetch the service data
-    const result = await db
-      .select()
-      .from(MemorialContent)
-      .where(
-        and(
-          eq(MemorialContent.memorialId, memorial.id),
-          eq(MemorialContent.section, 'funeral'),
-          eq(MemorialContent.key, `service${serviceIndex}`)
-        )
-      )
-      .get();
+    const result = await ContentService.getContentItem(memorial.id, 'funeral', `service${serviceIndex}`);
 
     if (!result || !result.value) {
       return new Response('Service not found', { status: 404 });

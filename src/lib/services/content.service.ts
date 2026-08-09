@@ -12,6 +12,23 @@ export class ContentService {
   }
 
   /**
+   * Retrieves a specific content row for a memorial section/key.
+   */
+  static async getContentItem(memorialId: number, section: string, key: string) {
+    return await db
+      .select()
+      .from(MemorialContent)
+      .where(
+        and(
+          eq(MemorialContent.memorialId, memorialId),
+          eq(MemorialContent.section, section),
+          eq(MemorialContent.key, key)
+        )
+      )
+      .get();
+  }
+
+  /**
    * Upserts content for a memorial section/key.
    */
   static async upsertContent(

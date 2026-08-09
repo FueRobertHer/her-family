@@ -3,7 +3,7 @@
 export const prerender = false;
 
 import Layout from '../../layouts/Layout.astro';
-import { db, MemorialContent, eq, and } from 'astro:db';
+import { ContentService } from '../../lib/services/content.service.ts';
 import { optimizeCloudinaryPdf } from '../../lib/image-optimization';
 import { getMemorialBySlug } from '../../lib/memorial-context';
 
@@ -19,17 +19,7 @@ const serviceIndex = parseInt((id || '0').split('-')[0]);
 const agendaTransitionName = `agenda-header-${memorialSlug || 'default'}-${serviceIndex}`;
 
 // Fetch the service data specifically
-const result = await db
-  .select()
-  .from(MemorialContent)
-  .where(
-    and(
-      eq(MemorialContent.memorialId, memorial.id),
-      eq(MemorialContent.section, 'funeral'),
-      eq(MemorialContent.key, `service${serviceIndex}`)
-    )
-  )
-  .get();
+const result = await ContentService.getContentItem(memorial.id, 'funeral', `service${serviceIndex}`);
 
 let agendaUrl = null;
 let serviceType = 'Service';

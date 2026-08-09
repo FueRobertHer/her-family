@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { cloudinary, isCloudinaryConfigured } from '../../lib/cloudinary';
+import { MediaService } from '../../lib/services/media.service.ts';
 import { isAuthenticated as checkAuth } from '../../lib/auth';
 import { checkRateLimit, getClientIdentifier } from '../../lib/rate-limiter';
 import { getMemorialBySlug } from '../../lib/memorial-context';
@@ -58,7 +58,6 @@ export const POST: APIRoute = async (context) => {
 
     // Validate file size (max 5MB for images, 100MB for videos — videos are admin-only)
     const isVideo = isAdmin && file.type.startsWith('video/');
-    const isPdf = file.type === 'application/pdf';
     const maxSize = isVideo ? 100 * 1024 * 1024 : 5 * 1024 * 1024;
 
     if (file.size > maxSize) {
@@ -66,7 +65,7 @@ export const POST: APIRoute = async (context) => {
     }
 
     // Check if Cloudinary is configured
-    if (!isCloudinaryConfigured()) {
+    if (!MediaService.isConfigured()) {
       return jsonError(
         'Cloudinary not configured',
         500,
@@ -74,67 +73,10 @@ export const POST: APIRoute = async (context) => {
       );
     }
 
-    // Convert file to base64
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    const base64File = `data:${file.type};base64,${buffer.toString('base64')}`;
-
-    // Upload to Cloudinary with proper types
-    interface CloudinaryUploadOptions {
-      folder: string;
-      resource_type: 'raw' | 'video' | 'image' | 'auto';
-      type?: string;
-      access_mode?: string;
-      use_filename?: boolean;
-      unique_filename?: boolean;
-      allowed_formats?: string[];
-      transformation?: Array<{
-        width?: number;
-        height?: number;
-        crop?: string;
-        quality?: string;
-        fetch_format?: string;
-      }>;
-    }
-
-    const uploadOptions: CloudinaryUploadOptions = {
-      folder: folder,
-      // Public comment uploads are validated as images above; only admins get auto detection.
-      resource_type: isAdmin ? 'auto' : 'image',
-    };
-
-    if (!isAdmin) {
-      // Don't trust the client-declared file.type: have Cloudinary reject
-      // anything whose actual decoded content isn't one of these raster formats.
-      uploadOptions.allowed_formats = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
-    }
-
-    // For PDFs, ensure they're accessible and can be embedded
-    if (isPdf) {
-      uploadOptions.resource_type = 'raw'; // Use 'raw' for PDFs
-      uploadOptions.type = 'upload';
-      uploadOptions.access_mode = 'public'; // Ensure public access
-      uploadOptions.use_filename = true; // Preserve original filename
-      uploadOptions.unique_filename = true; // But make it unique
-    } else if (!isVideo) {
-      // Only apply image transformations if it's not a PDF or Video
-      uploadOptions.transformation = [
-        { width: 2000, height: 2000, crop: 'limit' }, // Max dimensions
-        { quality: 'auto' }, // Auto quality optimization
-        { fetch_format: 'auto' }, // Auto format (WebP when supported)
-      ];
-    }
-
-    const result = await cloudinary.uploader.upload(base64File, uploadOptions);
+    const result = await MediaService.uploadMedia(file, folder, isAdmin);
 
     return new Response(
-      JSON.stringify({
-        success: true,
-        url: result.secure_url,
-        publicId: result.public_id,
-        width: result.width,
-        height: result.height,
-      }),
+      JSON.stringify(result),
       {
         status: 200,
         headers: { 'Content-Type': 'application/json' },

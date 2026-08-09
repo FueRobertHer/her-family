@@ -2,13 +2,13 @@
 export const prerender = false;
 
 import Layout from '../../layouts/Layout.astro';
-import { db, Memorials, eq } from 'astro:db';
 import { isAuthenticated } from '../../lib/auth';
+import { MemorialService } from '../../lib/services/memorial.service.ts';
 
 const isAdmin = isAuthenticated(Astro.cookies);
 const memorials = isAdmin
-  ? await db.select().from(Memorials)
-  : await db.select().from(Memorials).where(eq(Memorials.status, 'active'));
+  ? await MemorialService.getAllMemorialsAdmin()
+  : await MemorialService.getActiveMemorials();
 ---
 
 <Layout title="Memorials" description="Browse memorial pages">

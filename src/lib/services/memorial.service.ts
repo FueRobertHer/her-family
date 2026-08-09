@@ -264,6 +264,13 @@ export class MemorialService {
   }
 
   /**
+   * Retrieves a memorial record by ID
+   */
+  static async getMemorialById(id: number) {
+    return await db.select().from(Memorials).where(eq(Memorials.id, id)).get();
+  }
+
+  /**
    * Create a new memorial
    */
   static async createMemorial(name: string, slug: string) {
