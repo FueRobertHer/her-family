@@ -56,6 +56,10 @@ export default [
         TouchEvent: 'readonly',
         DragEvent: 'readonly',
         NodeListOf: 'readonly',
+        URLSearchParams: 'readonly',
+        HTMLFormElement: 'readonly',
+        HTMLDivElement: 'readonly',
+        HTMLSpanElement: 'readonly',
       },
     },
     rules: {
