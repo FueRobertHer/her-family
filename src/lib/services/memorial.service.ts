@@ -1,4 +1,4 @@
-import { db, MemorialContent, GalleryImages, Memorials, eq, and, asc } from 'astro:db';
+import { db, Memorials, MemorialContent, GalleryImages, Comments, eq, and, desc, asc } from 'astro:db';
 import type { Props as FuneralInfoProps } from '../../components/FuneralInfo.astro';
 
 export interface OrganizedContent {
@@ -76,6 +76,13 @@ export function parseJsonContent<T>(raw: string | undefined, label: string): T |
 }
 
 export class MemorialService {
+  /**
+   * Retrieves all memorials regardless of status (Admin only)
+   */
+  static async getAllMemorialsAdmin() {
+    return await db.select().from(Memorials).orderBy(desc(Memorials.updatedAt));
+  }
+
   /**
    * Retrieves all active memorials
    */
@@ -254,5 +261,46 @@ export class MemorialService {
       footerQuote: getContent('footer', 'quote', ''),
       footerCredit: getContent('footer', 'credit', ''),
     };
+  }
+
+  /**
+   * Create a new memorial
+   */
+  static async createMemorial(name: string, slug: string) {
+    const now = new Date().toISOString();
+    const result = await db.insert(Memorials).values({
+      slug,
+      name,
+      status: 'active',
+      createdAt: now,
+      updatedAt: now,
+    });
+    
+    return Number(result.lastInsertRowid);
+  }
+
+  /**
+   * Update an existing memorial
+   */
+  static async updateMemorial(id: number, status: string, name: string, slug: string) {
+    await db
+      .update(Memorials)
+      .set({
+        status,
+        name,
+        slug,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(Memorials.id, id));
+  }
+
+  /**
+   * Permanently delete a memorial and all associated records (cascading delete)
+   */
+  static async deleteMemorial(id: number) {
+    await db.delete(Comments).where(eq(Comments.memorialId, id));
+    await db.delete(MemorialContent).where(eq(MemorialContent.memorialId, id));
+    await db.delete(GalleryImages).where(eq(GalleryImages.memorialId, id));
+    await db.delete(Memorials).where(eq(Memorials.id, id));
   }
 }

@@ -1,9 +1,10 @@
 import type { APIRoute } from 'astro';
-import { db, Comments, GalleryImages, MemorialContent, Memorials, eq, desc } from 'astro:db';
+import { db, Memorials, eq } from 'astro:db';
 import { z } from 'zod';
 import { requireAuth } from '../../../lib/auth';
 import { errorResponse, successResponse, validationError } from '../../../lib/api-response';
 import { validateData } from '../../../lib/validation';
+import { MemorialService } from '../../../lib/services/memorial.service.ts';
 
 export const prerender = false;
 
@@ -44,8 +45,7 @@ export const GET: APIRoute = async ({ cookies }) => {
   if (authError) return authError;
 
   try {
-    // ISO-8601 strings sort correctly as text, so order in SQL
-    const memorials = await db.select().from(Memorials).orderBy(desc(Memorials.updatedAt));
+    const memorials = await MemorialService.getAllMemorialsAdmin();
     return successResponse(memorials);
   } catch (error) {
     console.error('Error loading memorials:', error);
@@ -77,18 +77,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       return validationError('A memorial with this slug already exists');
     }
 
-    const now = new Date().toISOString();
-    const result = await db.insert(Memorials).values({
-      slug: baseSlug,
-      name,
-      status: 'active',
-      createdAt: now,
-      updatedAt: now,
-    });
+    const memorialId = await MemorialService.createMemorial(name, baseSlug);
 
     return successResponse(
       {
-        id: Number(result.lastInsertRowid),
+        id: memorialId,
         slug: baseSlug,
         name,
         status: 'active',
@@ -139,15 +132,7 @@ export const PATCH: APIRoute = async ({ request, cookies }) => {
       }
     }
 
-    await db
-      .update(Memorials)
-      .set({
-        status: status ?? existing.status,
-        name: name ?? existing.name,
-        slug: nextSlug,
-        updatedAt: new Date().toISOString(),
-      })
-      .where(eq(Memorials.id, id));
+    await MemorialService.updateMemorial(id, status ?? existing.status, name ?? existing.name, nextSlug);
 
     return successResponse(
       {
@@ -189,10 +174,7 @@ export const DELETE: APIRoute = async ({ request, cookies }) => {
       return validationError('Cannot delete the last memorial');
     }
 
-    await db.delete(Comments).where(eq(Comments.memorialId, id));
-    await db.delete(MemorialContent).where(eq(MemorialContent.memorialId, id));
-    await db.delete(GalleryImages).where(eq(GalleryImages.memorialId, id));
-    await db.delete(Memorials).where(eq(Memorials.id, id));
+    await MemorialService.deleteMemorial(id);
 
     return successResponse(undefined, 'Memorial deleted successfully');
   } catch (error) {

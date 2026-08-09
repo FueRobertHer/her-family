@@ -1,5 +1,4 @@
 import type { APIRoute } from 'astro';
-import { db, GalleryImages, eq, and } from 'astro:db';
 import { requireAuth } from '../../../lib/auth';
 import {
   successResponse,
@@ -10,6 +9,7 @@ import {
 import { validateData } from '../../../lib/validation';
 import { z } from 'zod';
 import { getMemorialBySlug } from '../../../lib/memorial-context';
+import { GalleryService } from '../../../lib/services/gallery.service.ts';
 
 export const prerender = false;
 
@@ -45,14 +45,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       return notFoundError('Memorial');
     }
 
-    // Update the caption in the database
-    const result = await db
-      .update(GalleryImages)
-      .set({ caption: caption || '' })
-      .where(and(eq(GalleryImages.imagePath, imagePath), eq(GalleryImages.memorialId, memorial.id)));
+    // Update the caption in the database via Service
+    const updated = await GalleryService.updateCaption(memorial.id, imagePath, caption || '');
 
     // Check if any rows were affected
-    if (!result.rowsAffected || result.rowsAffected === 0) {
+    if (!updated) {
       return notFoundError('Image');
     }
 
