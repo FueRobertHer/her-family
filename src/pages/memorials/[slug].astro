@@ -12,241 +12,19 @@ import Comments from '../../components/Comments.astro';
 import AdminToolbar from '../../components/AdminToolbar.astro';
 import AdminModalShell from '../../components/AdminModalShell.astro';
 import EditButton from '../../components/EditButton.astro';
-import { db, MemorialContent, GalleryImages, Memorials, eq, and, asc } from 'astro:db';
 import { isAuthenticated } from '../../lib/auth';
 import { embedJson } from '../../lib/embed-json';
-import type { Props as FuneralInfoProps } from '../../components/FuneralInfo.astro';
+import { MemorialService } from '../../lib/services/memorial.service';
 
 const slug = Astro.params.slug || '';
 const isAdmin = isAuthenticated(Astro.cookies);
-const memorial = isAdmin
-  ? await db.select().from(Memorials).where(eq(Memorials.slug, slug)).get()
-  : await db
-      .select()
-      .from(Memorials)
-      .where(and(eq(Memorials.slug, slug), eq(Memorials.status, 'active')))
-      .get();
+const memorial = await MemorialService.getMemorialBySlug(slug, isAdmin);
 
 if (!memorial) {
-  Astro.response.status = 404;
+  return Astro.redirect('/404');
 }
 
-interface OrganizedContent {
-  [section: string]: {
-    [key: string]: string;
-  };
-}
-
-type ServiceInfo = FuneralInfoProps['services'][number];
-
-/** Parse a JSON content value without letting bad data crash the page render. */
-function parseJsonContent<T>(raw: string | undefined, label: string): T | null {
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw) as T;
-  } catch (error) {
-    console.error(`Invalid JSON in memorial content (${label}):`, error);
-    return null;
-  }
-}
-
-interface MemorialData {
-  name: string;
-  birthDate: string;
-  deathDate: string;
-  mainImage: string;
-  backgroundImage: string;
-  subtitle: string;
-  biography: string;
-  biographyTitle: string;
-  biographyVisible: boolean;
-  highlights: string[];
-  highlightsVisible: boolean;
-  galleryVisible: boolean;
-  galleryTitle: string;
-  images: Array<{ src: string; alt: string; caption?: string }>;
-  videoUrl: string;
-  posterImage: string;
-  videoSectionTitle: string;
-  videoDescription: string;
-  videoVisible: boolean;
-  commentsTitle: string;
-  commentsSubtitle: string;
-  commentsVisible: boolean;
-  donations: {
-    sectionTitle: string;
-    venmoUsername: string;
-    venmoImage: string;
-    cashappUsername: string;
-    cashappImage: string;
-    zelleEmail: string;
-    zelleImage: string;
-    customMessage: string;
-    visible: boolean;
-  };
-  funeralInfo: {
-    visible: boolean;
-    sectionTitle: string;
-    subtitle: string;
-    services: ServiceInfo[];
-    specialInstructionsVisible: boolean;
-    flowersInfoVisible: boolean;
-    receptionVisible: boolean;
-    specialInstructions: string;
-    flowersInfo: string;
-    receptionInfo?: {
-      location: string;
-      time: string;
-      description?: string;
-    };
-  };
-  footerVisible: boolean;
-  footerQuote: string;
-  footerCredit: string;
-}
-
-let memorialData: MemorialData = {
-  name: memorial?.name || 'Memorial',
-  birthDate: '1900-01-01',
-  deathDate: '2024-01-01',
-  mainImage: '/images/portrait.jpg',
-  backgroundImage: '',
-  subtitle: 'In loving memory',
-  biography: '',
-  biographyTitle: 'Life Story',
-  biographyVisible: true,
-  highlights: [],
-  highlightsVisible: true,
-  galleryVisible: true,
-  galleryTitle: 'Treasured Moments',
-  images: [],
-  videoUrl: '',
-  posterImage: '',
-  videoSectionTitle: 'A Life Remembered',
-  videoDescription: '',
-  videoVisible: true,
-  commentsTitle: 'Share Your Memories',
-  commentsSubtitle: 'Leave a message to honor their memory.',
-  commentsVisible: true,
-  donations: {
-    sectionTitle: 'Support',
-    venmoUsername: '',
-    venmoImage: '',
-    cashappUsername: '',
-    cashappImage: '',
-    zelleEmail: '',
-    zelleImage: '',
-    customMessage: '',
-    visible: true,
-  },
-  funeralInfo: {
-    visible: true,
-    sectionTitle: 'Service Information',
-    subtitle: 'Please join us as we celebrate their life.',
-    services: [],
-    specialInstructionsVisible: true,
-    flowersInfoVisible: true,
-    receptionVisible: true,
-    specialInstructions: '',
-    flowersInfo: '',
-  },
-  footerVisible: true,
-  footerQuote: '',
-  footerCredit: '',
-};
-
-if (memorial) {
-  // Content and gallery are independent — fetch them concurrently to save a
-  // serial DB round-trip on every server-rendered page view. isActive is
-  // filtered in SQL rather than in JS.
-  const [contentRows, galleryImages] = await Promise.all([
-    db.select().from(MemorialContent).where(eq(MemorialContent.memorialId, memorial.id)),
-    db
-      .select()
-      .from(GalleryImages)
-      .where(and(eq(GalleryImages.memorialId, memorial.id), eq(GalleryImages.isActive, true)))
-      .orderBy(asc(GalleryImages.displayOrder)),
-  ]);
-
-  const organizedContent = contentRows.reduce<OrganizedContent>((acc, item) => {
-    if (!acc[item.section]) acc[item.section] = {};
-    acc[item.section][item.key] = item.value;
-    return acc;
-  }, {});
-
-  const getContent = (section: string, key: string, fallback: string) =>
-    organizedContent[section]?.[key] ?? fallback;
-
-  const services: ServiceInfo[] = [];
-  for (let i = 0; i < 10; i++) {
-    const service = parseJsonContent<ServiceInfo>(
-      organizedContent.funeral?.[`service${i}`],
-      `service${i}`
-    );
-    if (service) services.push(service);
-  }
-
-  memorialData = {
-    ...memorialData,
-    name: getContent('hero', 'name', memorial.name),
-    birthDate: getContent('hero', 'birthDate', memorialData.birthDate),
-    deathDate: getContent('hero', 'deathDate', memorialData.deathDate),
-    mainImage: getContent('hero', 'mainImage', memorialData.mainImage),
-    backgroundImage: getContent('hero', 'backgroundImage', ''),
-    subtitle: getContent('hero', 'subtitle', memorialData.subtitle),
-    biography: getContent('biography', 'content', memorialData.biography),
-    biographyTitle: getContent('biography', 'title', memorialData.biographyTitle),
-    biographyVisible: organizedContent.biography?.visible !== 'false',
-    highlights:
-      parseJsonContent<string[]>(organizedContent.biography?.highlights, 'highlights') ?? [],
-    highlightsVisible: organizedContent.highlights?.visible !== 'false',
-    galleryVisible: organizedContent.gallery?.visible !== 'false',
-    galleryTitle: getContent('gallery', 'sectionTitle', memorialData.galleryTitle),
-    images: galleryImages.map((img) => ({
-      src: img.imagePath,
-      alt: img.caption || 'Memorial photo',
-      caption: img.caption || undefined,
-    })),
-    videoUrl: getContent('video', 'videoUrl', memorialData.videoUrl),
-    posterImage: getContent('video', 'posterImage', memorialData.posterImage),
-    videoSectionTitle: getContent('video', 'sectionTitle', memorialData.videoSectionTitle),
-    videoDescription: getContent('video', 'description', memorialData.videoDescription),
-    videoVisible: organizedContent.video?.visible !== 'false',
-    commentsTitle: getContent('comments', 'sectionTitle', memorialData.commentsTitle),
-    commentsSubtitle: getContent('comments', 'subtitle', memorialData.commentsSubtitle),
-    commentsVisible: organizedContent.comments?.visible !== 'false',
-    donations: {
-      sectionTitle: getContent('donations', 'sectionTitle', memorialData.donations.sectionTitle),
-      venmoUsername: getContent('donations', 'venmoUsername', ''),
-      venmoImage: getContent('donations', 'venmoImage', ''),
-      cashappUsername: getContent('donations', 'cashappUsername', ''),
-      cashappImage: getContent('donations', 'cashappImage', ''),
-      zelleEmail: getContent('donations', 'zelleEmail', ''),
-      zelleImage: getContent('donations', 'zelleImage', ''),
-      customMessage: getContent('donations', 'customMessage', ''),
-      visible: organizedContent.donations?.visible !== 'false',
-    },
-    funeralInfo: {
-      visible: organizedContent.funeral?.visible !== 'false',
-      sectionTitle: getContent('funeral', 'sectionTitle', memorialData.funeralInfo.sectionTitle),
-      subtitle: getContent('funeral', 'subtitle', memorialData.funeralInfo.subtitle),
-      services,
-      specialInstructionsVisible: organizedContent.funeral?.specialInstructionsVisible !== 'false',
-      flowersInfoVisible: organizedContent.funeral?.flowersInfoVisible !== 'false',
-      receptionVisible: organizedContent.reception?.visible !== 'false',
-      specialInstructions: getContent('funeral', 'specialInstructions', ''),
-      flowersInfo: getContent('funeral', 'flowersInfo', ''),
-      receptionInfo: {
-        location: getContent('reception', 'location', ''),
-        time: getContent('reception', 'time', ''),
-        description: getContent('reception', 'description', ''),
-      },
-    },
-    footerVisible: organizedContent.footer?.visible !== 'false',
-    footerQuote: getContent('footer', 'quote', ''),
-    footerCredit: getContent('footer', 'credit', ''),
-  };
-}
+const memorialData = await MemorialService.getMemorialData(memorial);
 ---
 
 <style is:global>
@@ -272,10 +50,8 @@ if (memorial) {
 </style>
 
 <Layout title={`${memorialData.name} - Memorial`} description={`Remembering ${memorialData.name}`}>
-  {memorial ? (
-    <>
-      <script id="memorial-data" type="application/json" is:inline set:html={embedJson(memorialData)} />
-      <script is:inline define:vars={{ slug }}>window.__MEMORIAL_SLUG__ = slug;</script>
+  <script id="memorial-data" type="application/json" is:inline set:html={embedJson(memorialData)} />
+  <script is:inline define:vars={{ slug }}>window.__MEMORIAL_SLUG__ = slug;</script>
 
       <main>
         {isAdmin && (
@@ -429,17 +205,9 @@ if (memorial) {
         />
       )}
 
-      {isAdmin && (
-        <script>
-          import '../../scripts/admin-editor.ts';
-        </script>
-      )}
-    </>
-  ) : (
-    <main class="min-h-[60vh] max-w-3xl mx-auto px-4 py-20 text-center">
-      <h1 class="text-3xl font-semibold text-warm-gray-900">Memorial Not Found</h1>
-      <p class="mt-4 text-warm-gray-600">This memorial does not exist or is no longer active.</p>
-      <a href="/memorials" class="inline-block mt-8 px-4 py-2 rounded-sm bg-indigo-600 text-white">Back to Memorials</a>
-    </main>
+  {isAdmin && (
+    <script>
+      import '../../scripts/admin-editor.ts';
+    </script>
   )}
 </Layout>
