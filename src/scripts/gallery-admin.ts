@@ -2,33 +2,33 @@
 // Handles admin interactions: Upload and Delete
 
 // ============ ADMIN UPLOAD FUNCTIONALITY ============
-const uploadBtn = document.getElementById('uploadImageBtn');
-const imageInput = document.getElementById('galleryImageInput');
+const uploadBtn = document.getElementById('uploadImageBtn') as HTMLButtonElement | null;
+const imageInput = document.getElementById('galleryImageInput') as HTMLInputElement | null;
 const captionModal = document.getElementById('captionModal');
-const captionInput = document.getElementById('captionInput');
+const captionInput = document.getElementById('captionInput') as HTMLInputElement | null;
 const confirmCaptionBtn = document.getElementById('confirmCaptionBtn');
 const cancelCaptionBtn = document.getElementById('cancelCaptionBtn');
 
-let selectedFile = null;
+let selectedFile: File | null = null;
 const memorialSlug =
   (document.getElementById('gallery')?.getAttribute('data-memorial-slug') || '').trim() || 'default';
 
 if (uploadBtn) {
-  uploadBtn.addEventListener('click', (e) => {
+  uploadBtn.addEventListener('click', (e: MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     imageInput?.click();
   });
 }
 
-imageInput?.addEventListener('change', async (e) => {
-  const target = e.target;
+imageInput?.addEventListener('change', async (e: Event) => {
+  const target = e.target as HTMLInputElement;
   const file = target.files?.[0];
   if (!file) return;
 
   // Store the selected file and show caption modal
   selectedFile = file;
-  captionInput.value = '';
+  if (captionInput) captionInput.value = '';
   if (captionModal) captionModal.style.display = 'flex';
   captionInput?.focus();
 });
@@ -36,15 +36,15 @@ imageInput?.addEventListener('change', async (e) => {
 // Cancel caption modal
 cancelCaptionBtn?.addEventListener('click', () => {
   selectedFile = null;
-  imageInput.value = '';
+  if (imageInput) imageInput.value = '';
   if (captionModal) captionModal.style.display = 'none';
 });
 
 // Confirm and upload with caption
 confirmCaptionBtn?.addEventListener('click', async () => {
-  if (!selectedFile) return;
+  if (!selectedFile || !uploadBtn) return;
 
-  const caption = captionInput.value.trim();
+  const caption = captionInput ? captionInput.value.trim() : '';
   if (captionModal) captionModal.style.display = 'none';
 
   // Show loading indicator
@@ -78,43 +78,45 @@ confirmCaptionBtn?.addEventListener('click', async () => {
       });
 
       if (dbResponse.ok) {
-        showToast('Image uploaded successfully! Refreshing page...', 'success');
+        window.showToast('Image uploaded successfully! Refreshing page...', 'success');
         setTimeout(() => window.location.reload(), 1000);
       } else {
-        showToast('Image uploaded but failed to add to database', 'error');
+        window.showToast('Image uploaded but failed to add to database', 'error');
       }
     } else {
-      showToast('Upload failed: ' + result.error, 'error');
+      window.showToast('Upload failed: ' + result.error, 'error');
     }
   } catch (error) {
     console.error('Upload error:', error);
-    showToast('Failed to upload image', 'error');
+    window.showToast('Failed to upload image', 'error');
   } finally {
-    uploadBtn.textContent = originalText || 'Upload New Image';
-    uploadBtn.removeAttribute('disabled');
-    imageInput.value = '';
+    if (uploadBtn) {
+      uploadBtn.textContent = originalText || 'Upload New Image';
+      uploadBtn.removeAttribute('disabled');
+    }
+    if (imageInput) imageInput.value = '';
     selectedFile = null;
   }
 });
 
 // ============ ADMIN EDIT CAPTION FUNCTIONALITY ============
 const editCaptionModal = document.getElementById('editCaptionModal');
-const editCaptionInput = document.getElementById('editCaptionInput');
+const editCaptionInput = document.getElementById('editCaptionInput') as HTMLInputElement | null;
 const saveEditCaptionBtn = document.getElementById('saveEditCaptionBtn');
 const cancelEditCaptionBtn = document.getElementById('cancelEditCaptionBtn');
 
-let currentEditImageUrl = null;
+let currentEditImageUrl: string | null = null;
 
 // Use event delegation for dynamic buttons
-document.addEventListener('click', (e) => {
-  const editBtn = e.target.closest('.edit-caption-btn');
+document.addEventListener('click', (e: Event) => {
+  const editBtn = (e.target as HTMLElement).closest('.edit-caption-btn') as HTMLElement | null;
   if (editBtn) {
     e.stopPropagation();
 
-    currentEditImageUrl = editBtn.dataset.imageUrl;
+    currentEditImageUrl = editBtn.dataset.imageUrl || null;
     const currentCaption = editBtn.dataset.caption || '';
 
-    editCaptionInput.value = currentCaption;
+    if (editCaptionInput) editCaptionInput.value = currentCaption;
     if (editCaptionModal) editCaptionModal.style.display = 'flex';
     editCaptionInput?.focus();
   }
@@ -128,9 +130,9 @@ cancelEditCaptionBtn?.addEventListener('click', () => {
 
 // Save edited caption
 saveEditCaptionBtn?.addEventListener('click', async () => {
-  if (!currentEditImageUrl) return;
+  if (!currentEditImageUrl || !saveEditCaptionBtn) return;
 
-  const caption = editCaptionInput.value.trim();
+  const caption = editCaptionInput ? editCaptionInput.value.trim() : '';
   if (editCaptionModal) editCaptionModal.style.display = 'none';
 
   // Show loading indicator
@@ -181,7 +183,7 @@ saveEditCaptionBtn?.addEventListener('click', async () => {
         }
 
         // Update the edit button's data attribute
-        const editButton = carouselItem.querySelector('.edit-caption-btn');
+        const editButton = carouselItem.querySelector('.edit-caption-btn') as HTMLElement;
         if (editButton) {
           editButton.dataset.caption = caption;
         }
@@ -196,7 +198,7 @@ saveEditCaptionBtn?.addEventListener('click', async () => {
         const clonedItems = document.querySelectorAll(`.carousel-item.clone`);
         clonedItems.forEach((clone) => {
           const cloneImg = clone.querySelector('img');
-          if (cloneImg && cloneImg.src === imgElement.src) {
+          if (cloneImg && imgElement && cloneImg.src === imgElement.src) {
             // Found a clone of the same image
             const cloneGroupDiv = clone.querySelector('.group');
             let cloneCaptionElement = cloneGroupDiv?.querySelector('.caption-text');
@@ -220,16 +222,18 @@ saveEditCaptionBtn?.addEventListener('click', async () => {
       }
 
       // Show success message
-      showToast('Caption updated successfully!', 'success');
+      window.showToast('Caption updated successfully!', 'success');
     } else {
-      showToast('Failed to update caption: ' + (result.error || 'Unknown error'), 'error');
+      window.showToast('Failed to update caption: ' + (result.error || 'Unknown error'), 'error');
     }
   } catch (error) {
     console.error('Error updating caption:', error);
-    showToast('Failed to update caption', 'error');
+    window.showToast('Failed to update caption', 'error');
   } finally {
-    saveEditCaptionBtn.textContent = originalText || 'Save';
-    saveEditCaptionBtn.removeAttribute('disabled');
+    if (saveEditCaptionBtn) {
+      saveEditCaptionBtn.textContent = originalText || 'Save';
+      saveEditCaptionBtn.removeAttribute('disabled');
+    }
     currentEditImageUrl = null;
   }
 });
@@ -243,8 +247,8 @@ editCaptionInput?.addEventListener('keypress', (e) => {
 
 // ============ ADMIN DELETE FUNCTIONALITY ============
 // Use event delegation for dynamic buttons
-document.addEventListener('click', async (e) => {
-  const deleteBtn = e.target.closest('.delete-gallery-image');
+document.addEventListener('click', async (e: Event) => {
+  const deleteBtn = (e.target as HTMLElement).closest('.delete-gallery-image') as HTMLElement | null;
   if (deleteBtn) {
     e.stopPropagation();
 
@@ -278,14 +282,14 @@ document.addEventListener('click', async (e) => {
       });
 
       if (dbResponse.ok) {
-        showToast('Image deleted successfully! Refreshing page...', 'success');
+        window.showToast('Image deleted successfully! Refreshing page...', 'success');
         setTimeout(() => window.location.reload(), 1000);
       } else {
-        showToast('Failed to delete image from database', 'error');
+        window.showToast('Failed to delete image from database', 'error');
       }
     } catch (error) {
       console.error('Delete error:', error);
-      showToast('Failed to delete image', 'error');
+      window.showToast('Failed to delete image', 'error');
     }
   }
 });

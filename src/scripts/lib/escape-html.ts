@@ -8,8 +8,8 @@
  * @param {unknown} text - Value to escape (coerced to string)
  * @returns {string} Escaped text safe for HTML insertion
  */
-export function escapeHtml(text) {
-  const map = {
+export function escapeHtml(text: unknown): string {
+  const map: Record<string, string> = {
     '&': '&amp;',
     '<': '&lt;',
     '>': '&gt;',

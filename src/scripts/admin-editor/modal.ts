@@ -1,13 +1,13 @@
 // Edit modal: open/close, field rendering, uploads and save.
-import { state, getActiveMemorialSlug, loadMemorialData } from './state.js';
-import { escapeHtml } from '../lib/escape-html.js';
-import { showToast, initNavLinksVisibility } from './helpers.js';
-import { updatePageContent, updateServiceOnPage } from './page-updaters.js';
-import { handleDragStart, handleDragOver, handleDrop, handleDragEnd } from './gallery-dnd.js';
+import { state, getActiveMemorialSlug, loadMemorialData } from './state.ts';
+import { escapeHtml } from '../lib/escape-html.ts';
+import { showToast, initNavLinksVisibility } from './helpers.ts';
+import { updatePageContent, updateServiceOnPage } from './page-updaters.ts';
+import { handleDragStart, handleDragOver, handleDrop, handleDragEnd } from './gallery-dnd.ts';
 
 // --- Main Modal & Upload Functions ---
 
-export async function openEditModal(section) {
+export async function openEditModal(section: string) {
   state.currentSection = section;
   const modal = document.getElementById('editModal');
   const modalTitle = document.getElementById('modalTitle');
@@ -34,9 +34,9 @@ export async function openEditModal(section) {
 
   if (section.startsWith('service-')) {
     const serviceIndex = parseInt(section.split('-')[1]);
-    modalTitle.textContent = `Edit Service Event #${serviceIndex + 1}`;
+    if (modalTitle) modalTitle.textContent = `Edit Service Event #${serviceIndex + 1}`;
   } else {
-    modalTitle.textContent = titles[section] || 'Edit Content';
+    if (modalTitle) modalTitle.textContent = (titles as any)[section] || 'Edit Content';
   }
 
   try {
@@ -48,7 +48,7 @@ export async function openEditModal(section) {
     if (result.success) {
       state.contentData = result.data.organizedContent;
       renderModalContent(section);
-      modal.classList.remove('hidden');
+      if (modal) modal.classList.remove('hidden');
     } else {
       showToast('Error loading content: ' + result.error, 'error');
     }
@@ -60,13 +60,14 @@ export async function openEditModal(section) {
 
 export function closeEditModal() {
   const modal = document.getElementById('editModal');
-  modal.classList.add('hidden');
+  if (modal) modal.classList.add('hidden');
   state.currentSection = null;
 }
 
-export function renderModalContent(section) {
+export function renderModalContent(section: string) {
   // ... (keep existing implementation)
   const modalContent = document.getElementById('modalContent');
+  if (!modalContent) return;
 
   if (section.startsWith('service-')) {
     const serviceIndex = parseInt(section.split('-')[1]);
@@ -385,7 +386,7 @@ export function renderModalContent(section) {
     ],
   };
 
-  const sectionFields = fields[section] || [];
+  const sectionFields = (fields as any)[section] || [];
 
   let dataSection = section;
   if (section === 'specialInstructions' || section === 'flowersInfo') {
@@ -401,7 +402,7 @@ export function renderModalContent(section) {
   const highlightsVisibilityData = section === 'highlights' ? state.contentData['highlights'] || {} : {};
 
   modalContent.innerHTML = sectionFields
-    .map((field) => {
+    .map((field: any) => {
       let value = actualSectionData[field.key]?.value || '';
 
       if (section === 'highlights' && field.key === 'highlights') {
@@ -529,7 +530,7 @@ export function renderModalContent(section) {
         const images = state.memorialData.images || [];
         const gridHtml = images
           .map(
-            (img, idx) => `
+            (img: any, idx: number) => `
         <div class="reorder-item relative bg-white rounded-lg shadow-md overflow-hidden cursor-move hover:shadow-lg transition-shadow" 
              draggable="true" data-index="${idx}" data-image-url="${img.src}">
           <div class="aspect-square overflow-hidden bg-warm-gray-200">
@@ -597,27 +598,27 @@ export function renderModalContent(section) {
     .join('');
 
   // Attach event listeners to new elements for reordering
-  const reorderItems = modalContent.querySelectorAll('.reorder-item');
+  const reorderItems = modalContent.querySelectorAll<HTMLElement>('.reorder-item');
   reorderItems.forEach((item) => {
-    item.addEventListener('dragstart', handleDragStart);
-    item.addEventListener('dragover', handleDragOver);
-    item.addEventListener('drop', handleDrop);
-    item.addEventListener('dragend', handleDragEnd);
+    item.addEventListener('dragstart', handleDragStart as any);
+    item.addEventListener('dragover', handleDragOver as any);
+    item.addEventListener('drop', handleDrop as any);
+    item.addEventListener('dragend', handleDragEnd as any);
   });
 }
 
-export async function uploadImageForField(inputId) {
+export async function uploadImageForField(inputId: string) {
   // ... (keep existing implementation)
   const fileInputId = `${inputId}-file`;
-  const fileInput = document.getElementById(fileInputId);
-  const textInput = document.getElementById(inputId);
+  const fileInput = document.getElementById(fileInputId) as HTMLInputElement | null;
+  const textInput = document.getElementById(inputId) as HTMLInputElement | null;
 
-  if (!fileInput) return;
+  if (!fileInput || !textInput) return;
 
   fileInput.click();
 
-  fileInput.onchange = async (e) => {
-    const file = e.target.files?.[0];
+  fileInput.onchange = async (e: Event) => {
+    const file = (e.target as HTMLInputElement).files?.[0];
     if (!file) return;
 
     const originalValue = textInput.value;
@@ -644,9 +645,9 @@ export async function uploadImageForField(inputId) {
         showToast('Upload failed: ' + errorMsg, 'error');
         textInput.value = originalValue;
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Upload error:', error);
-      showToast('Failed to upload image: ' + error.message, 'error');
+      window.showToast('Failed to upload image: ' + error.message, 'error');
       textInput.value = originalValue;
     } finally {
       textInput.disabled = false;
@@ -655,18 +656,18 @@ export async function uploadImageForField(inputId) {
   };
 }
 
-export async function uploadVideoForField(inputId) {
+export async function uploadVideoForField(inputId: string) {
   // ... (keep existing implementation)
   const fileInputId = `${inputId}-file`;
-  const fileInput = document.getElementById(fileInputId);
-  const textInput = document.getElementById(inputId);
+  const fileInput = document.getElementById(fileInputId) as HTMLInputElement | null;
+  const textInput = document.getElementById(inputId) as HTMLInputElement | null;
 
-  if (!fileInput) return;
+  if (!fileInput || !textInput) return;
 
   fileInput.click();
 
-  fileInput.onchange = async (e) => {
-    const file = e.target.files?.[0];
+  fileInput.onchange = async (e: Event) => {
+    const file = (e.target as HTMLInputElement).files?.[0];
     if (!file) return;
 
     const sizeMB = file.size / (1024 * 1024);
@@ -706,7 +707,7 @@ export async function uploadVideoForField(inputId) {
         );
         textInput.value = originalValue;
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Upload error:', error);
       alert('❌ Failed to upload video: ' + error.message);
       textInput.value = originalValue;
@@ -726,9 +727,10 @@ export async function saveAllModalContent() {
     // ... (keep existing service saving logic) ...
     const serviceIndex = parseInt(state.currentSection.split('-')[1]);
     const modalContent = document.getElementById('modalContent');
-    const inputs = modalContent.querySelectorAll('input, textarea');
+    if (!modalContent) return;
+    const inputs = modalContent.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input, textarea');
 
-    const serviceData = {};
+    const serviceData: Record<string, any> = {};
     inputs.forEach((input) => {
       const field = input.dataset.field;
       if (field) {
@@ -768,23 +770,24 @@ export async function saveAllModalContent() {
         }
 
         updateServiceOnPage(serviceIndex, serviceData);
-        showToast('Service updated successfully!', 'success');
+        window.showToast('Service updated successfully!', 'success');
         closeEditModal();
       } else {
         throw new Error(result.error || 'Failed to save service');
       }
     } catch (error) {
       console.error('Error saving service:', error);
-      showToast('Error saving service. Please try again.', 'error');
+      window.showToast('Error saving service. Please try again.', 'error');
     }
     return;
   }
 
   const modalContent = document.getElementById('modalContent');
-  const inputs = modalContent.querySelectorAll('input:not([type="file"]):not(.hidden), textarea');
+  if (!modalContent) return;
+  const inputs = modalContent.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input:not([type="file"]):not(.hidden), textarea');
 
-  const updates = [];
-  const updatesMap = {};
+  const updates: any[] = [];
+  const updatesMap: Record<string, Record<string, any>> = {};
 
   // Handle standard inputs
   inputs.forEach((input) => {
@@ -795,7 +798,7 @@ export async function saveAllModalContent() {
 
     let value;
     if (input.type === 'checkbox') {
-      value = input.checked ? 'true' : 'false';
+      value = (input as HTMLInputElement).checked ? 'true' : 'false';
     } else {
       value = input.value;
     }
@@ -803,8 +806,8 @@ export async function saveAllModalContent() {
     if (section === 'biography' && key === 'highlights') {
       const highlightsArray = value
         .split('\n')
-        .filter((h) => h.trim())
-        .map((h) => h.trim());
+        .filter((h: string) => h.trim())
+        .map((h: string) => h.trim());
       value = JSON.stringify(highlightsArray);
     }
 
@@ -819,7 +822,7 @@ export async function saveAllModalContent() {
 
   // Handle Gallery Reordering
   if (state.currentSection === 'gallery') {
-    const reorderItems = modalContent.querySelectorAll('.reorder-item');
+    const reorderItems = modalContent.querySelectorAll<HTMLElement>('.reorder-item');
     if (reorderItems.length > 0) {
       const reorderData = Array.from(reorderItems).map((item, idx) => ({
         imagePath: item.dataset.imageUrl,
@@ -841,7 +844,7 @@ export async function saveAllModalContent() {
         setTimeout(() => window.location.reload(), 1000);
       } catch (e) {
         console.error('Failed to update gallery order:', e);
-        showToast('Failed to update gallery order', 'error');
+        window.showToast('Failed to update gallery order', 'error');
       }
     }
   }
@@ -908,7 +911,7 @@ export async function saveAllModalContent() {
 
         // Pass updates using the correct data section key, but keep state.currentSection for routing
         // For highlights, we need to gather updates from both biography and highlights sections
-        let updateData = {};
+        let updateData: Record<string, any> = {};
         if (state.currentSection === 'highlights') {
           // Merge updates from both sections
           updates.forEach((update) => {
@@ -934,17 +937,17 @@ export async function saveAllModalContent() {
   }
 }
 
-export async function uploadAgendaForField(inputId) {
+export async function uploadAgendaForField(inputId: string) {
   const fileInputId = `${inputId}-file`;
-  const fileInput = document.getElementById(fileInputId);
-  const textInput = document.getElementById(inputId);
+  const fileInput = document.getElementById(fileInputId) as HTMLInputElement | null;
+  const textInput = document.getElementById(inputId) as HTMLInputElement | null;
 
-  if (!fileInput) return;
+  if (!fileInput || !textInput) return;
 
   fileInput.click();
 
-  fileInput.onchange = async (e) => {
-    const file = e.target.files?.[0];
+  fileInput.onchange = async (e: Event) => {
+    const file = (e.target as HTMLInputElement).files?.[0];
     if (!file) return;
 
     // Simple validation
@@ -975,7 +978,7 @@ export async function uploadAgendaForField(inputId) {
       } else {
         throw new Error(result.error || 'Upload failed');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
       alert('❌ Upload failed: ' + error.message);
       textInput.value = originalValue;

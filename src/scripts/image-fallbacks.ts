@@ -6,12 +6,12 @@
 // A capture-phase error listener on document handles both server-rendered
 // and client-rendered (comments, admin) images without per-element wiring.
 
-const PLACEHOLDERS = {
+const PLACEHOLDERS: Record<string, string> = {
   portrait: '/images/placeholder-portrait.svg',
   photo: '/images/placeholder-photo.svg',
 };
 
-function applyFallback(img) {
+function applyFallback(img: HTMLImageElement) {
   const kind = img.dataset.fallback;
   if (!kind || img.dataset.fallbackApplied) return;
   img.dataset.fallbackApplied = 'true';
@@ -32,7 +32,7 @@ function applyFallback(img) {
 // Images can fail before this module runs (eager hero images, cached 404s) —
 // sweep anything already in a failed state.
 function sweepFailedImages() {
-  document.querySelectorAll('img[data-fallback]').forEach((img) => {
+  document.querySelectorAll<HTMLImageElement>('img[data-fallback]').forEach((img) => {
     if (img.complete && img.naturalWidth === 0 && img.src) {
       applyFallback(img);
     }

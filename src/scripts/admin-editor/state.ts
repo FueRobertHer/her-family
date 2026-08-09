@@ -1,5 +1,19 @@
+declare global {
+  interface Window {
+    __MEMORIAL_SLUG__?: string;
+  }
+}
+
+interface EditorState {
+  currentSection: string | null;
+  contentData: Record<string, any>;
+  memorialData: Record<string, any>;
+  memorialDataLoaded: boolean;
+  draggedItem: HTMLElement | null;
+}
+
 // Shared mutable state for the admin editor modules.
-export const state = {
+export const state: EditorState = {
   currentSection: null,
   contentData: {},
   memorialData: {},
@@ -7,7 +21,7 @@ export const state = {
   draggedItem: null, // For gallery reordering
 };
 
-export function getActiveMemorialSlug() {
+export function getActiveMemorialSlug(): string {
   if (window.__MEMORIAL_SLUG__) {
     return window.__MEMORIAL_SLUG__;
   }

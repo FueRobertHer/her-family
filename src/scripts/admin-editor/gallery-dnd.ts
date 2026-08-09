@@ -1,28 +1,32 @@
 // Drag & drop handlers for gallery reordering inside the edit modal.
-import { state } from './state.js';
+import { state } from './state.ts';
 
 // --- Drag & Drop Functions for Gallery ---
 
-export function handleDragStart(e) {
-  state.draggedItem = e.target;
-  state.draggedItem.classList.add('opacity-50');
-  e.dataTransfer.effectAllowed = 'move';
+export function handleDragStart(e: DragEvent) {
+  state.draggedItem = e.target as HTMLElement;
+  state.draggedItem?.classList.add('opacity-50');
+  if (e.dataTransfer) {
+    e.dataTransfer.effectAllowed = 'move';
+  }
 }
 
-export function handleDragOver(e) {
+export function handleDragOver(e: DragEvent) {
   e.preventDefault();
-  e.dataTransfer.dropEffect = 'move';
+  if (e.dataTransfer) {
+    e.dataTransfer.dropEffect = 'move';
+  }
 
-  const target = e.target.closest('.reorder-item');
+  const target = (e.target as HTMLElement).closest('.reorder-item');
   if (target && target !== state.draggedItem) {
     target.classList.add('ring-2', 'ring-blue-500');
   }
 }
 
-export function handleDrop(e) {
+export function handleDrop(e: DragEvent) {
   e.preventDefault();
 
-  const target = e.target.closest('.reorder-item');
+  const target = (e.target as HTMLElement).closest('.reorder-item');
   const container = document.getElementById('reorderList');
 
   if (target && target !== state.draggedItem && state.draggedItem && container) {
@@ -35,13 +39,13 @@ export function handleDrop(e) {
     const targetIndex = allItems.indexOf(target);
 
     if (draggedIndex < targetIndex) {
-      parent.insertBefore(state.draggedItem, target.nextSibling);
+      parent?.insertBefore(state.draggedItem, target.nextSibling);
     } else {
-      parent.insertBefore(state.draggedItem, target);
+      parent?.insertBefore(state.draggedItem, target);
     }
 
     // Update indices in UI
-    const updatedItems = container.querySelectorAll('.reorder-item');
+    const updatedItems = container.querySelectorAll<HTMLElement>('.reorder-item');
     updatedItems.forEach((item, idx) => {
       item.dataset.index = idx.toString();
       const numberBadge = item.querySelector('.bg-black\\/60');
@@ -52,7 +56,7 @@ export function handleDrop(e) {
   target?.classList.remove('ring-2', 'ring-blue-500');
 }
 
-export function handleDragEnd(e) {
+export function handleDragEnd(_e: DragEvent) {
   state.draggedItem?.classList.remove('opacity-50');
 
   // Remove all ring highlights
@@ -63,4 +67,3 @@ export function handleDragEnd(e) {
 
   state.draggedItem = null;
 }
-

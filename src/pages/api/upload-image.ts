@@ -1,17 +1,10 @@
 import type { APIRoute } from 'astro';
-import { v2 as cloudinary } from 'cloudinary';
+import { cloudinary, isCloudinaryConfigured } from '../../lib/cloudinary';
 import { isAuthenticated as checkAuth } from '../../lib/auth';
 import { checkRateLimit, getClientIdentifier } from '../../lib/rate-limiter';
 import { getMemorialBySlug } from '../../lib/memorial-context';
 
 export const prerender = false;
-
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: import.meta.env.CLOUDINARY_CLOUD_NAME,
-  api_key: import.meta.env.CLOUDINARY_API_KEY,
-  api_secret: import.meta.env.CLOUDINARY_API_SECRET,
-});
 
 // Unauthenticated (comment) uploads: images only, small, rate limited.
 const COMMENT_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
@@ -73,11 +66,7 @@ export const POST: APIRoute = async (context) => {
     }
 
     // Check if Cloudinary is configured
-    const cloudName = import.meta.env.CLOUDINARY_CLOUD_NAME;
-    const apiKey = import.meta.env.CLOUDINARY_API_KEY;
-    const apiSecret = import.meta.env.CLOUDINARY_API_SECRET;
-
-    if (!cloudName || !apiKey || !apiSecret) {
+    if (!isCloudinaryConfigured()) {
       return jsonError(
         'Cloudinary not configured',
         500,

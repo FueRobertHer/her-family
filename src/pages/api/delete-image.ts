@@ -1,59 +1,36 @@
 import type { APIRoute } from 'astro';
-import { v2 as cloudinary } from 'cloudinary';
-import { isAuthenticated as checkAuth } from '../../lib/auth';
+import { cloudinary } from '../../lib/cloudinary';
+import { requireAuth } from '../../lib/auth';
+import { successResponse, errorResponse, validationError } from '../../lib/api-response';
 
 export const prerender = false;
-
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: import.meta.env.CLOUDINARY_CLOUD_NAME,
-  api_key: import.meta.env.CLOUDINARY_API_KEY,
-  api_secret: import.meta.env.CLOUDINARY_API_SECRET,
-});
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
     // Check admin authentication
-    if (!checkAuth(cookies)) {
-      return new Response(JSON.stringify({ error: 'Unauthorized - Please log in as admin' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
+    const authError = requireAuth(cookies);
+    if (authError) return authError;
 
     const { publicId } = await request.json();
 
     if (!publicId) {
-      return new Response(JSON.stringify({ error: 'No publicId provided' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return validationError('No publicId provided');
     }
 
     // Delete from Cloudinary
     const result = await cloudinary.uploader.destroy(publicId);
 
-    return new Response(
-      JSON.stringify({
-        success: result.result === 'ok',
-        result: result.result,
-      }),
-      {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    return successResponse({
+      success: result.result === 'ok',
+      result: result.result,
+    });
   } catch (error) {
     console.error('Delete error:', error);
-    return new Response(
-      JSON.stringify({
-        error: 'Failed to delete image',
-        details: error instanceof Error ? error.message : 'Unknown error',
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
+    return errorResponse(
+      'Failed to delete image',
+      500,
+      error instanceof Error ? error.message : 'Unknown error'
     );
   }
 };
+

@@ -62,3 +62,5 @@ coverage/
 # Backup files
 *.bak
 *.backup
+
+.claude/
