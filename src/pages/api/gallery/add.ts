@@ -1,9 +1,9 @@
 import type { APIRoute } from 'astro';
-import { db, GalleryImages } from 'astro:db';
 import { requireAuth } from '../../../lib/auth';
 import { successResponse, errorResponse, validationError } from '../../../lib/api-response';
 import { galleryImageSchema, validateData } from '../../../lib/validation';
 import { getMemorialBySlug } from '../../../lib/memorial-context';
+import { GalleryService } from '../../../lib/services/gallery.service.ts';
 
 export const prerender = false;
 
@@ -32,15 +32,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     const { imagePath, caption, displayOrder } = validation.data;
 
-    // Insert into database
-    await db.insert(GalleryImages).values({
-      memorialId: memorial.id,
-      imagePath,
-      caption: caption || '',
-      displayOrder: displayOrder || 999,
-      isActive: true,
-      uploadedAt: new Date().toISOString(),
-    });
+    // Insert into database via Service
+    await GalleryService.addImage(memorial.id, imagePath, caption || '', displayOrder || 999);
 
     return successResponse(undefined, 'Image added successfully');
   } catch (error) {

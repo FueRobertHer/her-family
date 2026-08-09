@@ -1,5 +1,4 @@
 import type { APIRoute } from 'astro';
-import { db, GalleryImages, eq, and } from 'astro:db';
 import { requireAuth } from '../../../lib/auth';
 import {
   successResponse,
@@ -9,6 +8,7 @@ import {
 } from '../../../lib/api-response';
 import { galleryUpdateOrderSchema, validateData } from '../../../lib/validation';
 import { getMemorialBySlug } from '../../../lib/memorial-context';
+import { GalleryService } from '../../../lib/services/gallery.service.ts';
 
 export const prerender = false;
 
@@ -32,14 +32,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       return notFoundError('Memorial');
     }
 
-    // Update the display order using a proper WHERE clause
-    const result = await db
-      .update(GalleryImages)
-      .set({ displayOrder })
-      .where(and(eq(GalleryImages.imagePath, imagePath), eq(GalleryImages.memorialId, memorial.id)));
+    // Update the display order via Service
+    const updated = await GalleryService.updateOrder(memorial.id, imagePath, displayOrder);
 
     // Check if any rows were affected
-    if (!result.rowsAffected || result.rowsAffected === 0) {
+    if (!updated) {
       return notFoundError('Image');
     }
 

@@ -1,8 +1,8 @@
 import type { APIRoute } from 'astro';
-import { db, GalleryImages, eq, and } from 'astro:db';
 import { requireAuth } from '../../../lib/auth';
 import { successResponse, errorResponse, validationError } from '../../../lib/api-response';
 import { getMemorialBySlug } from '../../../lib/memorial-context';
+import { GalleryService } from '../../../lib/services/gallery.service.ts';
 
 export const prerender = false;
 
@@ -28,10 +28,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       return errorResponse('Memorial not found', 404);
     }
 
-    // Delete from database
-    await db
-      .delete(GalleryImages)
-      .where(and(eq(GalleryImages.imagePath, imagePath), eq(GalleryImages.memorialId, memorial.id)));
+    // Delete from database via Service
+    await GalleryService.deleteImage(memorial.id, imagePath);
 
     return successResponse(undefined, 'Image deleted successfully');
   } catch (error) {
