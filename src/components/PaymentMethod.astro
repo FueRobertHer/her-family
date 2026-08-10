@@ -97,7 +97,9 @@ const emailAttrs = { [`data-${dataPrefix}-email`]: '' };
     qrImage ? (
       <button
         type="button"
-        onclick={`openPaymentLightbox('${qrImage}', '${name} QR Code')`}
+        data-lightbox-open="payment"
+        data-lightbox-url={qrImage}
+        data-lightbox-title={`${name} QR Code`}
         class={getBtnClasses()}
         {...btnAttrs}
       >

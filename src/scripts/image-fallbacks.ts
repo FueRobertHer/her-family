@@ -2,6 +2,7 @@
 //   data-fallback="portrait" -> neutral silhouette placeholder
 //   data-fallback="photo"    -> neutral photo placeholder
 //   data-fallback="hide"     -> hide the img (e.g. hero background keeps its gradient)
+//   data-fallback="hero-bg"  -> hide it and tell the hero to switch to dark text
 //
 // A capture-phase error listener on document handles both server-rendered
 // and client-rendered (comments, admin) images without per-element wiring.
@@ -18,6 +19,15 @@ function applyFallback(img: HTMLImageElement) {
 
   if (kind === 'hide') {
     img.style.display = 'none';
+    return;
+  }
+
+  // The hero renders light text over a scrim while a photo is present. If the
+  // photo never loads, the scrim goes with it and the text must go dark, or it
+  // ends up near-white on a pale gradient.
+  if (kind === 'hero-bg') {
+    img.style.display = 'none';
+    img.closest('[data-hero]')?.classList.remove('hero-has-photo');
     return;
   }
 

@@ -2,7 +2,11 @@
 import Layout from '../layouts/Layout.astro';
 ---
 
-<Layout title="Page Not Found" description="The page you're looking for cannot be found.">
+<Layout
+  title="Page Not Found"
+  description="The page you're looking for cannot be found."
+  noIndex={true}
+>
   <main class="min-h-screen flex items-center justify-center px-4 py-16">
     <div class="max-w-2xl w-full text-center">
       <!-- 404 Number -->

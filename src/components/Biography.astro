@@ -1,19 +1,13 @@
 ---
 export interface Props {
   content: string;
-  title?: string;
+  title: string;
   highlights?: string[];
   highlightsVisible?: boolean;
   isAdmin?: boolean;
 }
 
-const {
-  content,
-  title = 'Remembering a Beautiful Life',
-  highlights = [],
-  highlightsVisible = true,
-  isAdmin = false,
-} = Astro.props;
+const { content, title, highlights = [], highlightsVisible = true, isAdmin = false } = Astro.props;
 ---
 
 <section id="biography" class="py-16 sm:py-24 bg-white">
@@ -76,9 +70,10 @@ const {
     </div>
 
     {
-      highlights.length > 0 &&
-        (highlightsVisible || isAdmin) && (
-        <div class={`mt-12 bg-warm-gray-50 rounded-lg p-8 relative ${!highlightsVisible && isAdmin ? 'opacity-60 border-2 border-dashed border-gray-300' : ''}`}>
+      highlights.length > 0 && (highlightsVisible || isAdmin) && (
+        <div
+          class={`mt-12 bg-warm-gray-50 rounded-lg p-8 relative ${!highlightsVisible && isAdmin ? 'opacity-60 border-2 border-dashed border-gray-300' : ''}`}
+        >
           {!highlightsVisible && isAdmin && (
             <span class="hidden-badge absolute top-3 left-3 text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded-sm">
               Hidden
@@ -97,7 +92,8 @@ const {
           </div>
           {isAdmin && (
             <button
-              onclick="openEditModal('highlights')"
+              type="button"
+              data-edit-section="highlights"
               class="absolute top-4 right-4 bg-white hover:bg-warm-gray-100 text-indigo-600 px-3 py-2 rounded-lg shadow-md text-sm font-medium transition-all edit-button"
             >
               ✏️ Edit

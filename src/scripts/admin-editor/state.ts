@@ -1,9 +1,3 @@
-declare global {
-  interface Window {
-    __MEMORIAL_SLUG__?: string;
-  }
-}
-
 interface EditorState {
   currentSection: string | null;
   contentData: Record<string, any>;
@@ -22,9 +16,11 @@ export const state: EditorState = {
 };
 
 export function getActiveMemorialSlug(): string {
-  if (window.__MEMORIAL_SLUG__) {
-    return window.__MEMORIAL_SLUG__;
-  }
+  // Rendered onto <main> by the memorial page. Previously this arrived via an
+  // inline `window.__MEMORIAL_SLUG__ =` script, which forced 'unsafe-inline'.
+  const fromDom = document.querySelector<HTMLElement>('[data-memorial-slug]')?.dataset.memorialSlug;
+  if (fromDom) return fromDom;
+
   const match = window.location.pathname.match(/^\/memorials\/([^/]+)/);
   return match ? decodeURIComponent(match[1]) : 'default';
 }
@@ -50,4 +46,3 @@ export function loadMemorialData() {
     return false;
   }
 }
-

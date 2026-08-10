@@ -1,18 +1,31 @@
 ---
+import { renderCommentSlide, renderEmptyState, type CommentCardData } from '../lib/comment-card';
+
 interface Props {
-  title?: string;
-  subtitle?: string;
+  title: string;
+  subtitle: string;
   memorialSlug?: string;
+  /** First page of approved memories, rendered server-side. */
+  initialComments?: CommentCardData[];
+  /** Whether more pages exist beyond initialComments. */
+  hasMore?: boolean;
 }
 
-const {
-  title = 'Memories & Condolences',
-  subtitle = 'Share your favorite memories and messages of love.',
-  memorialSlug = '',
-} = Astro.props;
+const { title, subtitle, memorialSlug = '', initialComments = [], hasMore = false } = Astro.props;
+
+// Rendered on the server so the memories are present for crawlers, link
+// previews and visitors without JavaScript. comments.ts picks up from here.
+const initialMarkup =
+  initialComments.length > 0
+    ? initialComments.map(renderCommentSlide).join('')
+    : renderEmptyState();
 ---
 
-<section id="memories" class="py-16 sm:py-24 bg-white relative overflow-hidden" data-memorial-slug={memorialSlug}>
+<section
+  id="memories"
+  class="py-16 sm:py-24 bg-white relative overflow-hidden"
+  data-memorial-slug={memorialSlug}
+>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
     <div class="text-center mb-16">
       <h2
@@ -139,7 +152,13 @@ const {
             <p class="text-xs text-warm-gray-500 mt-1">Max 5MB. JPEG, PNG, WebP supported.</p>
           </div>
 
-          <div id="formMessage" role="status" aria-live="polite" class="hidden text-sm p-3 rounded-lg"></div>
+          <div
+            id="formMessage"
+            role="status"
+            aria-live="polite"
+            class="hidden text-sm p-3 rounded-lg"
+          >
+          </div>
 
           <button
             type="submit"
@@ -189,13 +208,13 @@ const {
         </div>
 
         <div id="commentsCarouselContainer" class="overflow-hidden pb-4">
-          <div id="commentsTrack" class="flex transition-transform duration-500 ease-out gap-6">
-            <!-- Loading State Initial -->
-            <div class="w-full flex justify-center py-12" id="initialLoader">
-              <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-warm-gray-600"></div>
-            </div>
-            <!-- Comments will be injected here -->
-          </div>
+          <div
+            id="commentsTrack"
+            class="flex transition-transform duration-500 ease-out gap-6"
+            data-initial-count={String(initialComments.length)}
+            data-has-more={String(hasMore)}
+            set:html={initialMarkup}
+          />
         </div>
       </div>
     </div>

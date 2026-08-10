@@ -19,7 +19,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       return validationError('memorialSlug is required');
     }
 
-    const memorial = await getMemorialBySlug(memorialSlug);
+    const memorial = await getMemorialBySlug(memorialSlug, { includeHidden: true });
     if (!memorial) {
       return errorResponse('Memorial not found', 404);
     }

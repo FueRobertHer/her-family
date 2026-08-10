@@ -7,9 +7,6 @@ export interface Props {
   closeButtonId?: string;
   cancelButtonId?: string;
   saveButtonId?: string;
-  closeOnClick?: string;
-  cancelOnClick?: string;
-  saveOnClick?: string;
   saveLabel?: string;
   cancelLabel?: string;
   bodyClass?: string;
@@ -26,9 +23,6 @@ const {
   closeButtonId,
   cancelButtonId,
   saveButtonId,
-  closeOnClick,
-  cancelOnClick,
-  saveOnClick,
   saveLabel = 'Save Changes',
   cancelLabel = 'Cancel',
   bodyClass = 'p-6 space-y-4',
@@ -38,17 +32,27 @@ const {
 } = Astro.props;
 ---
 
-<div id={modalId} class={`${hiddenClass} fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4`}>
+<div
+  id={modalId}
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby={titleId}
+  class={`${hiddenClass} fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4`}
+>
   <div
     class={`bg-white rounded-lg shadow-xl ${maxWidthClass} w-full ${
       scrollable ? 'max-h-[90vh] overflow-y-auto' : ''
     }`}
   >
-    <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+    <div
+      class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center"
+    >
       <h2 id={titleId} class="text-xl font-semibold text-gray-900">{title}</h2>
       <button
+        type="button"
         id={closeButtonId}
-        onclick={closeOnClick}
+        data-modal-close={modalId}
+        aria-label="Close"
         class="text-gray-400 hover:text-gray-600 text-2xl leading-none"
       >
         &times;
@@ -59,17 +63,21 @@ const {
       <slot />
     </div>
 
-    <div class="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-4 flex justify-end gap-3">
+    <div
+      class="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-4 flex justify-end gap-3"
+    >
       <button
+        type="button"
         id={cancelButtonId}
-        onclick={cancelOnClick}
+        data-modal-close={modalId}
         class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
       >
         {cancelLabel}
       </button>
       <button
+        type="button"
         id={saveButtonId}
-        onclick={saveOnClick}
+        data-modal-save={modalId}
         class="px-4 py-2 text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
       >
         {saveLabel}

@@ -3,25 +3,25 @@ import PaymentMethod from './PaymentMethod.astro';
 import Lightbox from './Lightbox.astro';
 
 export interface Props {
-  title?: string;
+  title: string;
   venmoUsername?: string;
   venmoImage?: string;
   cashappUsername?: string;
   cashappImage?: string;
   zelleEmail?: string;
   zelleImage?: string;
-  customMessage?: string;
+  customMessage: string;
 }
 
 const {
-  title = 'Honor Their Memory',
+  title,
   venmoUsername,
   venmoImage,
   cashappUsername,
   cashappImage,
   zelleEmail,
   zelleImage,
-  customMessage = 'Your generous donations help honor their memory and support their family during this difficult time.',
+  customMessage,
 } = Astro.props;
 ---
 
@@ -79,14 +79,3 @@ const {
 
   <Lightbox id="payment" />
 </section>
-
-<script is:inline>
-  // Wrapper functions for backwards compatibility
-  window.openPaymentLightbox = function (imageUrl, title) {
-    window.openLightbox('payment', imageUrl, title);
-  };
-
-  window.closePaymentLightbox = function () {
-    window.closeLightbox('payment');
-  };
-</script>

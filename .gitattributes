@@ -1,0 +1,16 @@
+# Normalize line endings to LF in the repository and in working trees.
+#
+# Without this, a Windows checkout (core.autocrlf=true) writes CRLF files that
+# Prettier reports as unformatted, so `bun run format:check` failed on nearly
+# every file regardless of its actual formatting.
+* text=auto eol=lf
+
+# Binary assets must never be touched.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff2 binary
+*.pdf binary
+*.db binary

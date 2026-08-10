@@ -1,6 +1,6 @@
 ---
 export interface Props {
-  title?: string;
+  title: string;
   memorialName?: string;
   memorialSlug?: string;
   services: Array<{
@@ -34,14 +34,14 @@ export interface Props {
 }
 
 const {
-  title = 'Service Information',
+  title,
   memorialName = '',
   memorialSlug = '',
   services,
   specialInstructions,
   flowersInfo,
   receptionInfo,
-  subtitle = 'Please join us as we celebrate their life and honor their memory',
+  subtitle,
   isAdmin = false,
   specialInstructionsVisible = true,
   flowersInfoVisible = true,
@@ -101,7 +101,8 @@ function formatTime(timeString: string) {
           >
             {isAdmin && (
               <button
-                onclick={`openEditModal('service-${index}')`}
+                type="button"
+                data-edit-section={`service-${index}`}
                 class="absolute top-4 right-4 bg-white hover:bg-warm-gray-100 text-indigo-600 px-3 py-2 rounded-lg shadow-md text-sm font-medium transition-all opacity-0 group-hover:opacity-100 edit-button"
               >
                 ✏️ Edit
@@ -292,7 +293,8 @@ function formatTime(timeString: string) {
                   </span>
                 )}
                 <button
-                  onclick="openEditModal('specialInstructions')"
+                  type="button"
+                  data-edit-section="specialInstructions"
                   class="bg-white hover:bg-blue-100 text-blue-600 px-3 py-2 rounded-lg shadow-md text-sm font-medium transition-all opacity-0 group-hover:opacity-100 edit-button"
                 >
                   ✏️ Edit
@@ -331,7 +333,8 @@ function formatTime(timeString: string) {
                   </span>
                 )}
                 <button
-                  onclick="openEditModal('flowersInfo')"
+                  type="button"
+                  data-edit-section="flowersInfo"
                   class="bg-white hover:bg-green-100 text-green-600 px-3 py-2 rounded-lg shadow-md text-sm font-medium transition-all opacity-0 group-hover:opacity-100 edit-button"
                 >
                   ✏️ Edit
@@ -372,7 +375,8 @@ function formatTime(timeString: string) {
                 </span>
               )}
               <button
-                onclick="openEditModal('reception')"
+                type="button"
+                data-edit-section="reception"
                 class="bg-white/20 hover:bg-white/30 text-white px-3 py-2 rounded-lg shadow-md text-sm font-medium transition-all edit-button"
               >
                 ✏️ Edit

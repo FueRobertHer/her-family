@@ -79,7 +79,12 @@ function initAdminToolbar(toolbar: HTMLElement) {
 
     const dragStart = (event: Event) => {
       if ((event.target as HTMLElement).closest('button, input, a, label')) return;
-      if (controls && event.type === 'touchstart' && (event.target as HTMLElement).closest(`#${controls.id}`)) return;
+      if (
+        controls &&
+        event.type === 'touchstart' &&
+        (event.target as HTMLElement).closest(`#${controls.id}`)
+      )
+        return;
       const coords = getCoordinates(event);
       initialX = coords.clientX - xOffset;
       initialY = coords.clientY - yOffset;

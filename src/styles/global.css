@@ -81,3 +81,34 @@
     display: none;
   }
 }
+
+/*
+  Edge fade for horizontally scrollable rows whose scrollbar is hidden.
+  Without it, links past the right edge (Memories, Support at 375px) were
+  simply invisible with nothing to suggest scrolling. State attributes come
+  from src/scripts/scroll-fade.ts; the row is fully opaque until it actually
+  overflows, so centred desktop rows are untouched.
+*/
+[data-scroll-fade][data-overflowing='true'] {
+  --scroll-fade-size: 2rem;
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    black var(--scroll-fade-size),
+    black calc(100% - var(--scroll-fade-size)),
+    transparent 100%
+  );
+}
+
+[data-scroll-fade][data-overflowing='true'][data-at-start='true'] {
+  mask-image: linear-gradient(
+    to right,
+    black 0,
+    black calc(100% - var(--scroll-fade-size)),
+    transparent 100%
+  );
+}
+
+[data-scroll-fade][data-overflowing='true'][data-at-end='true'] {
+  mask-image: linear-gradient(to right, transparent 0, black var(--scroll-fade-size), black 100%);
+}
