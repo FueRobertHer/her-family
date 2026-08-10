@@ -1,5 +1,6 @@
 ---
 import { renderCommentSlide, renderEmptyState, type CommentCardData } from '../lib/comment-card';
+import { MAX_UPLOAD_LABEL } from '../lib/upload-limits';
 
 interface Props {
   title: string;
@@ -149,7 +150,9 @@ const initialMarkup =
               </button>
             </div>
             <input type="file" id="commentImage" name="image" accept="image/*" class="hidden" />
-            <p class="text-xs text-warm-gray-500 mt-1">Max 5MB. JPEG, PNG, WebP supported.</p>
+            <p class="text-xs text-warm-gray-500 mt-1">
+              Max {MAX_UPLOAD_LABEL}. JPEG, PNG, WebP supported.
+            </p>
           </div>
 
           <div
