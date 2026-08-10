@@ -1,10 +1,11 @@
 import type { APIRoute } from 'astro';
 import { getMemorialBySlug } from '../../lib/memorial-context';
+import { isAuthenticated } from '../../lib/auth';
 import { ContentService } from '../../lib/services/content.service.ts';
 
 export const prerender = false;
 
-export const GET: APIRoute = async ({ request }) => {
+export const GET: APIRoute = async ({ request, cookies }) => {
   const url = new URL(request.url);
   const serviceIndex = url.searchParams.get('service');
   const memorialSlug = url.searchParams.get('memorial')?.trim() || '';
@@ -13,14 +14,20 @@ export const GET: APIRoute = async ({ request }) => {
     return new Response('Missing service or memorial parameter', { status: 400 });
   }
 
-  const memorial = await getMemorialBySlug(memorialSlug);
+  const memorial = await getMemorialBySlug(memorialSlug, {
+    includeHidden: isAuthenticated(cookies),
+  });
   if (!memorial) {
     return new Response('Memorial not found', { status: 404 });
   }
 
   try {
     // Fetch the service data
-    const result = await ContentService.getContentItem(memorial.id, 'funeral', `service${serviceIndex}`);
+    const result = await ContentService.getContentItem(
+      memorial.id,
+      'funeral',
+      `service${serviceIndex}`
+    );
 
     if (!result || !result.value) {
       return new Response('Service not found', { status: 404 });

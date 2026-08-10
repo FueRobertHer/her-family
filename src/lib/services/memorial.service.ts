@@ -1,5 +1,16 @@
-import { db, Memorials, MemorialContent, GalleryImages, Comments, eq, and, desc, asc } from 'astro:db';
+import {
+  db,
+  Memorials,
+  MemorialContent,
+  GalleryImages,
+  Comments,
+  eq,
+  and,
+  desc,
+  asc,
+} from 'astro:db';
 import type { Props as FuneralInfoProps } from '../../components/FuneralInfo.astro';
+import { SECTION_DEFAULTS } from '../sections';
 
 export interface OrganizedContent {
   [section: string]: {
@@ -151,31 +162,33 @@ export class MemorialService {
       if (service) services.push(service);
     }
 
+    // Fallback text lives in src/lib/sections.ts so the admin editor suggests
+    // exactly what the page renders when a field is left empty.
     const defaultData: MemorialData = {
       name: memorial.name || 'Memorial',
-      birthDate: '1900-01-01',
-      deathDate: '2024-01-01',
-      mainImage: '/images/portrait.jpg',
+      birthDate: SECTION_DEFAULTS.hero.birthDate,
+      deathDate: SECTION_DEFAULTS.hero.deathDate,
+      mainImage: SECTION_DEFAULTS.hero.mainImage,
       backgroundImage: '',
-      subtitle: 'In loving memory',
+      subtitle: SECTION_DEFAULTS.hero.subtitle,
       biography: '',
-      biographyTitle: 'Life Story',
+      biographyTitle: SECTION_DEFAULTS.biography.title,
       biographyVisible: true,
       highlights: [],
       highlightsVisible: true,
       galleryVisible: true,
-      galleryTitle: 'Treasured Moments',
+      galleryTitle: SECTION_DEFAULTS.gallery.sectionTitle,
       images: [],
       videoUrl: '',
       posterImage: '',
-      videoSectionTitle: 'A Life Remembered',
+      videoSectionTitle: SECTION_DEFAULTS.video.sectionTitle,
       videoDescription: '',
       videoVisible: true,
-      commentsTitle: 'Share Your Memories',
-      commentsSubtitle: 'Leave a message to honor their memory.',
+      commentsTitle: SECTION_DEFAULTS.comments.sectionTitle,
+      commentsSubtitle: SECTION_DEFAULTS.comments.subtitle,
       commentsVisible: true,
       donations: {
-        sectionTitle: 'Support',
+        sectionTitle: SECTION_DEFAULTS.donations.sectionTitle,
         venmoUsername: '',
         venmoImage: '',
         cashappUsername: '',
@@ -187,8 +200,8 @@ export class MemorialService {
       },
       funeralInfo: {
         visible: true,
-        sectionTitle: 'Service Information',
-        subtitle: 'Please join us as we celebrate their life.',
+        sectionTitle: SECTION_DEFAULTS.funeral.sectionTitle,
+        subtitle: SECTION_DEFAULTS.funeral.subtitle,
         services: [],
         specialInstructionsVisible: true,
         flowersInfoVisible: true,
@@ -246,7 +259,8 @@ export class MemorialService {
         sectionTitle: getContent('funeral', 'sectionTitle', defaultData.funeralInfo.sectionTitle),
         subtitle: getContent('funeral', 'subtitle', defaultData.funeralInfo.subtitle),
         services,
-        specialInstructionsVisible: organizedContent.funeral?.specialInstructionsVisible !== 'false',
+        specialInstructionsVisible:
+          organizedContent.funeral?.specialInstructionsVisible !== 'false',
         flowersInfoVisible: organizedContent.funeral?.flowersInfoVisible !== 'false',
         receptionVisible: organizedContent.reception?.visible !== 'false',
         specialInstructions: getContent('funeral', 'specialInstructions', ''),
@@ -282,7 +296,7 @@ export class MemorialService {
       createdAt: now,
       updatedAt: now,
     });
-    
+
     return Number(result.lastInsertRowid);
   }
 

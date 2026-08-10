@@ -1,20 +1,14 @@
-// Client-side JavaScript for comment functionality
-import { escapeHtml } from './lib/escape-html.ts';
-
-interface Comment {
-  id: number;
-  name: string;
-  email?: string;
-  relationship?: string;
-  message: string;
-  imageUrl?: string;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
-}
+// Client-side JavaScript for comment functionality.
+//
+// The first page of memories is rendered by the server (see Comments.astro), so
+// this module starts from the cards already in the DOM and only fetches
+// additional pages. Card markup comes from the shared renderer in
+// src/lib/comment-card.ts so both paths produce identical HTML.
+import { activateFocusTrap, releaseFocusTrap } from './lib/focus-trap.ts';
+import { renderCommentSlide, renderEmptyState, type CommentCardData } from '../lib/comment-card.ts';
 
 // State
-let allComments: Comment[] = [];
+let loadedCount = 0;
 let carouselIndex = 0;
 let offset = 0;
 const limit = 10;
@@ -26,10 +20,16 @@ let itemsPerPage = 1; // Responsive: 1 for mobile, 2 tablet, 3 desktop
 const commentsTrack = document.getElementById('commentsTrack') as HTMLElement;
 const prevBtn = document.getElementById('prevCommentBtn') as HTMLButtonElement;
 const nextBtn = document.getElementById('nextCommentBtn') as HTMLButtonElement;
-const initialLoader = document.getElementById('initialLoader');
-const memorialSlug = (
-  (document.getElementById('memories') as HTMLElement | null)?.dataset.memorialSlug || ''
-).trim();
+const memoriesSection = document.getElementById('memories') as HTMLElement | null;
+const memorialSlug = (memoriesSection?.dataset.memorialSlug || '').trim();
+
+// Seeded by the server so we resume paging where its first page ended.
+const initialCount = Number(commentsTrack?.dataset.initialCount ?? '0') || 0;
+const initialHasMore = commentsTrack?.dataset.hasMore === 'true';
+
+loadedCount = initialCount;
+offset = initialCount;
+hasMore = initialHasMore;
 
 // Determine items per page based on screen width
 function updateItemsPerPage() {
@@ -64,28 +64,19 @@ async function loadComments() {
     const result = await response.json();
 
     if (result.success) {
-      const newComments = result.data;
+      const newComments: CommentCardData[] = result.data;
 
       if (newComments.length < limit) {
         hasMore = false;
       }
 
-      if (offset === 0 && newComments.length === 0) {
-        commentsTrack.innerHTML = `
-          <div class="w-full text-center py-12 text-warm-gray-600">
-            <p>No memories shared yet. Be the first to share one.</p>
-          </div>
-        `;
+      if (newComments.length === 0 && loadedCount === 0) {
+        commentsTrack.innerHTML = renderEmptyState();
         prevBtn.disabled = true;
         nextBtn.disabled = true;
       } else {
-        if (offset === 0) {
-          // Remove initial loader
-          initialLoader?.remove();
-        }
-
-        allComments = [...allComments, ...newComments];
         renderNewComments(newComments);
+        loadedCount += newComments.length;
         offset += newComments.length;
 
         updateButtons();
@@ -93,7 +84,7 @@ async function loadComments() {
     }
   } catch (error) {
     console.error('Error loading comments:', error);
-    if (offset === 0) {
+    if (loadedCount === 0) {
       commentsTrack.innerHTML = `
         <div class="w-full text-center py-12 text-red-600">
           <p>Error loading memories. Please refresh to try again.</p>
@@ -105,57 +96,16 @@ async function loadComments() {
   }
 }
 
-function renderNewComments(comments: Comment[]) {
+function renderNewComments(comments: CommentCardData[]) {
+  if (comments.length === 0) return;
+
   const fragment = document.createDocumentFragment();
+  const staging = document.createElement('div');
+  staging.innerHTML = comments.map(renderCommentSlide).join('');
 
-  comments.forEach((comment) => {
-    const slide = document.createElement('div');
-    // Responsive width: 1 on mobile, 2 on tablet, 3 on desktop
-    slide.className = 'shrink-0 w-full md:w-[calc(50%-12px)] xl:w-[calc(33.333%-16px)]';
-
-    slide.innerHTML = `
-      <div class="bg-white rounded-xl p-6 shadow-xs border border-warm-gray-100 h-full flex flex-col">
-        <div class="flex items-start justify-between mb-4">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-full bg-warm-gray-100 flex items-center justify-center text-warm-gray-500 font-bold text-lg">
-              ${comment.name.charAt(0).toUpperCase()}
-            </div>
-            <div>
-              <h4 class="font-semibold text-warm-gray-900">${escapeHtml(comment.name)}</h4>
-              ${comment.relationship ? `<p class="text-xs text-warm-gray-500">${escapeHtml(comment.relationship)}</p>` : ''}
-            </div>
-          </div>
-          <time class="text-xs text-warm-gray-400 whitespace-nowrap" datetime="${comment.createdAt}">
-            ${formatDate(comment.createdAt)}
-          </time>
-        </div>
-        
-        <div class="grow space-y-4">
-           ${
-             comment.imageUrl
-               ? `
-            <div class="relative group cursor-pointer overflow-hidden rounded-lg mb-3" data-lightbox-trigger data-lightbox-url="${escapeHtml(comment.imageUrl)}" data-lightbox-title="Photo from ${escapeHtml(comment.name)}">
-              <img
-                src="${escapeHtml(comment.imageUrl)}"
-                alt="Memory photo"
-                class="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
-                data-fallback="photo"
-              />
-              <div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
-                <svg class="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                </svg>
-              </div>
-            </div>
-          `
-               : ''
-           }
-          <p class="text-warm-gray-700 leading-relaxed text-sm whitespace-pre-wrap line-clamp-6">${escapeHtml(comment.message)}</p>
-        </div>
-      </div>
-    `;
-    fragment.appendChild(slide);
-  });
+  while (staging.firstElementChild) {
+    fragment.appendChild(staging.firstElementChild);
+  }
 
   commentsTrack.appendChild(fragment);
 }
@@ -167,7 +117,10 @@ function renderNewComments(comments: Comment[]) {
 commentsTrack.addEventListener('click', (e) => {
   const trigger = (e.target as HTMLElement).closest<HTMLElement>('[data-lightbox-trigger]');
   if (!trigger) return;
-  window.openCommentLightbox(trigger.dataset.lightboxUrl || '', trigger.dataset.lightboxTitle || '');
+  window.openCommentLightbox(
+    trigger.dataset.lightboxUrl || '',
+    trigger.dataset.lightboxTitle || ''
+  );
 });
 
 function updateCarousel(animate = true) {
@@ -194,17 +147,17 @@ function updateButtons() {
 
   // Disable next if we are at the end and no more items to load
   // We can go next if:
-  // 1. We have loaded items ahead (allComments.length > carouselIndex + itemsPerPage)
+  // 1. We have loaded items ahead (loadedCount > carouselIndex + itemsPerPage)
   // 2. OR we have more items to fetch on server
 
-  const maxIndex = Math.max(0, allComments.length - itemsPerPage);
+  const maxIndex = Math.max(0, loadedCount - itemsPerPage);
   const canGoNext = carouselIndex < maxIndex || hasMore;
 
   nextBtn.disabled = !canGoNext;
 }
 
 function nextSlide() {
-  const maxIndex = Math.max(0, allComments.length - itemsPerPage);
+  const maxIndex = Math.max(0, loadedCount - itemsPerPage);
 
   if (carouselIndex < maxIndex) {
     // Just slide
@@ -212,13 +165,13 @@ function nextSlide() {
     updateCarousel(true);
 
     // Check if we need to load more (preload when close to end)
-    if (hasMore && !isLoading && allComments.length - carouselIndex <= itemsPerPage * 2) {
+    if (hasMore && !isLoading && loadedCount - carouselIndex <= itemsPerPage * 2) {
       loadComments();
     }
   } else if (hasMore && !isLoading) {
     // At end, need to load more first
     loadComments().then(() => {
-      if (allComments.length > maxIndex) {
+      if (loadedCount > maxIndex) {
         // If we actually got new items
         carouselIndex++;
         updateCarousel(true);
@@ -237,8 +190,15 @@ function prevSlide() {
 prevBtn?.addEventListener('click', prevSlide);
 nextBtn?.addEventListener('click', nextSlide);
 
-// Initial load
-loadComments();
+// The server rendered the first page, so there is nothing to fetch on load;
+// only sync the controls to what is already on screen. A memorial with no
+// approved memories still renders its empty state server-side.
+if (initialCount === 0) {
+  prevBtn.disabled = true;
+  nextBtn.disabled = true;
+} else {
+  updateButtons();
+}
 
 // Form handling (unchanged logic, just re-attaching listeners)
 const form = document.getElementById('commentForm') as HTMLFormElement;
@@ -361,7 +321,7 @@ form?.addEventListener('submit', async (e) => {
 
       // Reload comments to show new one (simple way: reset everything)
       // Or prepend? For simplicity in carousel, reload is safer.
-      allComments = [];
+      loadedCount = 0;
       offset = 0;
       hasMore = true;
       carouselIndex = 0;
@@ -379,15 +339,6 @@ form?.addEventListener('submit', async (e) => {
   }
 });
 
-// Utility functions
-function formatDate(dateString: string) {
-  return new Date(dateString).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
-}
-
 // Comment Lightbox
 const commentLightbox = document.getElementById('commentLightbox');
 const commentLightboxImage = document.getElementById('commentLightboxImage') as HTMLImageElement;
@@ -402,11 +353,13 @@ window.openCommentLightbox = (url: string, caption?: string) => {
     commentLightbox.classList.remove('hidden');
     commentLightbox.classList.add('flex');
     document.body.style.overflow = 'hidden';
+    activateFocusTrap(commentLightbox);
   }
 };
 
 function closeCommentLightboxFn() {
   if (commentLightbox) {
+    releaseFocusTrap(commentLightbox);
     commentLightbox.classList.add('hidden');
     commentLightbox.classList.remove('flex');
     document.body.style.overflow = '';

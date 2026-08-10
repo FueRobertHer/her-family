@@ -6,10 +6,14 @@ import Layout from '../../layouts/Layout.astro';
 import { ContentService } from '../../lib/services/content.service.ts';
 import { optimizeCloudinaryPdf } from '../../lib/image-optimization';
 import { getMemorialBySlug } from '../../lib/memorial-context';
+import { isAuthenticated } from '../../lib/auth';
 
 const { id } = Astro.params;
 const memorialSlug = Astro.url.searchParams.get('memorial')?.trim() || '';
-const memorial = memorialSlug ? await getMemorialBySlug(memorialSlug) : null;
+const isAdmin = isAuthenticated(Astro.cookies);
+const memorial = memorialSlug
+  ? await getMemorialBySlug(memorialSlug, { includeHidden: isAdmin })
+  : null;
 
 if (!memorial) {
   return Astro.redirect('/memorials');
@@ -19,7 +23,11 @@ const serviceIndex = parseInt((id || '0').split('-')[0]);
 const agendaTransitionName = `agenda-header-${memorialSlug || 'default'}-${serviceIndex}`;
 
 // Fetch the service data specifically
-const result = await ContentService.getContentItem(memorial.id, 'funeral', `service${serviceIndex}`);
+const result = await ContentService.getContentItem(
+  memorial.id,
+  'funeral',
+  `service${serviceIndex}`
+);
 
 let agendaUrl = null;
 let serviceType = 'Service';
@@ -59,7 +67,7 @@ const optimizedAgendaUrl = isPdf ? optimizeCloudinaryPdf(agendaUrl) : agendaUrl;
 const downloadUrl = `/api/download-agenda?service=${serviceIndex}&memorial=${encodeURIComponent(memorialSlug)}`;
 ---
 
-<Layout title={`${serviceType} Agenda`} description="View service agenda">
+<Layout title={`${serviceType} Agenda`} description="View service agenda" noIndex={true}>
   <!-- Preconnect hints for faster loading -->
   <link rel="preconnect" href="https://res.cloudinary.com" slot="head" />
   <link rel="preconnect" href="https://docs.google.com" slot="head" />
@@ -187,12 +195,14 @@ const downloadUrl = `/api/download-agenda?service=${serviceIndex}&memorial=${enc
                 >
                   Download Agenda
                 </a>
-                <button
-                  onclick={`window.open('${optimizedAgendaUrl}', '_blank')`}
+                <a
+                  href={optimizedAgendaUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   class="inline-flex items-center justify-center px-4 py-2 border border-warm-gray-300 shadow-xs text-sm font-medium rounded-lg text-warm-gray-700 bg-white hover:bg-warm-gray-50 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
                 >
                   Open in New Tab
-                </button>
+                </a>
                 <button
                   id="try-native-viewer"
                   class="inline-flex items-center justify-center px-4 py-2 border border-warm-gray-300 shadow-xs text-sm font-medium rounded-lg text-warm-gray-700 bg-white hover:bg-warm-gray-50 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"

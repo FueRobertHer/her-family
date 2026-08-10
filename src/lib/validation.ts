@@ -45,6 +45,23 @@ export const memorialContentSchema = z.object({
 
 export type MemorialContentInput = z.infer<typeof memorialContentSchema>;
 
+/**
+ * A whole section's worth of edits in one request.
+ *
+ * The editor used to POST once per field, so saving a section meant a dozen
+ * round trips, a dozen memorial lookups, and a partial write if any of them
+ * failed. Accepts a single item too, so older callers keep working.
+ */
+export const memorialContentBatchSchema = z.object({
+  memorialSlug: z.string().trim().min(1, 'memorialSlug is required'),
+  updates: z
+    .array(memorialContentSchema)
+    .min(1, 'At least one update is required')
+    .max(50, 'Too many updates in one request'),
+});
+
+export type MemorialContentBatchInput = z.infer<typeof memorialContentBatchSchema>;
+
 // Gallery image validation schema
 export const galleryImageSchema = z.object({
   imagePath: z

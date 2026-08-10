@@ -2,7 +2,6 @@
 export const prerender = false;
 import { MemorialService } from '../../lib/services/memorial.service.ts';
 import { isAuthenticated as checkAuth } from '../../lib/auth';
-import { clearSessionCookie } from '../../lib/session';
 import Layout from '../../layouts/Layout.astro';
 import '../../styles/global.css';
 
@@ -12,14 +11,8 @@ const isAuthenticated = checkAuth(cookies);
 const memorials = isAuthenticated ? await MemorialService.getAllMemorialsAdmin() : [];
 const selectedMemorialSlug =
   Astro.url.searchParams.get('memorial') || 'all';
-
-// Handle logout
-if (Astro.url.searchParams.get('logout') === 'true') {
-  clearSessionCookie(cookies);
-  return Astro.redirect('/admin');
-}
 ---
-<Layout title="Admin - Memorial Page" description="Manage memorials and comments">
+<Layout title="Admin - Memorial Page" description="Manage memorials and comments" noIndex={true}>
 
 {!isAuthenticated ? (
   <div class="min-h-screen flex items-center justify-center">
@@ -122,20 +115,30 @@ if (Astro.url.searchParams.get('logout') === 'true') {
     <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
       <div class="bg-white shadow-sm rounded-lg mb-6">
         <div class="border-b border-gray-200 px-6">
-          <nav class="-mb-px flex space-x-8 overflow-x-auto" aria-label="Admin sections">
-            <button
-              class="admin-section-tab border-indigo-500 text-indigo-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
-              data-section="comments"
-            >
-              Comments
-            </button>
-            <button
-              class="admin-section-tab border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
-              data-section="memorials"
-            >
-              Memorials
-            </button>
-          </nav>
+          <div class="flex items-center justify-between gap-4">
+            <nav class="-mb-px flex space-x-8 overflow-x-auto" aria-label="Admin sections">
+              <button
+                class="admin-section-tab border-indigo-500 text-indigo-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
+                data-section="comments"
+              >
+                Comments
+              </button>
+              <button
+                class="admin-section-tab border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
+                data-section="memorials"
+              >
+                Memorials
+              </button>
+            </nav>
+            <form method="post" action="/api/admin/logout" class="shrink-0">
+              <button
+                type="submit"
+                class="px-3 py-1.5 rounded-md text-sm border border-gray-300 text-gray-700 hover:bg-gray-100"
+              >
+                Sign out
+              </button>
+            </form>
+          </div>
         </div>
       </div>
 
@@ -322,10 +325,24 @@ if (Astro.url.searchParams.get('logout') === 'true') {
 )}
 
 <script>
-  import { escapeHtml } from '../../scripts/lib/escape-html.ts';
+  import { escapeHtml } from '../../lib/escape-html.ts';
 
-  // Admin dashboard functionality
-  if (document.querySelector('.tab-button')) {
+  // Admin dashboard functionality.
+  //
+  // All setup lives in this function rather than at module top level. Astro's
+  // ClientRouter executes a given module script only once per session, so when
+  // the header's Admin link brought you back to this page after a client-side
+  // navigation, none of the setup ran again and both panels sat on their
+  // "Loading..." placeholders forever. Re-running on astro:page-load fixes
+  // that; the guard keeps a single DOM from being initialized twice, since
+  // astro:page-load also fires on the initial load.
+  function initAdminDashboard() {
+    const dashboardRoot = document.getElementById('commentsSection');
+    if (!dashboardRoot || dashboardRoot.dataset.initialized === 'true') return;
+    if (!document.querySelector('.tab-button')) return;
+
+    dashboardRoot.dataset.initialized = 'true';
+
     interface Comment {
       id: number;
       memorialId: number;
@@ -495,27 +512,35 @@ if (Astro.url.searchParams.get('logout') === 'true') {
             <div class="ml-4 shrink-0">
               ${comment.status === 'pending' ? `
                 <button
-                  onclick="moderateComment(${comment.id}, 'approve')"
+                  type="button"
+                  data-comment-action="approve"
+                  data-comment-id="${comment.id}"
                   class="mr-2 bg-green-600 text-white px-3 py-1 rounded-sm text-sm hover:bg-green-700"
                 >
                   Approve
                 </button>
                 <button
-                  onclick="moderateComment(${comment.id}, 'reject')"
+                  type="button"
+                  data-comment-action="reject"
+                  data-comment-id="${comment.id}"
                   class="bg-red-600 text-white px-3 py-1 rounded-sm text-sm hover:bg-red-700"
                 >
                   Reject
                 </button>
               ` : comment.status === 'approved' ? `
                 <button
-                  onclick="moderateComment(${comment.id}, 'reject')"
+                  type="button"
+                  data-comment-action="reject"
+                  data-comment-id="${comment.id}"
                   class="bg-red-600 text-white px-3 py-1 rounded-sm text-sm hover:bg-red-700"
                 >
                   Reject
                 </button>
               ` : comment.status === 'rejected' ? `
                 <button
-                  onclick="moderateComment(${comment.id}, 'approve')"
+                  type="button"
+                  data-comment-action="approve"
+                  data-comment-id="${comment.id}"
                   class="bg-green-600 text-white px-3 py-1 rounded-sm text-sm hover:bg-green-700"
                 >
                   Approve
@@ -591,7 +616,10 @@ if (Astro.url.searchParams.get('logout') === 'true') {
                 Edit Content
               </a>
               <button
-                onclick="toggleMemorialVisibility(${memorial.id}, '${memorial.status === 'active' ? 'hidden' : 'active'}')"
+                type="button"
+                data-memorial-action="visibility"
+                data-memorial-id="${memorial.id}"
+                data-next-status="${memorial.status === 'active' ? 'hidden' : 'active'}"
                 class="px-3 py-1.5 rounded-md text-sm ${
                   memorial.status === 'active'
                     ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -601,13 +629,17 @@ if (Astro.url.searchParams.get('logout') === 'true') {
                 ${memorial.status === 'active' ? 'Hide' : 'Show Publicly'}
               </button>
               <button
-                onclick="requestMemorialEdit(${memorial.id})"
+                type="button"
+                data-memorial-action="edit"
+                data-memorial-id="${memorial.id}"
                 class="px-3 py-1.5 rounded-md text-sm bg-indigo-600 text-white hover:bg-indigo-700"
               >
                 Edit
               </button>
               <button
-                onclick="requestMemorialDelete(${memorial.id})"
+                type="button"
+                data-memorial-action="delete"
+                data-memorial-id="${memorial.id}"
                 class="px-3 py-1.5 rounded-md text-sm bg-red-600 text-white hover:bg-red-700"
               >
                 Delete
@@ -619,7 +651,7 @@ if (Astro.url.searchParams.get('logout') === 'true') {
         .join('');
     }
 
-    window.toggleMemorialVisibility = async function(id: number, nextStatus: 'active' | 'hidden') {
+    async function toggleMemorialVisibility(id: number, nextStatus: 'active' | 'hidden') {
       try {
         const response = await fetch('/api/admin/memorials', {
           method: 'PATCH',
@@ -661,7 +693,7 @@ if (Astro.url.searchParams.get('logout') === 'true') {
       if (confirmDeleteMemorialBtn) confirmDeleteMemorialBtn.textContent = 'Delete Memorial';
     }
 
-    window.requestMemorialDelete = function(id: number) {
+    function requestMemorialDelete(id: number) {
       const memorial = memorialList.find((item) => item.id === id);
       if (!memorial) {
         alert('Memorial not found');
@@ -700,7 +732,7 @@ if (Astro.url.searchParams.get('logout') === 'true') {
       if (saveEditMemorialBtn) saveEditMemorialBtn.textContent = 'Save Changes';
     }
 
-    window.requestMemorialEdit = function(id: number) {
+    function requestMemorialEdit(id: number) {
       const memorial = memorialList.find((item) => item.id === id);
       if (!memorial) {
         alert('Memorial not found');
@@ -742,7 +774,7 @@ if (Astro.url.searchParams.get('logout') === 'true') {
     }
 
     // Moderate comment
-    window.moderateComment = async function(id: number, action: string) {
+    async function moderateComment(id: number, action: string) {
       // Only confirm for reject action, not for approve
       if (action === 'reject') {
         if (!confirm('Are you sure you want to reject this comment?')) {
@@ -1030,6 +1062,44 @@ if (Astro.url.searchParams.get('logout') === 'true') {
       }
     });
 
+    // Row actions live on markup rebuilt by loadComments/loadMemorials, so they
+    // are delegated from the containers rather than bound per render. Inline
+    // onclick attributes here would also mean 'unsafe-inline' in script-src.
+    commentsContainer?.addEventListener('click', (event) => {
+      const button = (event.target as HTMLElement).closest<HTMLElement>('[data-comment-action]');
+      if (!button) return;
+
+      const id = Number(button.dataset.commentId);
+      const action = button.dataset.commentAction;
+      if (!Number.isFinite(id) || !action) return;
+
+      moderateComment(id, action);
+    });
+
+    memorialsContainer?.addEventListener('click', (event) => {
+      const button = (event.target as HTMLElement).closest<HTMLElement>('[data-memorial-action]');
+      if (!button) return;
+
+      const id = Number(button.dataset.memorialId);
+      if (!Number.isFinite(id)) return;
+
+      switch (button.dataset.memorialAction) {
+        case 'visibility': {
+          const nextStatus = button.dataset.nextStatus;
+          if (nextStatus === 'active' || nextStatus === 'hidden') {
+            toggleMemorialVisibility(id, nextStatus);
+          }
+          break;
+        }
+        case 'edit':
+          requestMemorialEdit(id);
+          break;
+        case 'delete':
+          requestMemorialDelete(id);
+          break;
+      }
+    });
+
     // Initial load
     loadMemorials();
 
@@ -1045,6 +1115,14 @@ if (Astro.url.searchParams.get('logout') === 'true') {
       (initialTab as HTMLElement).click();
     }
   }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAdminDashboard);
+  } else {
+    initAdminDashboard();
+  }
+
+  document.addEventListener('astro:page-load', initAdminDashboard);
 </script>
 
 </Layout>

@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { requireAuth } from '../../../lib/auth';
 import { successResponse, errorResponse, validationError } from '../../../lib/api-response';
-import { memorialContentSchema, validateData } from '../../../lib/validation';
+import { memorialContentBatchSchema, validateData } from '../../../lib/validation';
 import { getMemorialBySlug } from '../../../lib/memorial-context';
 import { ContentService } from '../../../lib/services/content.service.ts';
 
@@ -18,14 +18,19 @@ interface OrganizedContent {
 }
 
 // GET - Fetch all memorial content
-export const GET: APIRoute = async ({ request }) => {
+// Admin-only: the sole consumer is the inline editor, and an unauthenticated
+// read here would expose the content of hidden memorials.
+export const GET: APIRoute = async ({ request, cookies }) => {
   try {
+    const authError = requireAuth(cookies);
+    if (authError) return authError;
+
     const memorialSlug = new URL(request.url).searchParams.get('memorial')?.trim();
     if (!memorialSlug) {
       return validationError('memorial query parameter is required');
     }
 
-    const memorial = await getMemorialBySlug(memorialSlug);
+    const memorial = await getMemorialBySlug(memorialSlug, { includeHidden: true });
     if (!memorial) {
       return errorResponse('Memorial not found', 404);
     }
@@ -53,6 +58,11 @@ export const GET: APIRoute = async ({ request }) => {
 };
 
 // POST - Update memorial content
+//
+// Accepts either a single {section, key, value} or {updates: [...]}. The editor
+// sends the whole section at once: one request, one memorial lookup, and one
+// write per changed field instead of a dozen independent round trips that
+// could half-succeed.
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
     // Check admin authentication
@@ -61,27 +71,26 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     const body = await request.json();
 
-    // Validate input with Zod
-    const validation = validateData(memorialContentSchema, body);
+    // Normalize the single-update form into the batch form.
+    const candidate = Array.isArray(body?.updates)
+      ? body
+      : { memorialSlug: body?.memorialSlug, updates: [body] };
+
+    const validation = validateData(memorialContentBatchSchema, candidate);
     if (!validation.success) {
       return validationError(validation.error, validation.details?.join(', '));
     }
 
-    const memorialSlug = typeof body.memorialSlug === 'string' ? body.memorialSlug.trim() : '';
-    if (!memorialSlug) {
-      return validationError('memorialSlug is required');
-    }
+    const { memorialSlug, updates } = validation.data;
 
-    const memorial = await getMemorialBySlug(memorialSlug);
+    const memorial = await getMemorialBySlug(memorialSlug, { includeHidden: true });
     if (!memorial) {
       return errorResponse('Memorial not found', 404);
     }
 
-    const { section, key, value, type } = validation.data;
+    await ContentService.upsertManyContent(memorial.id, updates);
 
-    await ContentService.upsertContent(memorial.id, section, key, value, type);
-
-    return successResponse(undefined, 'Content updated successfully');
+    return successResponse({ updated: updates.length }, 'Content updated successfully');
   } catch (error) {
     console.error('Error updating content:', error);
     const details = error instanceof Error ? error.message : 'Unknown error';

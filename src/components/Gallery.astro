@@ -8,11 +8,11 @@ export interface Props {
     caption?: string;
   }>;
   isAdmin?: boolean;
-  title?: string;
+  title: string;
   memorialSlug?: string;
 }
 
-const { images, isAdmin = false, title = 'Treasured Moments', memorialSlug = '' } = Astro.props;
+const { images, isAdmin = false, title, memorialSlug = '' } = Astro.props;
 
 // Optimize gallery images for thumbnails
 const optimizedImages = images.map((img) => ({
@@ -95,7 +95,16 @@ const optimizedImages = images.map((img) => ({
                 data-full-url={image.fullSrc}
               >
                 <div class="group relative">
-                  <div class="aspect-square overflow-hidden rounded-lg bg-warm-gray-200 shadow-md transition-all duration-300 hover:shadow-xl cursor-pointer">
+                  {/*
+                    A button, not a div: the lightbox was mouse-only before, so
+                    keyboard users had no way to enlarge a photo. This also
+                    gives the focus trap somewhere to return focus on close.
+                  */}
+                  <button
+                    type="button"
+                    class="aspect-square block w-full overflow-hidden rounded-lg bg-warm-gray-200 shadow-md transition-all duration-300 hover:shadow-xl cursor-pointer"
+                    aria-label={`View photo: ${image.alt}`}
+                  >
                     <img
                       src={image.thumbSrc}
                       alt={image.alt}
@@ -106,7 +115,7 @@ const optimizedImages = images.map((img) => ({
                       decoding="async"
                       data-fallback="photo"
                     />
-                  </div>
+                  </button>
                   {image.caption && (
                     <p
                       class="mt-2 text-sm text-warm-gray-600 text-center caption-text"
@@ -159,16 +168,40 @@ const optimizedImages = images.map((img) => ({
     </div>
 
     <!-- Dots Indicator -->
-    <div id="carouselDots" class="flex justify-center gap-2 mt-6">
-      {
-        images.map((_, index) => (
-          <button
-            class="carousel-dot w-2 h-2 rounded-full bg-warm-gray-300 hover:bg-warm-gray-500 transition-colors"
-            data-index={index}
-            aria-label={`Go to image ${index + 1}`}
-          />
-        ))
-      }
+    <div class="flex items-center justify-center gap-1 mt-4">
+      <div id="carouselDots" class="flex justify-center">
+        {
+          /*
+            The dot itself stays 8px, but the button around it is 24px so it
+            meets the WCAG 2.5.8 minimum target size on touch screens.
+          */
+          images.map((_, index) => (
+            <button
+              type="button"
+              class="carousel-dot group flex h-6 w-6 items-center justify-center"
+              data-index={index}
+              aria-label={`Go to image ${index + 1}`}
+            >
+              <span class="carousel-dot-mark block h-2 w-2 rounded-full bg-warm-gray-300 transition-colors group-hover:bg-warm-gray-500" />
+            </button>
+          ))
+        }
+      </div>
+
+      <button
+        type="button"
+        id="carouselPlayPause"
+        class="ml-1 flex h-8 w-8 items-center justify-center rounded-full text-warm-gray-500 transition-colors hover:bg-warm-gray-200 hover:text-warm-gray-800"
+        aria-label="Pause slideshow"
+        title="Pause slideshow"
+      >
+        <svg class="pause-icon h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M6 5h4v14H6zM14 5h4v14h-4z"></path>
+        </svg>
+        <svg class="play-icon h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M8 5v14l11-7z"></path>
+        </svg>
+      </button>
     </div>
   </div>
 </section>
@@ -304,6 +337,16 @@ const optimizedImages = images.map((img) => ({
 }
 
 <style>
+  /* Only one of the two transport icons shows, driven by data-paused. */
+  #carouselPlayPause .play-icon,
+  #carouselPlayPause[data-paused='true'] .pause-icon {
+    display: none;
+  }
+
+  #carouselPlayPause[data-paused='true'] .play-icon {
+    display: block;
+  }
+
   /* Center arrows on the square image area, accounting for captions below */
   .carousel-arrow-positioning {
     position: relative;

@@ -27,7 +27,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     }
 
     const { imagePath, displayOrder, memorialSlug } = validation.data;
-    const memorial = await getMemorialBySlug(memorialSlug);
+    const memorial = await getMemorialBySlug(memorialSlug, { includeHidden: true });
     if (!memorial) {
       return notFoundError('Memorial');
     }

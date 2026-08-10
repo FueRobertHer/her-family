@@ -1,4 +1,4 @@
-import { db, Comments, MemorialContent, Memorials, eq, and, desc } from 'astro:db';
+import { db, Comments, MemorialContent, Memorials, eq, and, desc, count } from 'astro:db';
 
 export class CommentService {
   /**
@@ -59,7 +59,11 @@ export class CommentService {
   }
 
   /**
-   * Fetch comments and counts for the admin dashboard
+   * Fetch comments and counts for the admin dashboard.
+   *
+   * Counts come from a GROUP BY and the memorial name from a join. The previous
+   * version pulled every comment row to tally statuses in JS and every memorial
+   * to build a lookup map, so both grew with the table rather than the page.
    */
   static async getAdminComments(
     memorialIdFilter: number | null,
@@ -67,45 +71,59 @@ export class CommentService {
     limit: number,
     offset: number
   ) {
-    // 1. Get counts for all statuses
-    const statusRows =
-      memorialIdFilter !== null
-        ? await db
-            .select({ status: Comments.status })
-            .from(Comments)
-            .where(eq(Comments.memorialId, memorialIdFilter))
-        : await db.select({ status: Comments.status }).from(Comments);
+    const memorialCondition =
+      memorialIdFilter !== null ? eq(Comments.memorialId, memorialIdFilter) : undefined;
 
-    const counts = {
-      pending: statusRows.filter((c) => c.status === 'pending').length,
-      approved: statusRows.filter((c) => c.status === 'approved').length,
-      rejected: statusRows.filter((c) => c.status === 'rejected').length,
-      total: statusRows.length,
-    };
+    // 1. Counts per status, computed by the database.
+    const countQuery = db
+      .select({ status: Comments.status, total: count() })
+      .from(Comments)
+      .groupBy(Comments.status);
 
-    // 2. Fetch paginated comments
+    const countRows = await (memorialCondition ? countQuery.where(memorialCondition) : countQuery);
+
+    const counts = { pending: 0, approved: 0, rejected: 0, total: 0 };
+    for (const row of countRows) {
+      const total = Number(row.total) || 0;
+      counts.total += total;
+      if (row.status === 'pending' || row.status === 'approved' || row.status === 'rejected') {
+        counts[row.status] += total;
+      }
+    }
+
+    // 2. One page of comments, with their memorial joined in.
     const conditions = [];
-    if (memorialIdFilter !== null) conditions.push(eq(Comments.memorialId, memorialIdFilter));
+    if (memorialCondition) conditions.push(memorialCondition);
     if (statusFilter && statusFilter !== 'all') conditions.push(eq(Comments.status, statusFilter));
 
-    const baseQuery = db.select().from(Comments);
-    const pageRows = await (conditions.length > 0 ? baseQuery.where(and(...conditions)) : baseQuery)
+    const pageQuery = db
+      .select({
+        id: Comments.id,
+        memorialId: Comments.memorialId,
+        name: Comments.name,
+        email: Comments.email,
+        relationship: Comments.relationship,
+        message: Comments.message,
+        imageUrl: Comments.imageUrl,
+        status: Comments.status,
+        createdAt: Comments.createdAt,
+        updatedAt: Comments.updatedAt,
+        memorialName: Memorials.name,
+        memorialSlug: Memorials.slug,
+      })
+      .from(Comments)
+      .leftJoin(Memorials, eq(Comments.memorialId, Memorials.id));
+
+    const rows = await (conditions.length > 0 ? pageQuery.where(and(...conditions)) : pageQuery)
       .orderBy(desc(Comments.createdAt))
       .limit(limit)
       .offset(offset);
 
-    // 3. Map to include memorial details
-    const memorialRecords = await db.select().from(Memorials);
-    const memorialMap = new Map(memorialRecords.map((memorial) => [memorial.id, memorial]));
-
-    const comments = pageRows.map((comment) => {
-      const memorial = memorialMap.get(comment.memorialId);
-      return {
-        ...comment,
-        memorialName: memorial?.name || 'Unknown memorial',
-        memorialSlug: memorial?.slug || '',
-      };
-    });
+    const comments = rows.map((row) => ({
+      ...row,
+      memorialName: row.memorialName ?? 'Unknown memorial',
+      memorialSlug: row.memorialSlug ?? '',
+    }));
 
     return { comments, counts };
   }
@@ -122,7 +140,9 @@ export class CommentService {
     const updateQuery = db.update(Comments).set({ status, updatedAt: now });
 
     if (memorialIdFilter !== null) {
-      await updateQuery.where(and(eq(Comments.id, commentId), eq(Comments.memorialId, memorialIdFilter)));
+      await updateQuery.where(
+        and(eq(Comments.id, commentId), eq(Comments.memorialId, memorialIdFilter))
+      );
     } else {
       await updateQuery.where(eq(Comments.id, commentId));
     }

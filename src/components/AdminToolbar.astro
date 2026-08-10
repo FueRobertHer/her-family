@@ -41,7 +41,7 @@ const {
 
     <div
       id={controlsId}
-    data-admin-toolbar-controls="true"
+      data-admin-toolbar-controls="true"
       class={`flex items-center pr-4 space-x-4 whitespace-nowrap overflow-hidden pointer-events-auto ${
         draggable ? 'max-w-[300px] transition-all duration-300 group-hover:max-w-[300px]' : ''
       }`}
@@ -50,24 +50,30 @@ const {
       <slot />
     </div>
 
-    {showMinimize && (
-      <button
-        id={minimizeButtonId}
-        data-admin-toolbar-minimize="true"
-        class="p-2 hover:bg-indigo-700 text-white/70 hover:text-white"
-        title="Minimize/Maximize"
-      >
-        <svg
-          class="w-4 h-4 transform transition-transform duration-300"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
+    {
+      showMinimize && (
+        <button
+          id={minimizeButtonId}
+          data-admin-toolbar-minimize="true"
+          class="p-2 hover:bg-indigo-700 text-white/70 hover:text-white"
+          title="Minimize/Maximize"
         >
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"
-          ></path>
-        </svg>
-      </button>
-    )}
+          <svg
+            class="w-4 h-4 transform transition-transform duration-300"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 19l-7-7 7-7"
+            />
+          </svg>
+        </button>
+      )
+    }
   </div>
 </div>
 

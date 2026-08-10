@@ -15,33 +15,16 @@ interface ImportMeta {
 /**
  * Globals attached to window by client scripts. Declaring them here gives
  * type-checked access instead of the previous ts(2568) "may not exist" hints.
- * They are declared non-optional because the app always defines them before
- * the code that calls them runs (guarded call sites still typeof-check).
+ *
+ * This list used to be much longer: most entries existed only so inline
+ * onclick="..." attributes could reach module functions. Those handlers are
+ * now delegated listeners bound inside the modules themselves, so only
+ * genuinely cross-module globals remain.
  */
 interface Window {
-  __MEMORIAL_SLUG__?: string;
-  lightboxEscapeListenerAdded?: boolean;
-
+  /** Defined by Toast.astro, called from most client scripts. */
   showToast: (message: string, type?: string, duration?: number) => void;
 
-  openLightbox: (id: string, imageUrl?: string, title?: string) => void;
-  closeLightbox: (id: string) => void;
+  /** Defined and used by src/scripts/comments.ts. */
   openCommentLightbox: (imageUrl: string, title?: string) => void;
-  openPaymentLightbox: (imageUrl: string, title?: string) => void;
-  closePaymentLightbox: () => void;
-
-  openEditModal: (section: string) => void;
-  closeEditModal: () => void;
-  saveAllModalContent: () => void;
-  toggleEditButtons: (visible?: boolean) => void;
-  restoreHiddenSections: () => void;
-  moderateComment: (id: number, action: string) => Promise<void>;
-  toggleMemorialVisibility: (id: number, nextStatus: 'active' | 'hidden') => Promise<void>;
-  requestMemorialEdit: (id: number) => void;
-  requestMemorialDelete: (id: number) => void;
-  uploadImageForField: (fieldId: string) => void;
-  uploadVideoForField: (fieldId: string) => void;
-  uploadAgendaForField: (fieldId: string) => void;
-  initBiographyToggle: () => void;
-  recheckBiographyTruncation: () => void;
 }

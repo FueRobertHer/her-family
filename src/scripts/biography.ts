@@ -87,12 +87,3 @@ if (document.readyState === 'loading') {
 } else {
   initBiographyToggle();
 }
-
-// Expose to window for re-initialization after content updates
-declare global {
-  interface Window {
-    initBiographyToggle: () => void;
-  }
-}
-
-window.initBiographyToggle = initBiographyToggle;

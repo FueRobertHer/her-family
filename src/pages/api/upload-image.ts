@@ -41,7 +41,11 @@ export const POST: APIRoute = async (context) => {
       // for memorials that actually exist, so this can't be used as free
       // arbitrary file hosting against our Cloudinary quota.
       const clientId = getClientIdentifier(context);
-      const rateLimit = checkRateLimit(`upload:${clientId}`, COMMENT_UPLOADS_PER_HOUR, 60 * 60 * 1000);
+      const rateLimit = checkRateLimit(
+        `upload:${clientId}`,
+        COMMENT_UPLOADS_PER_HOUR,
+        60 * 60 * 1000
+      );
       if (!rateLimit.allowed) {
         return jsonError('Too many uploads. Please try again later.', 429);
       }
@@ -50,8 +54,9 @@ export const POST: APIRoute = async (context) => {
         return jsonError('Only JPEG, PNG, WebP, or GIF images are allowed', 400);
       }
 
+      // Hidden memorials are excluded by the lookup itself.
       const memorial = await getMemorialBySlug(commentFolderMatch[1]);
-      if (!memorial || memorial.status !== 'active') {
+      if (!memorial) {
         return jsonError('Memorial not found', 404);
       }
     }
@@ -75,15 +80,16 @@ export const POST: APIRoute = async (context) => {
 
     const result = await MediaService.uploadMedia(file, folder, isAdmin);
 
-    return new Response(
-      JSON.stringify(result),
-      {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    return new Response(JSON.stringify(result), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
   } catch (error) {
     console.error('Upload error:', error);
-    return jsonError('Failed to upload image', 500, error instanceof Error ? error.message : 'Unknown error');
+    return jsonError(
+      'Failed to upload image',
+      500,
+      error instanceof Error ? error.message : 'Unknown error'
+    );
   }
 };

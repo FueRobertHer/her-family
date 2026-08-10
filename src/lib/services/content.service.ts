@@ -29,6 +29,43 @@ export class ContentService {
   }
 
   /**
+   * Upserts several content rows in one atomic batch.
+   *
+   * Relies on the (memorialId, section, key) unique index so each row is a
+   * single INSERT ... ON CONFLICT DO UPDATE rather than a read followed by a
+   * write. db.batch wraps them in one transaction: a section save now either
+   * lands completely or not at all.
+   */
+  static async upsertManyContent(
+    memorialId: number,
+    updates: Array<{ section: string; key: string; value: string; type: string }>
+  ) {
+    if (updates.length === 0) return;
+
+    const updatedAt = new Date().toISOString();
+
+    const statements = updates.map((update) =>
+      db
+        .insert(MemorialContent)
+        .values({
+          memorialId,
+          section: update.section,
+          key: update.key,
+          value: String(update.value),
+          type: update.type,
+          updatedAt,
+        })
+        .onConflictDoUpdate({
+          target: [MemorialContent.memorialId, MemorialContent.section, MemorialContent.key],
+          set: { value: String(update.value), type: update.type, updatedAt },
+        })
+    );
+
+    // db.batch requires a non-empty tuple; the guard above ensures that.
+    await db.batch(statements as [(typeof statements)[number], ...typeof statements]);
+  }
+
+  /**
    * Upserts content for a memorial section/key.
    */
   static async upsertContent(
