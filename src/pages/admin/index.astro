@@ -327,8 +327,22 @@ const selectedMemorialSlug =
 <script>
   import { escapeHtml } from '../../lib/escape-html.ts';
 
-  // Admin dashboard functionality
-  if (document.querySelector('.tab-button')) {
+  // Admin dashboard functionality.
+  //
+  // All setup lives in this function rather than at module top level. Astro's
+  // ClientRouter executes a given module script only once per session, so when
+  // the header's Admin link brought you back to this page after a client-side
+  // navigation, none of the setup ran again and both panels sat on their
+  // "Loading..." placeholders forever. Re-running on astro:page-load fixes
+  // that; the guard keeps a single DOM from being initialized twice, since
+  // astro:page-load also fires on the initial load.
+  function initAdminDashboard() {
+    const dashboardRoot = document.getElementById('commentsSection');
+    if (!dashboardRoot || dashboardRoot.dataset.initialized === 'true') return;
+    if (!document.querySelector('.tab-button')) return;
+
+    dashboardRoot.dataset.initialized = 'true';
+
     interface Comment {
       id: number;
       memorialId: number;
@@ -1101,6 +1115,14 @@ const selectedMemorialSlug =
       (initialTab as HTMLElement).click();
     }
   }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAdminDashboard);
+  } else {
+    initAdminDashboard();
+  }
+
+  document.addEventListener('astro:page-load', initAdminDashboard);
 </script>
 
 </Layout>
