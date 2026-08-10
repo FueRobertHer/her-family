@@ -15,6 +15,8 @@ import EditButton from '../../components/EditButton.astro';
 import { isAuthenticated } from '../../lib/auth';
 import { embedJson } from '../../lib/embed-json';
 import { MemorialService } from '../../lib/services/memorial.service';
+import { CommentService } from '../../lib/services/comment.service';
+import { optimizeCloudinaryUrl, CloudinaryPresets } from '../../lib/image-optimization';
 
 const slug = Astro.params.slug || '';
 const isAdmin = isAuthenticated(Astro.cookies);
@@ -25,6 +27,30 @@ if (!memorial) {
 }
 
 const memorialData = await MemorialService.getMemorialData(memorial);
+
+// First page of memories, rendered with the page rather than fetched after
+// hydration: they are the heart of the page and were previously invisible to
+// crawlers, link previews and anyone whose JavaScript failed.
+const INITIAL_COMMENT_COUNT = 10;
+const initialComments = memorialData.commentsVisible
+  ? await CommentService.getApprovedComments(memorial.id, INITIAL_COMMENT_COUNT + 1, 0)
+  : [];
+const hasMoreComments = initialComments.length > INITIAL_COMMENT_COUNT;
+
+// Link preview: these pages get shared by text message and on Facebook, so the
+// portrait and life dates should carry over rather than a bare URL.
+const birthYear = new Date(memorialData.birthDate).getFullYear();
+const deathYear = new Date(memorialData.deathDate).getFullYear();
+const lifespan =
+  Number.isNaN(birthYear) || Number.isNaN(deathYear) ? '' : `, ${birthYear} - ${deathYear}`;
+const subtitle = memorialData.subtitle?.trim();
+const shareDescription = [
+  `Remembering ${memorialData.name}${lifespan}.`,
+  subtitle ? (subtitle.endsWith('.') ? subtitle : `${subtitle}.`) : '',
+]
+  .filter(Boolean)
+  .join(' ');
+const shareImage = optimizeCloudinaryUrl(memorialData.mainImage, CloudinaryPresets.socialPreview);
 ---
 
 <style is:global>
@@ -49,165 +75,322 @@ const memorialData = await MemorialService.getMemorialData(memorial);
   }
 </style>
 
-<Layout title={`${memorialData.name} - Memorial`} description={`Remembering ${memorialData.name}`}>
+<Layout
+  title={`${memorialData.name} - Memorial`}
+  description={shareDescription}
+  ogImage={shareImage}
+  ogType="profile"
+>
   <script id="memorial-data" type="application/json" is:inline set:html={embedJson(memorialData)} />
-  <script is:inline define:vars={{ slug }}>window.__MEMORIAL_SLUG__ = slug;</script>
 
-      <main>
-        {isAdmin && (
-          <AdminToolbar draggable={true} showMinimize={true}>
-            <span class="text-sm font-medium">Edit Mode</span>
-            <label class="relative inline-flex items-center cursor-pointer pointer-events-auto" style="touch-action: auto;">
-              <input type="checkbox" id="editModeToggle" class="sr-only peer pointer-events-auto" checked style="touch-action: auto;">
-              <div class="w-9 h-5 bg-indigo-800 peer-focus:outline-hidden peer-focus:ring-2 peer-focus:ring-white rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500 pointer-events-auto"></div>
-            </label>
-          </AdminToolbar>
-        )}
+  <main data-memorial-slug={slug}>
+    {
+      isAdmin && (
+        <AdminToolbar draggable={true} showMinimize={true}>
+          <span class="text-sm font-medium">Edit Mode</span>
+          <label
+            class="relative inline-flex items-center cursor-pointer pointer-events-auto"
+            style="touch-action: auto;"
+          >
+            <input
+              type="checkbox"
+              id="editModeToggle"
+              class="sr-only peer pointer-events-auto"
+              checked
+              style="touch-action: auto;"
+            />
+            <div class="w-9 h-5 bg-indigo-800 peer-focus:outline-hidden peer-focus:ring-2 peer-focus:ring-white rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500 pointer-events-auto" />
+          </label>
+        </AdminToolbar>
+      )
+    }
 
-        <div id="hero-section" transition:name={`memorial-card-${slug}`} class="relative">
-          <Hero
-            name={memorialData.name}
-            birthDate={memorialData.birthDate}
-            deathDate={memorialData.deathDate}
-            mainImage={memorialData.mainImage}
-            backgroundImage={memorialData.backgroundImage}
-            subtitle={memorialData.subtitle}
-          />
-          {isAdmin && <EditButton section="hero" label="Edit Hero" positionClass="absolute top-4 right-4" />}
-        </div>
+    <div id="hero-section" transition:name={`memorial-card-${slug}`} class="relative">
+      <Hero
+        name={memorialData.name}
+        birthDate={memorialData.birthDate}
+        deathDate={memorialData.deathDate}
+        mainImage={memorialData.mainImage}
+        backgroundImage={memorialData.backgroundImage}
+        subtitle={memorialData.subtitle}
+      />
+      {
+        isAdmin && (
+          <EditButton section="hero" label="Edit Hero" positionClass="absolute top-4 right-4" />
+        )
+      }
+    </div>
 
-        <nav
-          class="sticky top-14 z-30 bg-white/95 backdrop-blur-xs border-b border-warm-gray-200"
-          aria-label="Memorial sections"
+    <nav
+      class="sticky top-14 z-30 bg-white/95 backdrop-blur-xs border-b border-warm-gray-200"
+      aria-label="Memorial sections"
+    >
+      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div
+          data-scroll-fade
+          class="flex gap-x-6 py-2 overflow-x-auto whitespace-nowrap no-scrollbar justify-start sm:justify-center"
         >
-          <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex gap-x-6 py-4 overflow-x-auto whitespace-nowrap no-scrollbar justify-start sm:justify-center">
-              {(memorialData.biographyVisible || isAdmin) && <a href="#biography" class="text-warm-gray-600 hover:text-warm-gray-900 font-medium transition-colors">Life Story</a>}
-              {(memorialData.funeralInfo.visible || isAdmin) && <a href="#funeral-info" class="text-warm-gray-600 hover:text-warm-gray-900 font-medium transition-colors">Services</a>}
-              {(memorialData.galleryVisible || isAdmin) && <a href="#gallery" class="text-warm-gray-600 hover:text-warm-gray-900 font-medium transition-colors">Gallery</a>}
-              {(memorialData.videoVisible || isAdmin) && <a href="#video" class="text-warm-gray-600 hover:text-warm-gray-900 font-medium transition-colors">Video</a>}
-              {(memorialData.commentsVisible || isAdmin) && <a href="#memories" class="text-warm-gray-600 hover:text-warm-gray-900 font-medium transition-colors">Memories</a>}
-              {(memorialData.donations.visible || isAdmin) && <a href="#donations" class="text-warm-gray-600 hover:text-warm-gray-900 font-medium transition-colors">Support</a>}
+          {
+            (memorialData.biographyVisible || isAdmin) && (
+              <a
+                href="#biography"
+                class="text-warm-gray-600 hover:text-warm-gray-900 font-medium transition-colors py-2"
+              >
+                Life Story
+              </a>
+            )
+          }
+          {
+            (memorialData.funeralInfo.visible || isAdmin) && (
+              <a
+                href="#funeral-info"
+                class="text-warm-gray-600 hover:text-warm-gray-900 font-medium transition-colors py-2"
+              >
+                Services
+              </a>
+            )
+          }
+          {
+            (memorialData.galleryVisible || isAdmin) && (
+              <a
+                href="#gallery"
+                class="text-warm-gray-600 hover:text-warm-gray-900 font-medium transition-colors py-2"
+              >
+                Gallery
+              </a>
+            )
+          }
+          {
+            (memorialData.videoVisible || isAdmin) && (
+              <a
+                href="#video"
+                class="text-warm-gray-600 hover:text-warm-gray-900 font-medium transition-colors py-2"
+              >
+                Video
+              </a>
+            )
+          }
+          {
+            (memorialData.commentsVisible || isAdmin) && (
+              <a
+                href="#memories"
+                class="text-warm-gray-600 hover:text-warm-gray-900 font-medium transition-colors py-2"
+              >
+                Memories
+              </a>
+            )
+          }
+          {
+            (memorialData.donations.visible || isAdmin) && (
+              <a
+                href="#donations"
+                class="text-warm-gray-600 hover:text-warm-gray-900 font-medium transition-colors py-2"
+              >
+                Support
+              </a>
+            )
+          }
+        </div>
+      </div>
+    </nav>
+
+    {
+      (memorialData.biographyVisible || isAdmin) && (
+        <div
+          id="biography-section"
+          class={`relative ${!memorialData.biographyVisible && isAdmin ? 'opacity-70 border-2 border-dashed border-gray-300' : ''}`}
+        >
+          {isAdmin && !memorialData.biographyVisible && (
+            <div class="absolute top-0 left-0 bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-br z-20 hidden-badge">
+              Hidden from public
+            </div>
+          )}
+          <Biography
+            title={memorialData.biographyTitle}
+            content={memorialData.biography}
+            highlights={memorialData.highlights}
+            highlightsVisible={memorialData.highlightsVisible}
+            isAdmin={isAdmin}
+          />
+          {isAdmin && <EditButton section="biography" label="Edit Biography" />}
+        </div>
+      )
+    }
+
+    {
+      (memorialData.funeralInfo.visible || isAdmin) && (
+        <div
+          id="funeral-section"
+          class={`relative ${!memorialData.funeralInfo.visible && isAdmin ? 'opacity-70 border-2 border-dashed border-gray-300' : ''}`}
+        >
+          {isAdmin && !memorialData.funeralInfo.visible && (
+            <div class="absolute top-0 left-0 bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-br z-20 hidden-badge">
+              Hidden from public
+            </div>
+          )}
+          <FuneralInfo
+            title={memorialData.funeralInfo.sectionTitle}
+            memorialName={memorialData.name}
+            memorialSlug={slug}
+            services={memorialData.funeralInfo.services}
+            receptionInfo={memorialData.funeralInfo.receptionInfo}
+            subtitle={memorialData.funeralInfo.subtitle}
+            specialInstructions={memorialData.funeralInfo.specialInstructions}
+            flowersInfo={memorialData.funeralInfo.flowersInfo}
+            isAdmin={isAdmin}
+            specialInstructionsVisible={memorialData.funeralInfo.specialInstructionsVisible}
+            flowersInfoVisible={memorialData.funeralInfo.flowersInfoVisible}
+            receptionVisible={memorialData.funeralInfo.receptionVisible}
+          />
+          {isAdmin && <EditButton section="funeral" label="Edit Funeral Info" />}
+        </div>
+      )
+    }
+
+    {
+      (memorialData.galleryVisible || isAdmin) && (
+        <div
+          id="gallery-section"
+          class={`relative ${!memorialData.galleryVisible && isAdmin ? 'opacity-70 border-2 border-dashed border-gray-300' : ''}`}
+        >
+          {isAdmin && !memorialData.galleryVisible && (
+            <div class="absolute top-0 left-0 bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-br z-20 hidden-badge">
+              Hidden from public
+            </div>
+          )}
+          <Gallery
+            images={memorialData.images}
+            isAdmin={isAdmin}
+            title={memorialData.galleryTitle}
+            memorialSlug={slug}
+          />
+          {isAdmin && <EditButton section="gallery" label="Edit Gallery" />}
+        </div>
+      )
+    }
+
+    {
+      (memorialData.videoVisible || isAdmin) && (
+        <div
+          id="video-section"
+          class={`relative ${!memorialData.videoVisible && isAdmin ? 'opacity-70 border-2 border-dashed border-gray-300' : ''}`}
+        >
+          {isAdmin && !memorialData.videoVisible && (
+            <div class="absolute top-0 left-0 bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-br z-20 hidden-badge">
+              Hidden from public
+            </div>
+          )}
+          <VideoPlayer
+            videoUrl={memorialData.videoUrl}
+            posterImage={memorialData.posterImage}
+            title={memorialData.videoSectionTitle}
+            description={memorialData.videoDescription}
+          />
+          {isAdmin && <EditButton section="video" label="Edit Video" />}
+        </div>
+      )
+    }
+
+    {
+      (memorialData.commentsVisible || isAdmin) && (
+        <div
+          id="comments-section"
+          class={`relative ${!memorialData.commentsVisible && isAdmin ? 'opacity-70 border-2 border-dashed border-gray-300' : ''}`}
+        >
+          {isAdmin && !memorialData.commentsVisible && (
+            <div class="absolute top-0 left-0 bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-br z-20 hidden-badge">
+              Hidden from public
+            </div>
+          )}
+          <Comments
+            title={memorialData.commentsTitle}
+            subtitle={memorialData.commentsSubtitle}
+            memorialSlug={slug}
+            initialComments={initialComments.slice(0, INITIAL_COMMENT_COUNT)}
+            hasMore={hasMoreComments}
+          />
+          {isAdmin && <EditButton section="comments" label="Edit Memories" />}
+        </div>
+      )
+    }
+
+    {
+      (memorialData.donations.visible || isAdmin) && (
+        <div
+          id="donations-section"
+          class={`relative ${!memorialData.donations.visible && isAdmin ? 'opacity-70 border-2 border-dashed border-gray-300' : ''}`}
+        >
+          {isAdmin && !memorialData.donations.visible && (
+            <div class="absolute top-0 left-0 bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-br z-20 hidden-badge">
+              Hidden from public
+            </div>
+          )}
+          <Donations
+            title={memorialData.donations.sectionTitle}
+            venmoUsername={memorialData.donations.venmoUsername}
+            venmoImage={memorialData.donations.venmoImage}
+            cashappUsername={memorialData.donations.cashappUsername}
+            cashappImage={memorialData.donations.cashappImage}
+            zelleEmail={memorialData.donations.zelleEmail}
+            zelleImage={memorialData.donations.zelleImage}
+            customMessage={memorialData.donations.customMessage}
+          />
+          {isAdmin && <EditButton section="donations" label="Edit Donations" />}
+        </div>
+      )
+    }
+
+    {
+      (memorialData.footerVisible || isAdmin) && (
+        <footer
+          class={`bg-warm-gray-800 text-warm-gray-300 py-12 relative ${!memorialData.footerVisible && isAdmin ? 'opacity-70 border-t-2 border-dashed border-gray-500' : ''}`}
+        >
+          {isAdmin && !memorialData.footerVisible && (
+            <div class="absolute top-0 left-0 bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-br z-20 hidden-badge">
+              Hidden from public
+            </div>
+          )}
+          <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <div class="mb-6">
+              <h3 class="font-display text-2xl font-semibold text-white mb-2" data-footer-name>
+                {memorialData.name}
+              </h3>
+              <p class="text-warm-gray-400" data-footer-dates>
+                {new Date(memorialData.birthDate).getFullYear()} -{' '}
+                {new Date(memorialData.deathDate).getFullYear()}
+              </p>
+            </div>
+            <p class="text-warm-gray-400 max-w-2xl mx-auto" data-footer-quote>
+              {memorialData.footerQuote}
+            </p>
+            <div class="mt-8 pt-8 border-t border-warm-gray-700">
+              <p class="text-sm text-warm-gray-500" data-footer-credit>
+                {memorialData.footerCredit}
+              </p>
             </div>
           </div>
-        </nav>
-
-        {(memorialData.biographyVisible || isAdmin) && (
-          <div id="biography-section" class={`relative ${!memorialData.biographyVisible && isAdmin ? 'opacity-70 border-2 border-dashed border-gray-300' : ''}`}>
-            {isAdmin && !memorialData.biographyVisible && <div class="absolute top-0 left-0 bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-br z-20 hidden-badge">Hidden from public</div>}
-            <Biography
-              title={memorialData.biographyTitle}
-              content={memorialData.biography}
-              highlights={memorialData.highlights}
-              highlightsVisible={memorialData.highlightsVisible}
-              isAdmin={isAdmin}
+          {isAdmin && (
+            <EditButton
+              section="footer"
+              label="Edit Footer"
+              positionClass="absolute top-4 right-4"
             />
-            {isAdmin && <EditButton section="biography" label="Edit Biography" />}
-          </div>
-        )}
+          )}
+        </footer>
+      )
+    }
+  </main>
 
-        {(memorialData.funeralInfo.visible || isAdmin) && (
-          <div id="funeral-section" class={`relative ${!memorialData.funeralInfo.visible && isAdmin ? 'opacity-70 border-2 border-dashed border-gray-300' : ''}`}>
-            {isAdmin && !memorialData.funeralInfo.visible && <div class="absolute top-0 left-0 bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-br z-20 hidden-badge">Hidden from public</div>}
-            <FuneralInfo
-              title={memorialData.funeralInfo.sectionTitle}
-              memorialName={memorialData.name}
-              memorialSlug={slug}
-              services={memorialData.funeralInfo.services}
-              receptionInfo={memorialData.funeralInfo.receptionInfo}
-              subtitle={memorialData.funeralInfo.subtitle}
-              specialInstructions={memorialData.funeralInfo.specialInstructions}
-              flowersInfo={memorialData.funeralInfo.flowersInfo}
-              isAdmin={isAdmin}
-              specialInstructionsVisible={memorialData.funeralInfo.specialInstructionsVisible}
-              flowersInfoVisible={memorialData.funeralInfo.flowersInfoVisible}
-              receptionVisible={memorialData.funeralInfo.receptionVisible}
-            />
-            {isAdmin && <EditButton section="funeral" label="Edit Funeral Info" />}
-          </div>
-        )}
+  {
+    isAdmin && (
+      <AdminModalShell
+        modalId="editModal"
+        title="Edit Content"
+        titleId="modalTitle"
+        bodyId="modalContent"
+      />
+    )
+  }
 
-        {(memorialData.galleryVisible || isAdmin) && (
-          <div id="gallery-section" class={`relative ${!memorialData.galleryVisible && isAdmin ? 'opacity-70 border-2 border-dashed border-gray-300' : ''}`}>
-            {isAdmin && !memorialData.galleryVisible && <div class="absolute top-0 left-0 bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-br z-20 hidden-badge">Hidden from public</div>}
-            <Gallery images={memorialData.images} isAdmin={isAdmin} title={memorialData.galleryTitle} memorialSlug={slug} />
-            {isAdmin && <EditButton section="gallery" label="Edit Gallery" />}
-          </div>
-        )}
-
-        {(memorialData.videoVisible || isAdmin) && (
-          <div id="video-section" class={`relative ${!memorialData.videoVisible && isAdmin ? 'opacity-70 border-2 border-dashed border-gray-300' : ''}`}>
-            {isAdmin && !memorialData.videoVisible && <div class="absolute top-0 left-0 bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-br z-20 hidden-badge">Hidden from public</div>}
-            <VideoPlayer
-              videoUrl={memorialData.videoUrl}
-              posterImage={memorialData.posterImage}
-              title={memorialData.videoSectionTitle}
-              description={memorialData.videoDescription}
-            />
-            {isAdmin && <EditButton section="video" label="Edit Video" />}
-          </div>
-        )}
-
-        {(memorialData.commentsVisible || isAdmin) && (
-          <div id="comments-section" class={`relative ${!memorialData.commentsVisible && isAdmin ? 'opacity-70 border-2 border-dashed border-gray-300' : ''}`}>
-            {isAdmin && !memorialData.commentsVisible && <div class="absolute top-0 left-0 bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-br z-20 hidden-badge">Hidden from public</div>}
-            <Comments title={memorialData.commentsTitle} subtitle={memorialData.commentsSubtitle} memorialSlug={slug} />
-            {isAdmin && <EditButton section="comments" label="Edit Memories" />}
-          </div>
-        )}
-
-        {(memorialData.donations.visible || isAdmin) && (
-          <div id="donations-section" class={`relative ${!memorialData.donations.visible && isAdmin ? 'opacity-70 border-2 border-dashed border-gray-300' : ''}`}>
-            {isAdmin && !memorialData.donations.visible && <div class="absolute top-0 left-0 bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-br z-20 hidden-badge">Hidden from public</div>}
-            <Donations
-              title={memorialData.donations.sectionTitle}
-              venmoUsername={memorialData.donations.venmoUsername}
-              venmoImage={memorialData.donations.venmoImage}
-              cashappUsername={memorialData.donations.cashappUsername}
-              cashappImage={memorialData.donations.cashappImage}
-              zelleEmail={memorialData.donations.zelleEmail}
-              zelleImage={memorialData.donations.zelleImage}
-              customMessage={memorialData.donations.customMessage}
-            />
-            {isAdmin && <EditButton section="donations" label="Edit Donations" />}
-          </div>
-        )}
-
-        {(memorialData.footerVisible || isAdmin) && (
-          <footer class={`bg-warm-gray-800 text-warm-gray-300 py-12 relative ${!memorialData.footerVisible && isAdmin ? 'opacity-70 border-t-2 border-dashed border-gray-500' : ''}`}>
-            {isAdmin && !memorialData.footerVisible && <div class="absolute top-0 left-0 bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-br z-20 hidden-badge">Hidden from public</div>}
-            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-              <div class="mb-6">
-                <h3 class="font-display text-2xl font-semibold text-white mb-2" data-footer-name>{memorialData.name}</h3>
-                <p class="text-warm-gray-400" data-footer-dates>
-                  {new Date(memorialData.birthDate).getFullYear()} - {new Date(memorialData.deathDate).getFullYear()}
-                </p>
-              </div>
-              <p class="text-warm-gray-400 max-w-2xl mx-auto" data-footer-quote>{memorialData.footerQuote}</p>
-              <div class="mt-8 pt-8 border-t border-warm-gray-700">
-                <p class="text-sm text-warm-gray-500" data-footer-credit>{memorialData.footerCredit}</p>
-              </div>
-            </div>
-            {isAdmin && <EditButton section="footer" label="Edit Footer" positionClass="absolute top-4 right-4" />}
-          </footer>
-        )}
-      </main>
-
-      {isAdmin && (
-        <AdminModalShell
-          modalId="editModal"
-          title="Edit Content"
-          titleId="modalTitle"
-          bodyId="modalContent"
-          closeOnClick="closeEditModal()"
-          cancelOnClick="closeEditModal()"
-          saveOnClick="saveAllModalContent()"
-        />
-      )}
-
-  {isAdmin && (
-    <script>
-      import '../../scripts/admin-editor.ts';
-    </script>
-  )}
+  {isAdmin && <script>import '../../scripts/admin-editor.ts';</script>}
 </Layout>

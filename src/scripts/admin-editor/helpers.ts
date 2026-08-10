@@ -3,30 +3,6 @@ import { state } from './state.ts';
 
 // --- Helper Functions ---
 
-// Create URL-friendly slug
-export function createSlug(text: string | null | undefined): string {
-  if (!text) return '';
-  return text
-    .toLowerCase()
-    .trim()
-    .replace(/[^\w\s-]/g, '') // Remove special characters
-    .replace(/\s+/g, '-') // Replace spaces with hyphens
-    .replace(/-+/g, '-'); // Replace multiple hyphens with single hyphen
-}
-
-// Generate agenda URL with memorial name and service type
-export function generateAgendaUrl(serviceIndex: string | number, serviceType: string): string {
-  const memorialName = (state.memorialData as any)?.name || '';
-  const memorialNameSlug = createSlug(memorialName);
-  const serviceSlug = createSlug(serviceType);
-
-  let url = `/agenda/${serviceIndex}`;
-  if (memorialNameSlug) url += `-${memorialNameSlug}`;
-  if (serviceSlug) url += `-${serviceSlug}`;
-
-  return url;
-}
-
 export function updateNavLinkVisibility(href: string, isVisible: boolean | string) {
   const link = document.querySelector<HTMLElement>(`nav a[href="${href}"]`);
   if (!link) return;
@@ -97,7 +73,6 @@ export function restoreHiddenSections() {
   });
 }
 
-
 export function initNavLinksVisibility() {
   if (!state.memorialData) return;
 
@@ -131,4 +106,3 @@ export function showToast(message: string, type: 'success' | 'error' | 'info' = 
     toast.remove();
   }, 3000);
 }
-

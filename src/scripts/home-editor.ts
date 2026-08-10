@@ -22,7 +22,9 @@ function initHomeEditor() {
 
   const eyebrowInput = document.getElementById('home-eyebrow-input') as HTMLInputElement | null;
   const titleInput = document.getElementById('home-title-input') as HTMLInputElement | null;
-  const descriptionInput = document.getElementById('home-description-input') as HTMLTextAreaElement | null;
+  const descriptionInput = document.getElementById(
+    'home-description-input'
+  ) as HTMLTextAreaElement | null;
 
   const eyebrowEl = document.getElementById('homeEyebrow');
   const titleEl = document.getElementById('homeTitle');

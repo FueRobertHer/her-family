@@ -1,5 +1,6 @@
 // Gallery Carousel Script
 // Handles carousel and lightbox interactions
+import { activateFocusTrap, releaseFocusTrap } from './lib/focus-trap.ts';
 
 // ============ CAROUSEL FUNCTIONALITY WITH INFINITE WRAP ============
 const carouselTrack = document.getElementById('carouselTrack');
@@ -97,15 +98,16 @@ function updateCarousel(animate: boolean = true) {
 
   carouselTrack.style.transform = `translateX(${offset}px)`;
 
-  // Update dots based on real index
+  // Update dots based on real index. The coloured mark is a span inside the
+  // button so the button itself can stay a 24px touch target.
   carouselDots.forEach((dot, idx) => {
-    if (idx === realIndex) {
-      dot.classList.add('bg-warm-gray-700', 'scale-125');
-      dot.classList.remove('bg-warm-gray-300');
-    } else {
-      dot.classList.remove('bg-warm-gray-700', 'scale-125');
-      dot.classList.add('bg-warm-gray-300');
-    }
+    const mark = dot.querySelector('.carousel-dot-mark') ?? dot;
+    const isCurrent = idx === realIndex;
+
+    mark.classList.toggle('bg-warm-gray-700', isCurrent);
+    mark.classList.toggle('scale-125', isCurrent);
+    mark.classList.toggle('bg-warm-gray-300', !isCurrent);
+    dot.setAttribute('aria-current', isCurrent ? 'true' : 'false');
   });
 }
 
@@ -166,12 +168,45 @@ function prevSlide() {
   goToSlide(-1);
 }
 
-function resetAutoPlay() {
+// WCAG 2.2.2: moving content that starts automatically and lasts more than
+// five seconds needs a pause control. `paused` is the user's explicit choice
+// and outranks the transient hover/focus pauses below.
+const prefersReducedMotion =
+  typeof window.matchMedia === 'function' &&
+  window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+let userPaused = prefersReducedMotion;
+
+function stopAutoPlay() {
   if (autoPlayInterval) {
     clearInterval(autoPlayInterval);
+    autoPlayInterval = null;
   }
+}
+
+function resetAutoPlay() {
+  stopAutoPlay();
+  if (userPaused) return;
   autoPlayInterval = setInterval(nextSlide, 5000); // Auto-advance every 5 seconds
 }
+
+function updatePauseButton() {
+  const button = document.getElementById('carouselPlayPause');
+  if (!button) return;
+
+  const label = userPaused ? 'Play slideshow' : 'Pause slideshow';
+  button.setAttribute('aria-label', label);
+  button.setAttribute('title', label);
+  button.dataset.paused = String(userPaused);
+}
+
+document.getElementById('carouselPlayPause')?.addEventListener('click', () => {
+  userPaused = !userPaused;
+  updatePauseButton();
+  resetAutoPlay();
+});
+
+updatePauseButton();
 
 // Event listeners
 carouselNext?.addEventListener('click', nextSlide);
@@ -221,12 +256,18 @@ carouselTrack?.addEventListener(
 initInfiniteCarousel();
 resetAutoPlay();
 
-// Pause autoplay on hover
-carouselTrack?.addEventListener('mouseenter', () => {
-  if (autoPlayInterval) clearInterval(autoPlayInterval);
-});
+// Pause autoplay while the pointer is over the carousel, and while anything
+// inside it has keyboard focus (a keyboard user gets the same reprieve).
+const carouselRegion = carouselTrack?.closest('section') ?? carouselTrack;
 
-carouselTrack?.addEventListener('mouseleave', resetAutoPlay);
+carouselRegion?.addEventListener('mouseenter', stopAutoPlay);
+carouselRegion?.addEventListener('mouseleave', resetAutoPlay);
+carouselRegion?.addEventListener('focusin', stopAutoPlay);
+carouselRegion?.addEventListener('focusout', (event) => {
+  const next = (event as FocusEvent).relatedTarget as Node | null;
+  if (next && carouselRegion.contains(next)) return;
+  resetAutoPlay();
+});
 
 // Debounced resize handler for performance
 let resizeTimeout: ReturnType<typeof setTimeout>;
@@ -273,9 +314,11 @@ function openLightbox(index: number) {
   lightbox?.classList.remove('hidden');
   lightbox?.classList.add('flex');
   document.body.style.overflow = 'hidden';
+  if (lightbox) activateFocusTrap(lightbox);
 }
 
 function closeLightboxFn() {
+  if (lightbox) releaseFocusTrap(lightbox);
   lightbox?.classList.add('hidden');
   lightbox?.classList.remove('flex');
   document.body.style.overflow = '';

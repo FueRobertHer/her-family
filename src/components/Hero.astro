@@ -18,13 +18,23 @@ const bgImage = backgroundImage || mainImage;
 // Optimize images for Cloudinary
 const optimizedBgImage = optimizeCloudinaryUrl(bgImage, CloudinaryPresets.heroBackground);
 const optimizedMainImage = optimizeCloudinaryUrl(mainImage, CloudinaryPresets.hero);
+
+// Hero text is light-on-photo and dark-on-gradient. Without this, pale text
+// sat on the pale fallback gradient at roughly 1.2:1 contrast, legible only
+// because of a heavy drop-shadow. If the background image 404s at runtime the
+// class is removed again by the data-fallback="hero-bg" handler.
+const hasBackgroundPhoto = Boolean(bgImage);
 ---
 
 <section
-  class="relative min-h-screen flex items-center justify-center bg-linear-to-br from-indigo-100 to-purple-100"
+  data-hero
+  class:list={[
+    'hero relative min-h-screen flex items-center justify-center bg-linear-to-br from-indigo-100 to-purple-100',
+    hasBackgroundPhoto && 'hero-has-photo',
+  ]}
 >
   <!-- Background Image with Overlay -->
-  <div class="absolute inset-0 z-0">
+  <div class="absolute inset-0 z-0" data-hero-bg-layer>
     <img
       src={optimizedBgImage}
       alt=""
@@ -35,9 +45,13 @@ const optimizedMainImage = optimizeCloudinaryUrl(mainImage, CloudinaryPresets.he
       fetchpriority="high"
       decoding="async"
       data-hero-background
-      data-fallback="hide"
+      data-fallback="hero-bg"
     />
-    <div class="absolute inset-0 bg-linear-to-t from-warm-gray-900/10 to-transparent"></div>
+    <!-- Scrim: keeps light text readable over an arbitrary photo. -->
+    <div
+      class="absolute inset-0 bg-linear-to-t from-warm-gray-900/70 via-warm-gray-900/40 to-warm-gray-900/25"
+    >
+    </div>
   </div>
 
   <!-- Content -->
@@ -64,27 +78,24 @@ const optimizedMainImage = optimizeCloudinaryUrl(mainImage, CloudinaryPresets.he
 
     <!-- Name and Dates -->
     <h1
-      class="font-display text-5xl sm:text-6xl lg:text-7xl font-bold text-warm-gray-900 mb-5 drop-shadow-[0_0_15px_rgba(255,255,255,0.8)]"
+      class="hero-text font-display text-5xl sm:text-6xl lg:text-7xl font-bold mb-5"
       data-hero-name
     >
       {name}
     </h1>
 
     <div
-      class="flex items-center justify-center space-x-4 text-xl sm:text-2xl text-warm-gray-50 font-semibold mb-6 drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)]"
+      class="hero-text flex items-center justify-center space-x-4 text-xl sm:text-2xl font-semibold mb-6"
       data-hero-dates
     >
       <time datetime={birthDate}>{new Date(birthDate).getFullYear()}</time>
-      <span class="w-8 h-1 bg-warm-gray-50 rounded-full shadow-xs"></span>
+      <span class="hero-rule w-8 h-1 rounded-full"></span>
       <time datetime={deathDate}>{new Date(deathDate).getFullYear()}</time>
     </div>
 
     {
       subtitle && (
-        <p
-          class="text-2xl sm:text-3xl text-warm-gray-50 italic max-w-2xl mx-auto mb-8 drop-shadow-[0_4px_10px_rgba(0,0,0,0.95)]"
-          data-hero-subtitle
-        >
+        <p class="hero-text text-2xl sm:text-3xl italic max-w-2xl mx-auto mb-8" data-hero-subtitle>
           {subtitle}
         </p>
       )
@@ -95,10 +106,10 @@ const optimizedMainImage = optimizeCloudinaryUrl(mainImage, CloudinaryPresets.he
   <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20">
     <button
       data-hero-scroll-cue
-      class="animate-bounce p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors duration-300 backdrop-blur-xs"
+      class="hero-text animate-bounce p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors duration-300 backdrop-blur-xs"
       aria-label="Scroll to content"
     >
-      <svg class="w-6 h-6 text-warm-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path
           stroke-linecap="round"
           stroke-linejoin="round"
@@ -108,6 +119,38 @@ const optimizedMainImage = optimizeCloudinaryUrl(mainImage, CloudinaryPresets.he
     </button>
   </div>
 </section>
+
+<style>
+  /*
+    Two legible states rather than one pale-on-pale state:
+      .hero-has-photo -> light text over the scrim
+      no photo        -> dark text on the pastel gradient (~12:1)
+    The shadows are a legibility aid on top of the scrim, never the only thing
+    separating text from its background.
+  */
+  .hero-text {
+    color: var(--color-warm-gray-800);
+  }
+
+  .hero-rule {
+    background-color: var(--color-warm-gray-500);
+  }
+
+  .hero-has-photo .hero-text {
+    color: var(--color-warm-gray-50);
+    text-shadow: 0 2px 12px rgb(0 0 0 / 0.75);
+  }
+
+  .hero-has-photo .hero-rule {
+    background-color: var(--color-warm-gray-50);
+  }
+
+  /* Background layer is removed entirely when there is no usable photo, so the
+     scrim can't darken the pastel gradient behind dark text. */
+  .hero:not(.hero-has-photo) [data-hero-bg-layer] {
+    display: none;
+  }
+</style>
 
 <script>
   import '../scripts/hero.ts';

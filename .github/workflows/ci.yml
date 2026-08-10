@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A newer push to the same branch makes the in-flight run redundant.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.13
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Format check
+        run: bun run format:check
+
+      - name: Type check
+        run: bun run check
+
+      - name: Test
+        run: bun test
+
+      # Builds against a throwaway local SQLite file seeded from db/seed.ts, so
+      # CI needs no Turso credentials. This catches the failures type checking
+      # cannot: bad imports, adapter config, and Astro build-time errors.
+      - name: Build
+        run: bun run build:local
+        env:
+          ASTRO_DATABASE_FILE: ci-build.db
+          ADMIN_PASSWORD: ci-build-placeholder

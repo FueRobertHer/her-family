@@ -34,7 +34,9 @@ export default [
         alert: 'readonly',
         confirm: 'readonly',
         localStorage: 'readonly',
+        sessionStorage: 'readonly',
         requestAnimationFrame: 'readonly',
+        ResizeObserver: 'readonly',
         // Web APIs
         Request: 'readonly',
         Response: 'readonly',
@@ -55,6 +57,8 @@ export default [
         MouseEvent: 'readonly',
         TouchEvent: 'readonly',
         DragEvent: 'readonly',
+        FocusEvent: 'readonly',
+        Node: 'readonly',
         NodeListOf: 'readonly',
         URLSearchParams: 'readonly',
         HTMLFormElement: 'readonly',
@@ -97,11 +101,7 @@ export default [
         parser: tsparser,
         extraFileExtensions: ['.astro'],
       },
-      globals: {
-        closeLightbox: 'readonly', // Lightbox functions defined in parent pages
-        openPaymentLightbox: 'readonly',
-        closePaymentLightbox: 'readonly',
-      },
+      globals: {},
     },
   },
 

@@ -1,9 +1,52 @@
 // Edit modal: open/close, field rendering, uploads and save.
 import { state, getActiveMemorialSlug, loadMemorialData } from './state.ts';
-import { escapeHtml } from '../lib/escape-html.ts';
+import { escapeHtml } from '../../lib/escape-html.ts';
+import { activateFocusTrap, releaseFocusTrap } from '../lib/focus-trap.ts';
 import { showToast, initNavLinksVisibility } from './helpers.ts';
-import { updatePageContent, updateServiceOnPage } from './page-updaters.ts';
 import { handleDragStart, handleDragOver, handleDrop, handleDragEnd } from './gallery-dnd.ts';
+import {
+  SECTIONS,
+  placeholderFor,
+  storageSectionFor,
+  type SectionField,
+} from '../../lib/sections.ts';
+
+/**
+ * After a successful save the page is reloaded so the server re-renders it.
+ * The alternative (a hand-written DOM patcher per section) was a second
+ * implementation of every component that drifted out of sync. The toast is
+ * handed to the next page load so the confirmation survives the reload.
+ */
+const FLASH_KEY = 'admin-editor-flash';
+
+function reloadWithFlash(message: string) {
+  try {
+    sessionStorage.setItem(FLASH_KEY, message);
+  } catch {
+    // Private browsing with storage disabled: the reload still happens.
+  }
+  window.location.reload();
+}
+
+export function showPendingFlash() {
+  let message: string | null;
+  try {
+    message = sessionStorage.getItem(FLASH_KEY);
+    if (message) sessionStorage.removeItem(FLASH_KEY);
+  } catch {
+    return;
+  }
+
+  if (!message) return;
+
+  // Prefer the shared Toast component; fall back to the editor's own toast if
+  // its script has not initialized yet.
+  if (typeof window.showToast === 'function') {
+    window.showToast(message, 'success');
+  } else {
+    showToast(message, 'success');
+  }
+}
 
 // --- Main Modal & Upload Functions ---
 
@@ -16,27 +59,11 @@ export async function openEditModal(section: string) {
     if (loadMemorialData()) initNavLinksVisibility();
   }
 
-  const titles = {
-    hero: 'Edit Hero Section',
-    biography: 'Edit Biography',
-    highlights: 'Edit Highlights',
-    video: 'Edit Video Section',
-    donations: 'Edit Donations',
-    funeral: 'Edit Funeral Information',
-    specialInstructions: 'Edit Special Instructions',
-    flowersInfo: 'Edit Flowers/Donation Information',
-    services: 'Edit Service Events',
-    reception: 'Edit Reception Information',
-    gallery: 'Edit Gallery',
-    comments: 'Edit Memories',
-    footer: 'Edit Footer',
-  };
-
   if (section.startsWith('service-')) {
     const serviceIndex = parseInt(section.split('-')[1]);
     if (modalTitle) modalTitle.textContent = `Edit Service Event #${serviceIndex + 1}`;
-  } else {
-    if (modalTitle) modalTitle.textContent = (titles as any)[section] || 'Edit Content';
+  } else if (modalTitle) {
+    modalTitle.textContent = SECTIONS[section]?.title || 'Edit Content';
   }
 
   try {
@@ -48,7 +75,10 @@ export async function openEditModal(section: string) {
     if (result.success) {
       state.contentData = result.data.organizedContent;
       renderModalContent(section);
-      if (modal) modal.classList.remove('hidden');
+      if (modal) {
+        modal.classList.remove('hidden');
+        activateFocusTrap(modal);
+      }
     } else {
       showToast('Error loading content: ' + result.error, 'error');
     }
@@ -60,8 +90,178 @@ export async function openEditModal(section: string) {
 
 export function closeEditModal() {
   const modal = document.getElementById('editModal');
-  if (modal) modal.classList.add('hidden');
+  if (modal) {
+    releaseFocusTrap(modal);
+    modal.classList.add('hidden');
+  }
   state.currentSection = null;
+}
+
+/** Current stored value for a field, in the form the editor displays it. */
+function fieldValue(sectionKey: string, field: SectionField): string {
+  const storage = storageSectionFor(sectionKey, field);
+  const raw = state.contentData[storage]?.[field.key]?.value as string | undefined;
+
+  if (field.serialize === 'lines') {
+    try {
+      const parsed = JSON.parse(raw || '[]');
+      return Array.isArray(parsed) ? parsed.join('\n') : '';
+    } catch {
+      return '';
+    }
+  }
+
+  if (raw === undefined && field.type === 'checkbox') {
+    return field.defaultValue ?? 'true';
+  }
+
+  return raw ?? '';
+}
+
+const UPLOAD_ICON =
+  '<svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>';
+
+const VIDEO_ICON =
+  '<svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>';
+
+/**
+ * Renders one field from the shared section schema (src/lib/sections.ts).
+ * Every branch escapes the stored value: it is admin-authored, but it still
+ * lands in an HTML context.
+ */
+function renderField(sectionKey: string, field: SectionField): string {
+  const value = fieldValue(sectionKey, field);
+  const inputId = `modal-${sectionKey}-${field.key}`;
+  const placeholder = escapeHtml(placeholderFor(sectionKey, field));
+  const label = escapeHtml(field.label);
+  const dataAttrs = `data-section="${escapeHtml(storageSectionFor(sectionKey, field))}" data-key="${escapeHtml(field.key)}"${
+    field.serialize ? ` data-serialize="${escapeHtml(field.serialize)}"` : ''
+  }`;
+
+  switch (field.type) {
+    case 'info':
+      return `
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <p class="text-sm text-blue-800">${escapeHtml(field.message)}</p>
+        </div>
+      `;
+
+    case 'checkbox':
+      return `
+        <div class="flex items-center p-4 bg-gray-50 rounded-lg">
+          <input
+            type="checkbox"
+            id="${inputId}"
+            ${value === 'true' ? 'checked' : ''}
+            ${dataAttrs}
+            class="w-5 h-5 text-indigo-600 border-gray-300 rounded-sm focus:ring-indigo-500"
+          />
+          <label for="${inputId}" class="ml-3 text-sm font-medium text-gray-700">
+            ${label}
+          </label>
+        </div>
+      `;
+
+    case 'image':
+    case 'video': {
+      const isVideo = field.type === 'video';
+      return `
+        <div>
+          <label for="${inputId}" class="block text-sm font-medium text-gray-700 mb-2">
+            ${label}
+          </label>
+          <div class="flex gap-2">
+            <input
+              type="text"
+              id="${inputId}"
+              value="${escapeHtml(value)}"
+              ${dataAttrs}
+              class="min-w-0 flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900"
+              placeholder="${placeholder}"
+            />
+            <button
+              type="button"
+              data-upload-target="${inputId}"
+              data-upload-kind="${isVideo ? 'video' : 'image'}"
+              class="shrink-0 px-4 py-2 ${isVideo ? 'bg-purple-600 hover:bg-purple-700' : 'bg-blue-600 hover:bg-blue-700'} text-white rounded-md transition-colors flex items-center whitespace-nowrap"
+            >
+              ${isVideo ? VIDEO_ICON + 'Upload Video' : UPLOAD_ICON + 'Upload'}
+            </button>
+          </div>
+          <input type="file" id="${inputId}-file" accept="${isVideo ? 'video/*' : 'image/*'}" class="hidden" />
+          <p class="mt-1 text-xs text-gray-500">
+            ${
+              isVideo
+                ? 'You can paste a Cloudinary URL or upload a new video (max 100MB recommended)'
+                : 'You can paste a Cloudinary URL or upload a new image'
+            }
+          </p>
+        </div>
+      `;
+    }
+
+    case 'reorder_gallery': {
+      const images = (state.memorialData.images || []) as Array<{ src: string; alt?: string }>;
+      const gridHtml = images
+        .map(
+          (img, idx) => `
+        <div class="reorder-item relative bg-white rounded-lg shadow-md overflow-hidden cursor-move hover:shadow-lg transition-shadow"
+             draggable="true" data-index="${idx}" data-image-url="${escapeHtml(img.src)}">
+          <div class="aspect-square overflow-hidden bg-warm-gray-200">
+            <img src="${escapeHtml(img.src)}" alt="${escapeHtml(img.alt || '')}" class="w-full h-full object-cover" />
+          </div>
+          <div class="absolute top-2 left-2 bg-black/60 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold">
+            ${idx + 1}
+          </div>
+        </div>
+      `
+        )
+        .join('');
+
+      return `
+        <div class="mt-6 border-t border-gray-200 pt-6">
+          <label class="block text-sm font-medium text-gray-700 mb-4">${label}</label>
+          <div id="reorderList" class="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-2">
+            ${gridHtml}
+          </div>
+          <p class="text-xs text-gray-500">Drag and drop images to reorder them. Changes are saved when you click "Save Changes".</p>
+        </div>
+      `;
+    }
+
+    case 'textarea':
+      return `
+        <div>
+          <label for="${inputId}" class="block text-sm font-medium text-gray-700 mb-2">
+            ${label}
+          </label>
+          <textarea
+            id="${inputId}"
+            rows="${field.rows || 4}"
+            ${dataAttrs}
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900"
+            placeholder="${placeholder}"
+          >${escapeHtml(value)}</textarea>
+        </div>
+      `;
+
+    default:
+      return `
+        <div>
+          <label for="${inputId}" class="block text-sm font-medium text-gray-700 mb-2">
+            ${label}
+          </label>
+          <input
+            type="${field.type}"
+            id="${inputId}"
+            value="${escapeHtml(value)}"
+            ${dataAttrs}
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900"
+            placeholder="${placeholder}"
+          />
+        </div>
+      `;
+  }
 }
 
 export function renderModalContent(section: string) {
@@ -142,7 +342,7 @@ export function renderModalContent(section: string) {
             <input type="text" id="service-agendaUrl" value="${service.agendaUrl || ''}" data-service-index="${serviceIndex}" data-field="agendaUrl"
               class="min-w-0 flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900"
               placeholder="https://...">
-            <button type="button" onclick="uploadAgendaForField('service-agendaUrl')"
+            <button type="button" data-upload-target="service-agendaUrl" data-upload-kind="agenda"
               class="shrink-0 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors flex items-center whitespace-nowrap">
               <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
@@ -158,444 +358,13 @@ export function renderModalContent(section: string) {
     return;
   }
 
-  const fields = {
-    hero: [
-      { key: 'name', label: 'Full Name', type: 'text' },
-      { key: 'birthDate', label: 'Birth Date', type: 'date' },
-      { key: 'deathDate', label: 'Death Date', type: 'date' },
-      { key: 'subtitle', label: 'Subtitle', type: 'text' },
-      {
-        key: 'mainImage',
-        label: 'Portrait Image',
-        type: 'image',
-        placeholder: '/images/portrait.jpg or Cloudinary URL',
-      },
-      {
-        key: 'backgroundImage',
-        label: 'Background Image',
-        type: 'image',
-        placeholder: 'Optional: Custom background image',
-      },
-    ],
-    biography: [
-      { key: 'visible', label: 'Show Biography Section', type: 'checkbox' },
-      { key: 'title', label: 'Section Title', type: 'text' },
-      {
-        key: 'content',
-        label: 'Biography Content',
-        type: 'textarea',
-        rows: 10,
-      },
-    ],
-    highlights: [
-      { key: 'visible', label: 'Show Cherished Memories', type: 'checkbox' },
-      {
-        key: 'highlights',
-        label: 'Cherished Memories (one per line)',
-        type: 'textarea',
-        rows: 8,
-        placeholder: 'Enter each memory on a new line',
-      },
-    ],
-    video: [
-      { key: 'visible', label: 'Show Video Section', type: 'checkbox' },
-      {
-        key: 'sectionTitle',
-        label: 'Section Title',
-        type: 'text',
-        placeholder: 'In Their Own Words',
-      },
-      { key: 'description', label: 'Video Description', type: 'text' },
-      {
-        key: 'videoUrl',
-        label: 'Video URL',
-        type: 'video',
-        placeholder: '/videos/memorial-video.mp4 or Cloudinary URL',
-      },
-      {
-        key: 'posterImage',
-        label: 'Video Poster Image',
-        type: 'image',
-        placeholder: '/images/video-poster.jpg',
-      },
-    ],
-    donations: [
-      { key: 'visible', label: 'Show Donations Section', type: 'checkbox' },
-      {
-        key: 'sectionTitle',
-        label: 'Section Title',
-        type: 'text',
-        placeholder: 'Honor Their Memory',
-      },
-      {
-        key: 'customMessage',
-        label: 'Custom Message',
-        type: 'textarea',
-        rows: 3,
-      },
-      {
-        key: 'venmoUsername',
-        label: 'Venmo Username',
-        type: 'text',
-        placeholder: '@username',
-      },
-      {
-        key: 'venmoImage',
-        label: 'Venmo QR Code/Image',
-        type: 'image',
-        placeholder: 'Upload QR Code',
-      },
-      {
-        key: 'cashappUsername',
-        label: 'Cash App Username',
-        type: 'text',
-        placeholder: '$username',
-      },
-      {
-        key: 'cashappImage',
-        label: 'Cash App QR Code/Image',
-        type: 'image',
-        placeholder: 'Upload QR Code',
-      },
-      {
-        key: 'zelleEmail',
-        label: 'Zelle Email',
-        type: 'email',
-        placeholder: 'email@example.com',
-      },
-      {
-        key: 'zelleImage',
-        label: 'Zelle QR Code/Image',
-        type: 'image',
-        placeholder: 'Upload QR Code',
-      },
-    ],
-    funeral: [
-      { key: 'visible', label: 'Show Funeral Section', type: 'checkbox' },
-      {
-        key: 'sectionTitle',
-        label: 'Section Title',
-        type: 'text',
-        placeholder: 'Service Information',
-      },
-      {
-        key: 'subtitle',
-        label: 'Subtitle Text',
-        type: 'text',
-        placeholder: 'Please join us as we celebrate their life and honor their memory',
-      },
-    ],
-    specialInstructions: [
-      {
-        key: 'specialInstructionsVisible',
-        label: 'Show Special Instructions',
-        type: 'checkbox',
-      },
-      {
-        key: 'specialInstructions',
-        label: 'Special Instructions',
-        type: 'textarea',
-        rows: 5,
-        placeholder: 'Please arrive 15 minutes early for seating...',
-      },
-    ],
-    flowersInfo: [
-      {
-        key: 'flowersInfoVisible',
-        label: 'Show Flowers/Donation Info',
-        type: 'checkbox',
-      },
-      {
-        key: 'flowersInfo',
-        label: 'Flowers/Donation Information',
-        type: 'textarea',
-        rows: 3,
-        placeholder: 'In lieu of flowers, the family requests...',
-      },
-    ],
-    services: [
-      {
-        key: 'info',
-        label: 'Service Management',
-        type: 'info',
-        message:
-          'Service events are complex structured data. To edit services, dates, times, and locations, please update the database directly or contact support.',
-      },
-    ],
-    reception: [
-      { key: 'visible', label: 'Show Reception Information', type: 'checkbox' },
-      {
-        key: 'location',
-        label: 'Reception Location',
-        type: 'text',
-        placeholder: "St. Mary's Parish Hall",
-      },
-      {
-        key: 'time',
-        label: 'Reception Time',
-        type: 'text',
-        placeholder: 'Following the service',
-      },
-      {
-        key: 'description',
-        label: 'Reception Description',
-        type: 'textarea',
-        rows: 3,
-        placeholder: 'Light refreshments will be served...',
-      },
-    ],
-    gallery: [
-      { key: 'visible', label: 'Show Gallery Section', type: 'checkbox' },
-      {
-        key: 'sectionTitle',
-        label: 'Section Title',
-        type: 'text',
-        placeholder: 'Treasured Moments',
-      },
-      { key: 'images', label: 'Reorder Images', type: 'reorder_gallery' },
-    ],
-    footer: [
-      { key: 'visible', label: 'Show Footer', type: 'checkbox' },
-      { key: 'quote', label: 'Memorial Quote', type: 'textarea', rows: 2 },
-      {
-        key: 'credit',
-        label: 'Footer Credit Text',
-        type: 'text',
-        placeholder: 'Created with love by the Family • 2024',
-      },
-    ],
-    comments: [
-      { key: 'visible', label: 'Show Memories Section', type: 'checkbox' },
-      {
-        key: 'autoApprove',
-        label: 'Auto-approve New Comments',
-        type: 'checkbox',
-      },
-      {
-        key: 'sectionTitle',
-        label: 'Section Title',
-        type: 'text',
-        placeholder: 'Share Your Memories',
-      },
-      {
-        key: 'subtitle',
-        label: 'Subtitle Text',
-        type: 'text',
-        placeholder: 'Leave a message to honor their memory...',
-      },
-    ],
-  };
-
-  const sectionFields = (fields as any)[section] || [];
-
-  let dataSection = section;
-  if (section === 'specialInstructions' || section === 'flowersInfo') {
-    dataSection = 'funeral';
-  } else if (section === 'highlights') {
-    // Highlights data is stored under biography section, but visibility under highlights
-    // We'll need to handle this specially
-    dataSection = 'biography';
+  const definition = SECTIONS[section];
+  if (!definition) {
+    modalContent.innerHTML = '<div class="text-red-600">Unknown section</div>';
+    return;
   }
-  const actualSectionData = state.contentData[dataSection] || {};
 
-  // For highlights visibility, check the highlights section
-  const highlightsVisibilityData = section === 'highlights' ? state.contentData['highlights'] || {} : {};
-
-  modalContent.innerHTML = sectionFields
-    .map((field: any) => {
-      let value = actualSectionData[field.key]?.value || '';
-
-      if (section === 'highlights' && field.key === 'highlights') {
-        try {
-          const highlightsArray = JSON.parse(actualSectionData[field.key]?.value || '[]');
-          value = highlightsArray.join('\n');
-        } catch {
-          value = '';
-        }
-      }
-
-      // For highlights visibility, check the highlights section instead of biography
-      if (section === 'highlights' && field.key === 'visible') {
-        value = highlightsVisibilityData[field.key]?.value || '';
-      }
-
-      if (field.type === 'checkbox' && !actualSectionData[field.key]) {
-        // For highlights section, check visibility in highlightsVisibilityData
-        if (
-          section === 'highlights' &&
-          field.key === 'visible' &&
-          !highlightsVisibilityData[field.key]
-        ) {
-          value = 'true';
-        } else if (section === 'comments' && field.key === 'autoApprove') {
-          // Default to false for autoApprove
-          value = 'false';
-        } else {
-          // Default to true for most visibility toggles
-          value = 'true';
-        }
-      }
-
-      const inputId = `modal-${section}-${field.key}`;
-      // Special handling for highlights: content goes to 'biography', visibility goes to 'highlights'
-      const dataSectionAttr =
-        section === 'highlights' && field.key === 'visible' ? 'highlights' : dataSection;
-
-      if (field.type === 'info') {
-        return `
-        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <p class="text-sm text-blue-800">${escapeHtml(field.message)}</p>
-        </div>
-      `;
-      } else if (field.type === 'checkbox') {
-        return `
-        <div class="flex items-center p-4 bg-gray-50 rounded-lg">
-          <input
-            type="checkbox"
-            id="${inputId}"
-            ${value === 'true' || value === true ? 'checked' : ''}
-            data-section="${dataSectionAttr}"
-            data-key="${field.key}"
-            class="w-5 h-5 text-indigo-600 border-gray-300 rounded-sm focus:ring-indigo-500"
-          />
-          <label for="${inputId}" class="ml-3 text-sm font-medium text-gray-700">
-            ${escapeHtml(field.label)}
-          </label>
-        </div>
-      `;
-      } else if (field.type === 'image') {
-        return `
-        <div>
-          <label for="${inputId}" class="block text-sm font-medium text-gray-700 mb-2">
-            ${field.label}
-          </label>
-          <div class="flex gap-2">
-            <input
-              type="text"
-              id="${inputId}"
-              value="${value}"
-              data-section="${dataSectionAttr}"
-              data-key="${field.key}"
-              class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900"
-              placeholder="${field.placeholder || ''}"
-            />
-            <button
-              type="button"
-              onclick="uploadImageForField('${inputId}')"
-              class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors flex items-center"
-            >
-              <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-              </svg>
-              Upload
-            </button>
-          </div>
-          <input type="file" id="${inputId}-file" accept="image/*" class="hidden" />
-          <p class="mt-1 text-xs text-gray-500">You can paste a Cloudinary URL or upload a new image</p>
-        </div>
-      `;
-      } else if (field.type === 'video') {
-        return `
-        <div>
-          <label for="${inputId}" class="block text-sm font-medium text-gray-700 mb-2">
-            ${field.label}
-          </label>
-          <div class="flex gap-2">
-            <input
-              type="text"
-              id="${inputId}"
-              value="${value}"
-              data-section="${dataSectionAttr}"
-              data-key="${field.key}"
-              class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900"
-              placeholder="${field.placeholder || ''}"
-            />
-            <button
-              type="button"
-              onclick="uploadVideoForField('${inputId}')"
-              class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md transition-colors flex items-center"
-            >
-              <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-              </svg>
-              Upload Video
-            </button>
-          </div>
-          <input type="file" id="${inputId}-file" accept="video/*" class="hidden" />
-          <p class="mt-1 text-xs text-gray-500">You can paste a Cloudinary URL or upload a new video (max 100MB recommended)</p>
-        </div>
-      `;
-      } else if (field.type === 'reorder_gallery') {
-        // Build the grid of images
-        const images = state.memorialData.images || [];
-        const gridHtml = images
-          .map(
-            (img: any, idx: number) => `
-        <div class="reorder-item relative bg-white rounded-lg shadow-md overflow-hidden cursor-move hover:shadow-lg transition-shadow" 
-             draggable="true" data-index="${idx}" data-image-url="${img.src}">
-          <div class="aspect-square overflow-hidden bg-warm-gray-200">
-            <img src="${img.src}" alt="${img.alt}" class="w-full h-full object-cover" />
-          </div>
-          <div class="absolute top-2 left-2 bg-black/60 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold">
-            ${idx + 1}
-          </div>
-          <div class="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors flex items-center justify-center pointer-events-none">
-            <svg class="w-8 h-8 text-white drop-shadow-lg opacity-0 hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-            </svg>
-          </div>
-        </div>
-      `
-          )
-          .join('');
-
-        return `
-        <div class="mt-6 border-t border-gray-200 pt-6">
-          <label class="block text-sm font-medium text-gray-700 mb-4">
-            ${field.label}
-          </label>
-          <div id="reorderList" class="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-2">
-            ${gridHtml}
-          </div>
-          <p class="text-xs text-gray-500">Drag and drop images to reorder them. Changes are saved when you click "Save Changes".</p>
-        </div>
-      `;
-      } else if (field.type === 'textarea') {
-        return `
-        <div>
-          <label for="${inputId}" class="block text-sm font-medium text-gray-700 mb-2">
-            ${field.label}
-          </label>
-          <textarea
-            id="${inputId}"
-            rows="${field.rows || 4}"
-            data-section="${dataSectionAttr}"
-            data-key="${field.key}"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900"
-            placeholder="${field.placeholder || ''}"
-          >${value}</textarea>
-        </div>
-      `;
-      } else {
-        return `
-        <div>
-          <label for="${inputId}" class="block text-sm font-medium text-gray-700 mb-2">
-            ${field.label}
-          </label>
-          <input
-            type="${field.type}"
-            id="${inputId}"
-            value="${value}"
-            data-section="${dataSectionAttr}"
-            data-key="${field.key}"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900"
-            placeholder="${field.placeholder || ''}"
-          />
-        </div>
-      `;
-      }
-    })
-    .join('');
+  modalContent.innerHTML = definition.fields.map((field) => renderField(section, field)).join('');
 
   // Attach event listeners to new elements for reordering
   const reorderItems = modalContent.querySelectorAll<HTMLElement>('.reorder-item');
@@ -728,7 +497,9 @@ export async function saveAllModalContent() {
     const serviceIndex = parseInt(state.currentSection.split('-')[1]);
     const modalContent = document.getElementById('modalContent');
     if (!modalContent) return;
-    const inputs = modalContent.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input, textarea');
+    const inputs = modalContent.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>(
+      'input, textarea'
+    );
 
     const serviceData: Record<string, any> = {};
     inputs.forEach((input) => {
@@ -764,14 +535,8 @@ export async function saveAllModalContent() {
       const result = await response.json();
 
       if (result.success) {
-        // Update the state.memorialData object so the modal will show fresh data next time
-        if (state.memorialData.funeralInfo && state.memorialData.funeralInfo.services) {
-          state.memorialData.funeralInfo.services[serviceIndex] = serviceData;
-        }
-
-        updateServiceOnPage(serviceIndex, serviceData);
-        window.showToast('Service updated successfully!', 'success');
         closeEditModal();
+        reloadWithFlash('Service updated successfully!');
       } else {
         throw new Error(result.error || 'Failed to save service');
       }
@@ -784,153 +549,82 @@ export async function saveAllModalContent() {
 
   const modalContent = document.getElementById('modalContent');
   if (!modalContent) return;
-  const inputs = modalContent.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input:not([type="file"]):not(.hidden), textarea');
+  const inputs = modalContent.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>(
+    'input:not([type="file"]):not(.hidden), textarea'
+  );
 
-  const updates: any[] = [];
-  const updatesMap: Record<string, Record<string, any>> = {};
+  // data-section / data-key / data-serialize are written by renderField from
+  // the shared schema, so this loop needs no per-section knowledge.
+  const updates: Array<{ section: string; key: string; value: string }> = [];
 
-  // Handle standard inputs
   inputs.forEach((input) => {
     const section = input.dataset.section;
     const key = input.dataset.key;
-
     if (!section || !key) return;
 
-    let value;
-    if (input.type === 'checkbox') {
-      value = (input as HTMLInputElement).checked ? 'true' : 'false';
-    } else {
-      value = input.value;
-    }
+    let value =
+      input.type === 'checkbox'
+        ? (input as HTMLInputElement).checked
+          ? 'true'
+          : 'false'
+        : input.value;
 
-    if (section === 'biography' && key === 'highlights') {
-      const highlightsArray = value
-        .split('\n')
-        .filter((h: string) => h.trim())
-        .map((h: string) => h.trim());
-      value = JSON.stringify(highlightsArray);
+    if (input.dataset.serialize === 'lines') {
+      value = JSON.stringify(
+        value
+          .split('\n')
+          .map((line) => line.trim())
+          .filter(Boolean)
+      );
     }
 
     updates.push({ section, key, value });
-
-    if (!updatesMap[section]) {
-      updatesMap[section] = {};
-    }
-    // Store the same value format for updatesMap as we store in updates array
-    updatesMap[section][key] = value;
   });
 
-  // Handle Gallery Reordering
-  if (state.currentSection === 'gallery') {
-    const reorderItems = modalContent.querySelectorAll<HTMLElement>('.reorder-item');
-    if (reorderItems.length > 0) {
-      const reorderData = Array.from(reorderItems).map((item, idx) => ({
-        imagePath: item.dataset.imageUrl,
-        displayOrder: idx,
-        memorialSlug: getActiveMemorialSlug(),
-      }));
+  // Gallery reordering posts to its own endpoint.
+  const reorderItems = Array.from(modalContent.querySelectorAll<HTMLElement>('.reorder-item'));
 
-      // We'll save the reorder data separately
-      try {
-        const updatePromises = reorderData.map((item) =>
-          fetch('/api/gallery/update-order', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(item),
-          })
-        );
-        await Promise.all(updatePromises);
-        // Force refresh to see new order since we don't have easy DOM manipulation for the carousel here
-        setTimeout(() => window.location.reload(), 1000);
-      } catch (e) {
-        console.error('Failed to update gallery order:', e);
-        window.showToast('Failed to update gallery order', 'error');
-      }
-    }
-  }
-
-  if (updates.length === 0 && state.currentSection !== 'gallery') {
+  if (updates.length === 0 && reorderItems.length === 0) {
     showToast('Error: No valid fields to save', 'error');
     return;
   }
 
   try {
+    const requests: Array<Promise<{ success?: boolean; error?: string }>> = [];
+
+    // One request for the whole section: the endpoint writes them in a single
+    // transaction, so a section can no longer be left half-saved.
     if (updates.length > 0) {
-      const results = await Promise.all(
-        updates.map((update) =>
-          fetch('/api/admin/content', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...update, memorialSlug: getActiveMemorialSlug() }),
-          }).then((r) => r.json())
-        )
+      requests.push(
+        fetch('/api/admin/content', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ memorialSlug: getActiveMemorialSlug(), updates }),
+        }).then((r) => r.json())
       );
-
-      const allSuccess = results.every((r) => r.success);
-
-      if (allSuccess) {
-        // Get the correct data section for update (handle special cases)
-        let updateDataSection = state.currentSection;
-        if (state.currentSection === 'specialInstructions' || state.currentSection === 'flowersInfo') {
-          updateDataSection = 'funeral';
-        } else if (state.currentSection === 'highlights') {
-          updateDataSection = 'biography'; // highlights content is stored under biography
-        }
-
-        // Update state.memorialData for visibility flags (used by nav links until next page load)
-        updates.forEach((update) => {
-          if (update.key === 'visible') {
-            const isVisible = update.value === 'true';
-            switch (state.currentSection) {
-              case 'biography':
-                state.memorialData.biographyVisible = isVisible;
-                break;
-              case 'highlights':
-                state.memorialData.highlightsVisible = isVisible;
-                break;
-              case 'video':
-                state.memorialData.videoVisible = isVisible;
-                break;
-              case 'gallery':
-                state.memorialData.galleryVisible = isVisible;
-                break;
-              case 'comments':
-                state.memorialData.commentsVisible = isVisible;
-                break;
-              case 'donations':
-                if (!state.memorialData.donations) state.memorialData.donations = {};
-                state.memorialData.donations.visible = isVisible;
-                break;
-              case 'funeral':
-                if (!state.memorialData.funeralInfo) state.memorialData.funeralInfo = {};
-                state.memorialData.funeralInfo.visible = isVisible;
-                break;
-            }
-          }
-        });
-
-        // Pass updates using the correct data section key, but keep state.currentSection for routing
-        // For highlights, we need to gather updates from both biography and highlights sections
-        let updateData: Record<string, any> = {};
-        if (state.currentSection === 'highlights') {
-          // Merge updates from both sections
-          updates.forEach((update) => {
-            updateData[update.key] = updatesMap[update.section]?.[update.key];
-          });
-        } else {
-          updateData = updatesMap[updateDataSection] || {};
-        }
-
-        updatePageContent(state.currentSection, updateData);
-        showToast('Changes saved successfully!', 'success');
-        closeEditModal();
-      } else {
-        throw new Error('Some updates failed');
-      }
-    } else if (state.currentSection === 'gallery') {
-      showToast('Changes saved successfully!', 'success');
-      closeEditModal();
     }
+
+    reorderItems.forEach((item, displayOrder) => {
+      requests.push(
+        fetch('/api/gallery/update-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            imagePath: item.dataset.imageUrl,
+            displayOrder,
+            memorialSlug: getActiveMemorialSlug(),
+          }),
+        }).then((r) => r.json())
+      );
+    });
+
+    const results = await Promise.all(requests);
+    if (!results.every((r) => r.success)) {
+      throw new Error('Some updates failed');
+    }
+
+    closeEditModal();
+    reloadWithFlash('Changes saved successfully!');
   } catch (error) {
     console.error('Error saving content:', error);
     showToast('Error saving changes. Please try again.', 'error');
@@ -987,4 +681,3 @@ export async function uploadAgendaForField(inputId: string) {
     }
   };
 }
-

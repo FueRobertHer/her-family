@@ -9,15 +9,31 @@ export interface Props {
   title: string;
   description?: string;
   brandLabel?: string;
+  /** Image used for link previews. Absolute or site-relative. */
+  ogImage?: string;
+  /** 'profile' for an individual memorial, 'website' elsewhere. */
+  ogType?: 'website' | 'profile' | 'article';
+  /** Keep this page out of search results (admin, agenda viewer). */
+  noIndex?: boolean;
 }
 
 const {
   title,
   description = 'A memorial page to honor and remember a beloved life',
   brandLabel = 'The Her Family',
+  ogImage,
+  ogType = 'website',
+  noIndex = false,
 } = Astro.props;
 const pathname = Astro.url.pathname;
 const isAdminAuthenticated = isAuthenticated(Astro.cookies);
+
+// Link previews need absolute URLs. Astro.site is unset (the production
+// domain lives in Vercel), so resolve against the request origin.
+const canonicalUrl = new URL(pathname, Astro.url.origin).href;
+const absoluteOgImage = ogImage
+  ? new URL(ogImage, Astro.url.origin).href
+  : new URL('/web-app-manifest-512x512.png', Astro.url.origin).href;
 ---
 
 <!doctype html>
@@ -26,6 +42,21 @@ const isAdminAuthenticated = isAuthenticated(Astro.cookies);
     <meta charset="UTF-8" />
     <meta name="description" content={description} />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="canonical" href={canonicalUrl} />
+    {noIndex && <meta name="robots" content="noindex, nofollow" />}
+
+    <!-- Link previews (text messages, Facebook, iMessage, Slack) -->
+    <meta property="og:type" content={ogType} />
+    <meta property="og:site_name" content={brandLabel} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:image" content={absoluteOgImage} />
+    <meta property="og:image:alt" content={title} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={absoluteOgImage} />
     <!-- Favicons - Modern browsers (PNG preferred for quality) -->
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
@@ -260,6 +291,10 @@ const isAdminAuthenticated = isAuthenticated(Astro.cookies);
 
     <script>
       import '../scripts/image-fallbacks.ts';
+    </script>
+
+    <script>
+      import '../scripts/scroll-fade.ts';
     </script>
 
     <script>

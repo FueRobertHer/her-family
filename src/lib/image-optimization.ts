@@ -9,6 +9,8 @@ export interface CloudinaryOptions {
   crop?: 'fill' | 'fit' | 'scale' | 'thumb';
   quality?: 'auto' | number;
   format?: 'auto' | 'webp' | 'jpg' | 'png';
+  /** Which part of the image to keep when cropping, e.g. 'auto' or 'face'. */
+  gravity?: 'auto' | 'face' | 'center';
 }
 
 /**
@@ -34,6 +36,7 @@ export function optimizeCloudinaryUrl(url: string, options: CloudinaryOptions = 
     height,
     crop = 'fill',
     quality = 'auto',
+    gravity,
     format = isImage ? 'webp' : 'auto', // Force WebP for images, auto for other types
   } = options;
 
@@ -43,6 +46,7 @@ export function optimizeCloudinaryUrl(url: string, options: CloudinaryOptions = 
   if (width) transforms.push(`w_${width}`);
   if (height) transforms.push(`h_${height}`);
   if (crop && (width || height)) transforms.push(`c_${crop}`);
+  if (gravity && (width || height)) transforms.push(`g_${gravity}`);
   transforms.push(`f_${format}`); // Format: webp for images, auto for other types
   transforms.push(`q_${quality}`); // Auto quality
 
@@ -98,4 +102,14 @@ export const CloudinaryPresets = {
   galleryFull: { width: 1600, height: 1600, crop: 'fit' as const },
   portrait: { width: 400, height: 400, crop: 'fill' as const },
   commentImage: { width: 800, height: 800, crop: 'fit' as const },
+  // Link previews: 1.91:1 is what Facebook/iMessage crop to anyway. Gravity
+  // 'auto' keeps the subject in frame instead of slicing a portrait in half.
+  // JPEG rather than WebP: several preview scrapers still reject WebP.
+  socialPreview: {
+    width: 1200,
+    height: 630,
+    crop: 'fill' as const,
+    gravity: 'auto' as const,
+    format: 'jpg' as const,
+  },
 };

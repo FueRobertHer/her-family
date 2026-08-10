@@ -18,32 +18,34 @@ const memorials = isAdmin
       <p class="mt-3 text-warm-gray-600">A place to remember and honor loved ones.</p>
     </header>
 
-    {memorials.length === 0 ? (
-      <div class="bg-white border border-warm-gray-200 rounded-xl p-8 text-warm-gray-600">
-        No memorials available yet.
-      </div>
-    ) : (
-      <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {memorials.map((memorial) => (
-          <a
-            href={`/memorials/${memorial.slug}`}
-            transition:name={`memorial-card-${memorial.slug}`}
-            class="block bg-white border border-warm-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow"
-          >
-            <h2 class="text-xl font-semibold text-warm-gray-900 flex items-center gap-2">
-              <span>{memorial.name}</span>
-              {isAdmin && memorial.status !== 'active' && (
-                <span class="inline-flex items-center rounded-full bg-gray-200 px-2 py-0.5 text-xs text-gray-700">
-                  Hidden
-                </span>
-              )}
-            </h2>
-            <p class="mt-2 text-sm text-warm-gray-500">
-              {isAdmin && memorial.status !== 'active' ? 'Open hidden memorial' : 'Open memorial'}
-            </p>
-          </a>
-        ))}
-      </div>
-    )}
+    {
+      memorials.length === 0 ? (
+        <div class="bg-white border border-warm-gray-200 rounded-xl p-8 text-warm-gray-600">
+          No memorials available yet.
+        </div>
+      ) : (
+        <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {memorials.map((memorial) => (
+            <a
+              href={`/memorials/${memorial.slug}`}
+              transition:name={`memorial-card-${memorial.slug}`}
+              class="block bg-white border border-warm-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow"
+            >
+              <h2 class="text-xl font-semibold text-warm-gray-900 flex items-center gap-2">
+                <span>{memorial.name}</span>
+                {isAdmin && memorial.status !== 'active' && (
+                  <span class="inline-flex items-center rounded-full bg-gray-200 px-2 py-0.5 text-xs text-gray-700">
+                    Hidden
+                  </span>
+                )}
+              </h2>
+              <p class="mt-2 text-sm text-warm-gray-500">
+                {isAdmin && memorial.status !== 'active' ? 'Open hidden memorial' : 'Open memorial'}
+              </p>
+            </a>
+          ))}
+        </div>
+      )
+    }
   </main>
 </Layout>

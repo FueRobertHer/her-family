@@ -2,10 +2,11 @@
 // The previous 1,950-line monolith is split by concern into ./admin-editor/*:
 //   state.js         shared mutable state + memorial data loading
 //   helpers.js       DOM/utility helpers (visibility, slugs, toasts)
-//   page-updaters.js applying saved content to the live page
 //   gallery-dnd.js   gallery drag & drop reordering
 //   modal.js         edit modal rendering, uploads, save
-// This file wires window globals (used by inline onclick handlers) and init.
+// Field definitions come from src/lib/sections.ts, shared with the server.
+// This file wires up initialization and the delegated click handling that
+// replaced the editor's inline onclick attributes.
 
 import { state, loadMemorialData } from './admin-editor/state.ts';
 import {
@@ -13,7 +14,6 @@ import {
   restoreHiddenSections,
   initNavLinksVisibility,
 } from './admin-editor/helpers.ts';
-import { recheckBiographyTruncation } from './admin-editor/page-updaters.ts';
 import {
   openEditModal,
   closeEditModal,
@@ -21,20 +21,10 @@ import {
   uploadVideoForField,
   uploadAgendaForField,
   saveAllModalContent,
+  showPendingFlash,
 } from './admin-editor/modal.ts';
 
 // --- Event Listeners & Initialization ---
-
-// Attach functions to window for HTML event handlers
-window.toggleEditButtons = toggleEditButtons;
-window.restoreHiddenSections = restoreHiddenSections;
-window.openEditModal = openEditModal;
-window.closeEditModal = closeEditModal;
-window.uploadImageForField = uploadImageForField;
-window.uploadVideoForField = uploadVideoForField;
-window.uploadAgendaForField = uploadAgendaForField;
-window.saveAllModalContent = saveAllModalContent;
-window.recheckBiographyTruncation = recheckBiographyTruncation;
 
 function initAdminEditor() {
   const memorialDataScript = document.getElementById('memorial-data');
@@ -42,6 +32,9 @@ function initAdminEditor() {
     return;
   }
   memorialDataScript.dataset.initialized = 'true';
+
+  // A save reloads the page; surface its confirmation once we are back.
+  showPendingFlash();
 
   const editModeToggle = document.getElementById('editModeToggle') as HTMLInputElement | null;
 
@@ -94,10 +87,46 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-// Close modal when clicking outside
-document.getElementById('editModal')?.addEventListener('click', (e) => {
-  if ((e.target as HTMLElement).id === 'editModal') {
+// All editor buttons are wired here through delegation. Inline onclick
+// attributes would require 'unsafe-inline' in script-src for the whole site,
+// and delegation also survives view transitions without re-binding.
+document.addEventListener('click', (event) => {
+  const target = event.target as HTMLElement;
+
+  const editTrigger = target.closest<HTMLElement>('[data-edit-section]');
+  if (editTrigger?.dataset.editSection) {
+    openEditModal(editTrigger.dataset.editSection);
+    return;
+  }
+
+  const uploadTrigger = target.closest<HTMLElement>('[data-upload-target]');
+  if (uploadTrigger?.dataset.uploadTarget) {
+    const fieldId = uploadTrigger.dataset.uploadTarget;
+    switch (uploadTrigger.dataset.uploadKind) {
+      case 'video':
+        uploadVideoForField(fieldId);
+        break;
+      case 'agenda':
+        uploadAgendaForField(fieldId);
+        break;
+      default:
+        uploadImageForField(fieldId);
+    }
+    return;
+  }
+
+  if (target.closest('[data-modal-save="editModal"]')) {
+    saveAllModalContent();
+    return;
+  }
+
+  if (target.closest('[data-modal-close="editModal"]')) {
+    closeEditModal();
+    return;
+  }
+
+  // Click on the backdrop itself dismisses the modal.
+  if (target.id === 'editModal') {
     closeEditModal();
   }
 });
-

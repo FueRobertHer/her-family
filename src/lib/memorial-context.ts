@@ -10,9 +10,21 @@ export interface MemorialRecord {
   updatedAt: string;
 }
 
-export async function getMemorialBySlug(slug: string): Promise<MemorialRecord | null> {
+export interface MemorialLookupOptions {
+  /**
+   * Include memorials whose status is not 'active'. Only admin-authenticated
+   * routes may pass true: a hidden memorial must be unreachable through every
+   * public endpoint, not just the page route.
+   */
+  includeHidden?: boolean;
+}
+
+export async function getMemorialBySlug(
+  slug: string,
+  { includeHidden = false }: MemorialLookupOptions = {}
+): Promise<MemorialRecord | null> {
   if (!slug) return null;
-  const memorial = await MemorialService.getMemorialBySlug(slug, true);
+  const memorial = await MemorialService.getMemorialBySlug(slug, includeHidden);
   return (memorial as MemorialRecord | undefined) ?? null;
 }
 
@@ -28,14 +40,15 @@ export async function getMemorialBySlug(slug: string): Promise<MemorialRecord | 
  * ```
  */
 export async function requireMemorial(
-  slug: string | undefined | null
+  slug: string | undefined | null,
+  options: MemorialLookupOptions = {}
 ): Promise<{ memorial: MemorialRecord } | Response> {
   const trimmed = typeof slug === 'string' ? slug.trim() : '';
   if (!trimmed) {
     return validationError('memorial slug is required');
   }
 
-  const memorial = await getMemorialBySlug(trimmed);
+  const memorial = await getMemorialBySlug(trimmed, options);
   if (!memorial) {
     return errorResponse('Memorial not found', 404);
   }

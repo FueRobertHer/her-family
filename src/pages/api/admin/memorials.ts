@@ -9,12 +9,7 @@ export const prerender = false;
 
 const createMemorialSchema = z.object({
   name: z.string().trim().min(1, 'Name is required').max(120, 'Name is too long'),
-  slug: z
-    .string()
-    .trim()
-    .max(120, 'Slug is too long')
-    .optional()
-    .or(z.literal('')),
+  slug: z.string().trim().max(120, 'Slug is too long').optional().or(z.literal('')),
 });
 
 const updateMemorialSchema = z.object({
@@ -131,7 +126,12 @@ export const PATCH: APIRoute = async ({ request, cookies }) => {
       }
     }
 
-    await MemorialService.updateMemorial(id, status ?? existing.status, name ?? existing.name, nextSlug);
+    await MemorialService.updateMemorial(
+      id,
+      status ?? existing.status,
+      name ?? existing.name,
+      nextSlug
+    );
 
     return successResponse(
       {

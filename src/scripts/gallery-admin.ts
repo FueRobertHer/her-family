@@ -11,7 +11,8 @@ const cancelCaptionBtn = document.getElementById('cancelCaptionBtn');
 
 let selectedFile: File | null = null;
 const memorialSlug =
-  (document.getElementById('gallery')?.getAttribute('data-memorial-slug') || '').trim() || 'default';
+  (document.getElementById('gallery')?.getAttribute('data-memorial-slug') || '').trim() ||
+  'default';
 
 if (uploadBtn) {
   uploadBtn.addEventListener('click', (e: MouseEvent) => {
@@ -248,7 +249,9 @@ editCaptionInput?.addEventListener('keypress', (e) => {
 // ============ ADMIN DELETE FUNCTIONALITY ============
 // Use event delegation for dynamic buttons
 document.addEventListener('click', async (e: Event) => {
-  const deleteBtn = (e.target as HTMLElement).closest('.delete-gallery-image') as HTMLElement | null;
+  const deleteBtn = (e.target as HTMLElement).closest(
+    '.delete-gallery-image'
+  ) as HTMLElement | null;
   if (deleteBtn) {
     e.stopPropagation();
 

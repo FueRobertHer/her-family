@@ -22,7 +22,7 @@ export const GET: APIRoute = async ({ request, cookies }) => {
 
     let memorialIdFilter: number | null = null;
     if (memorialSlug && memorialSlug !== 'all') {
-      const memorial = await getMemorialBySlug(memorialSlug);
+      const memorial = await getMemorialBySlug(memorialSlug, { includeHidden: true });
       if (!memorial) {
         return errorResponse('Memorial not found', 404);
       }
@@ -57,7 +57,7 @@ export const PATCH: APIRoute = async ({ request, cookies }) => {
     const memorialSlug = typeof body.memorialSlug === 'string' ? body.memorialSlug.trim() : '';
     let memorialIdFilter: number | null = null;
     if (memorialSlug && memorialSlug !== 'all') {
-      const memorial = await getMemorialBySlug(memorialSlug);
+      const memorial = await getMemorialBySlug(memorialSlug, { includeHidden: true });
       if (!memorial) {
         return errorResponse('Memorial not found', 404);
       }

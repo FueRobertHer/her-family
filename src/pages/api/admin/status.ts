@@ -13,4 +13,3 @@ export const GET: APIRoute = async ({ cookies }) => {
     status: isAuthenticated ? 'authenticated' : 'unauthenticated',
   });
 };
-
