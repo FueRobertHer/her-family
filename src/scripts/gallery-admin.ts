@@ -1,5 +1,6 @@
 // Gallery Admin Script
 // Handles admin interactions: Upload and Delete
+import { uploadToMediaLibrary } from './lib/upload.ts';
 
 // ============ ADMIN UPLOAD FUNCTIONALITY ============
 const uploadBtn = document.getElementById('uploadImageBtn') as HTMLButtonElement | null;
@@ -54,42 +55,29 @@ confirmCaptionBtn?.addEventListener('click', async () => {
   uploadBtn.setAttribute('disabled', 'true');
 
   try {
-    const formData = new FormData();
-    formData.append('file', selectedFile);
-    formData.append('folder', `memorials/${memorialSlug}/gallery`);
+    const { url } = await uploadToMediaLibrary(selectedFile, `memorials/${memorialSlug}/gallery`);
 
-    const response = await fetch('/api/upload-image', {
+    // Add image to database with caption
+    const dbResponse = await fetch('/api/gallery/add', {
       method: 'POST',
-      body: formData,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        imagePath: url,
+        caption: caption || '',
+        displayOrder: 999,
+        memorialSlug,
+      }),
     });
 
-    const result = await response.json();
-
-    if (result.success) {
-      // Add image to database with caption
-      const dbResponse = await fetch('/api/gallery/add', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          imagePath: result.url,
-          caption: caption || '',
-          displayOrder: 999,
-          memorialSlug,
-        }),
-      });
-
-      if (dbResponse.ok) {
-        window.showToast('Image uploaded successfully! Refreshing page...', 'success');
-        setTimeout(() => window.location.reload(), 1000);
-      } else {
-        window.showToast('Image uploaded but failed to add to database', 'error');
-      }
+    if (dbResponse.ok) {
+      window.showToast('Image uploaded successfully! Refreshing page...', 'success');
+      setTimeout(() => window.location.reload(), 1000);
     } else {
-      window.showToast('Upload failed: ' + result.error, 'error');
+      window.showToast('Image uploaded but failed to add to database', 'error');
     }
   } catch (error) {
     console.error('Upload error:', error);
-    window.showToast('Failed to upload image', 'error');
+    window.showToast(error instanceof Error ? error.message : 'Failed to upload image', 'error');
   } finally {
     if (uploadBtn) {
       uploadBtn.textContent = originalText || 'Upload New Image';
