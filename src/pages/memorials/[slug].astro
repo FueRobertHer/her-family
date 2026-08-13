@@ -61,17 +61,17 @@ const shareImage = optimizeCloudinaryUrl(memorialData.mainImage, CloudinaryPrese
     pointer-events: none !important;
   }
 
+  /*
+   * No `display` override here. Every edit button carries `inline-flex` from
+   * EditButton, and forcing a display value fought that: the two rules this
+   * replaces both matched (the buttons have `absolute` and `inline-flex`), so
+   * the later one won and turned them into block boxes. Tailwind's preflight
+   * sets `svg { display: block }`, so in a block container the pencil claimed
+   * its own line and pushed the label underneath it.
+   */
   body:not(.hide-edit-buttons) .edit-button {
     visibility: visible !important;
     pointer-events: auto !important;
-  }
-
-  body:not(.hide-edit-buttons) button.edit-button[class*='inline-flex'] {
-    display: inline-flex !important;
-  }
-
-  body:not(.hide-edit-buttons) button.edit-button[class*='absolute'] {
-    display: block !important;
   }
 </style>
 
