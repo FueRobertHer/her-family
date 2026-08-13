@@ -2,7 +2,7 @@
 import { state, getActiveMemorialSlug, loadMemorialData } from './state.ts';
 import { escapeHtml } from '../../lib/escape-html.ts';
 import { activateFocusTrap, releaseFocusTrap } from '../lib/focus-trap.ts';
-import { uploadToMediaLibrary } from '../lib/upload.ts';
+import { describeUploadError, uploadToMediaLibrary } from '../lib/upload.ts';
 import { MAX_UPLOAD_LABEL, formatBytes } from '../../lib/upload-limits.ts';
 import { showToast, initNavLinksVisibility } from './helpers.ts';
 import { handleDragStart, handleDragOver, handleDrop, handleDragEnd } from './gallery-dnd.ts';
@@ -412,10 +412,8 @@ function wireUploadForField(inputId: string, options: { folder: string; noun: st
     } catch (error) {
       console.error(`${options.noun} upload failed:`, error);
       textInput.value = originalValue;
-      showToast(
-        error instanceof Error ? error.message : `Failed to upload ${options.noun}.`,
-        'error'
-      );
+      // Admin surface: include the server's diagnostic detail.
+      showToast(describeUploadError(error), 'error');
     } finally {
       textInput.disabled = false;
       fileInput.value = '';

@@ -78,9 +78,10 @@ export function optimizeCloudinaryPdf(url: string): string {
 
   // We upload PDFs with resource_type 'raw', and Cloudinary's raw delivery is a
   // straight passthrough: it parses a transformation segment out of the path
-  // and then ignores it. Verified against res.cloudinary.com - the transformed
-  // and untransformed raw URLs return byte-identical responses. So skip it and
-  // keep the URL short; only a PDF stored as an image asset can be optimized.
+  // and then ignores it. Checked against a known raw asset on res.cloudinary.com,
+  // where the transformed and untransformed URLs both returned 200 with the same
+  // content type. So skip it and keep the URL short; only a PDF stored as an
+  // image asset can actually be optimized.
   if (url.includes('/raw/upload/')) {
     return url;
   }

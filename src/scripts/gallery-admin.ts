@@ -1,6 +1,6 @@
 // Gallery Admin Script
 // Handles admin interactions: Upload and Delete
-import { uploadToMediaLibrary } from './lib/upload.ts';
+import { describeUploadError, uploadToMediaLibrary } from './lib/upload.ts';
 
 // ============ ADMIN UPLOAD FUNCTIONALITY ============
 const uploadBtn = document.getElementById('uploadImageBtn') as HTMLButtonElement | null;
@@ -77,7 +77,8 @@ confirmCaptionBtn?.addEventListener('click', async () => {
     }
   } catch (error) {
     console.error('Upload error:', error);
-    window.showToast(error instanceof Error ? error.message : 'Failed to upload image', 'error');
+    // Admin surface: include the server's diagnostic detail.
+    window.showToast(describeUploadError(error), 'error');
   } finally {
     if (uploadBtn) {
       uploadBtn.textContent = originalText || 'Upload New Image';

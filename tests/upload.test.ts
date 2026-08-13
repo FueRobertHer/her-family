@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from 'bun:test';
-import { uploadToMediaLibrary } from '../src/scripts/lib/upload';
+import { UploadError, describeUploadError, uploadToMediaLibrary } from '../src/scripts/lib/upload';
 import { MAX_UPLOAD_BYTES, MAX_UPLOAD_LABEL, formatBytes } from '../src/lib/upload-limits';
 
 const realFetch = globalThis.fetch;
@@ -74,7 +74,26 @@ describe('uploadToMediaLibrary', () => {
     expect(err.message).not.toContain('JSON');
   });
 
-  test('surfaces the server error together with its details', async () => {
+  // The endpoint puts raw exception text in `details`. Admins need it; a
+  // visitor uploading a photo to a memorial page must never be shown it, so it
+  // is carried separately rather than baked into the message.
+  test('keeps the server diagnostic out of the user-facing message', async () => {
+    stubFetch(
+      Response.json(
+        { error: 'Failed to upload image', details: 'getaddrinfo ENOTFOUND api.cloudinary.com' },
+        { status: 500 }
+      )
+    );
+
+    const err = await uploadToMediaLibrary(file(10), 'f').catch((e) => e);
+
+    expect(err).toBeInstanceOf(UploadError);
+    expect(err.message).toBe('Failed to upload image');
+    expect(err.message).not.toContain('ENOTFOUND');
+    expect(err.detail).toBe('getaddrinfo ENOTFOUND api.cloudinary.com');
+  });
+
+  test('describeUploadError adds the diagnostic back for admin surfaces', async () => {
     stubFetch(
       Response.json(
         { error: 'Cloudinary not configured', details: 'Add CLOUDINARY_API_KEY' },
@@ -82,8 +101,14 @@ describe('uploadToMediaLibrary', () => {
       )
     );
 
-    await expect(uploadToMediaLibrary(file(10), 'f')).rejects.toThrow(
-      'Cloudinary not configured: Add CLOUDINARY_API_KEY'
+    const err = await uploadToMediaLibrary(file(10), 'f').catch((e) => e);
+
+    expect(describeUploadError(err)).toBe('Cloudinary not configured: Add CLOUDINARY_API_KEY');
+  });
+
+  test('describeUploadError leaves a detail-free error alone', () => {
+    expect(describeUploadError(new UploadError('Files must be under 4MB.'))).toBe(
+      'Files must be under 4MB.'
     );
   });
 
