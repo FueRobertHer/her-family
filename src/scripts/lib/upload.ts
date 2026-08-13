@@ -6,6 +6,34 @@ export interface UploadResult {
 }
 
 /**
+ * An upload failure, split into what anyone may read and what only an admin
+ * should.
+ *
+ * `message` is always safe to show: our own size and network wording, or the
+ * server's hand-written `error` string. `detail` is the endpoint's `details`
+ * field, which is the raw exception text from Cloudinary. That is exactly what
+ * an admin needs and exactly what a visitor on a memorial page should never be
+ * shown, so the two are kept apart rather than concatenated at the throw site.
+ */
+export class UploadError extends Error {
+  readonly detail?: string;
+
+  constructor(message: string, detail?: string) {
+    super(message);
+    this.name = 'UploadError';
+    this.detail = detail;
+  }
+}
+
+/** Admin-facing rendering: the safe message plus the diagnostic, when present. */
+export function describeUploadError(error: unknown): string {
+  if (error instanceof UploadError) {
+    return error.detail ? `${error.message}: ${error.detail}` : error.message;
+  }
+  return error instanceof Error && error.message ? error.message : 'Upload failed.';
+}
+
+/**
  * POSTs a file to /api/upload-image and returns the hosted URL, or throws an
  * Error whose message is safe to show the user as-is.
  *
@@ -18,7 +46,7 @@ export interface UploadResult {
  */
 export async function uploadToMediaLibrary(file: File, folder: string): Promise<UploadResult> {
   if (file.size > MAX_UPLOAD_BYTES) {
-    throw new Error(`"${file.name}" is ${formatBytes(file.size)}. ${TOO_LARGE_MESSAGE}`);
+    throw new UploadError(`"${file.name}" is ${formatBytes(file.size)}. ${TOO_LARGE_MESSAGE}`);
   }
 
   const formData = new FormData();
@@ -29,14 +57,14 @@ export async function uploadToMediaLibrary(file: File, folder: string): Promise<
   try {
     response = await fetch('/api/upload-image', { method: 'POST', body: formData });
   } catch {
-    throw new Error('Could not reach the server. Check your connection and try again.');
+    throw new UploadError('Could not reach the server. Check your connection and try again.');
   }
 
-  // Raised by the platform before our handler runs, with an HTML body.
-
-  // Raised by the platform before our handler runs, with an HTML body.
+  // Either the platform rejecting the body before our handler runs (an HTML
+  // page, which is what used to break JSON.parse) or our own handler's 413.
+  // Both mean the same thing, so answer with the same wording and skip parsing.
   if (response.status === 413) {
-    throw new Error(TOO_LARGE_MESSAGE);
+    throw new UploadError(TOO_LARGE_MESSAGE);
   }
 
   const raw = await response.text();
@@ -51,14 +79,16 @@ export async function uploadToMediaLibrary(file: File, folder: string): Promise<
   try {
     result = JSON.parse(raw);
   } catch {
-    throw new Error(
+    throw new UploadError(
       `Upload failed (HTTP ${response.status}). The server returned an unexpected response.`
     );
   }
 
   if (!response.ok || !result.success || !result.url) {
-    const detail = result.details ? `: ${result.details}` : '';
-    throw new Error(`${result.error || `Upload failed (HTTP ${response.status})`}${detail}`);
+    throw new UploadError(
+      result.error || `Upload failed (HTTP ${response.status})`,
+      result.details
+    );
   }
 
   return { url: result.url, publicId: result.publicId };
