@@ -1,4 +1,6 @@
 ---
+import EditButton from './EditButton.astro';
+
 export interface Props {
   title: string;
   memorialName?: string;
@@ -100,13 +102,11 @@ function formatTime(timeString: string) {
             data-service-index={index}
           >
             {isAdmin && (
-              <button
-                type="button"
-                data-edit-section={`service-${index}`}
-                class="absolute top-4 right-4 bg-white hover:bg-warm-gray-100 text-indigo-600 px-3 py-2 rounded-lg shadow-md text-sm font-medium transition-all opacity-0 group-hover:opacity-100 edit-button"
-              >
-                ✏️ Edit
-              </button>
+              <EditButton
+                section={`service-${index}`}
+                positionClass="absolute top-4 right-4"
+                class="opacity-0 group-hover:opacity-100"
+              />
             )}
             <div class="flex items-start justify-between mb-4">
               <h3
@@ -292,13 +292,12 @@ function formatTime(timeString: string) {
                     Hidden
                   </span>
                 )}
-                <button
-                  type="button"
-                  data-edit-section="specialInstructions"
-                  class="bg-white hover:bg-blue-100 text-blue-600 px-3 py-2 rounded-lg shadow-md text-sm font-medium transition-all opacity-0 group-hover:opacity-100 edit-button"
-                >
-                  ✏️ Edit
-                </button>
+                <EditButton
+                  section="specialInstructions"
+                  positionClass=""
+                  variant="blue"
+                  class="opacity-0 group-hover:opacity-100"
+                />
               </div>
             )}
             <h4 class="font-semibold text-blue-900 mb-3 flex items-center">
@@ -332,13 +331,12 @@ function formatTime(timeString: string) {
                     Hidden
                   </span>
                 )}
-                <button
-                  type="button"
-                  data-edit-section="flowersInfo"
-                  class="bg-white hover:bg-green-100 text-green-600 px-3 py-2 rounded-lg shadow-md text-sm font-medium transition-all opacity-0 group-hover:opacity-100 edit-button"
-                >
-                  ✏️ Edit
-                </button>
+                <EditButton
+                  section="flowersInfo"
+                  positionClass=""
+                  variant="green"
+                  class="opacity-0 group-hover:opacity-100"
+                />
               </div>
             )}
             <h4 class="font-semibold text-green-900 mb-3 flex items-center">
@@ -374,13 +372,7 @@ function formatTime(timeString: string) {
                   Hidden
                 </span>
               )}
-              <button
-                type="button"
-                data-edit-section="reception"
-                class="bg-white/20 hover:bg-white/30 text-white px-3 py-2 rounded-lg shadow-md text-sm font-medium transition-all edit-button"
-              >
-                ✏️ Edit
-              </button>
+              <EditButton section="reception" positionClass="" variant="onDark" />
             </div>
           )}
           <div class="text-center">
