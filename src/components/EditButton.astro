@@ -1,32 +1,53 @@
 ---
 /**
- * Admin-only floating edit button with an SVG pencil icon.
- * Replaces the seven duplicated emoji (✏️) buttons on the memorial page.
+ * Admin-only edit button: shared pencil icon, shared type, shared shape.
+ *
+ * Every edit affordance on the memorial page routes through here so they cannot
+ * drift apart again. The colour `variant` exists because these sit on different
+ * surfaces (white cards, the blue and green notice panels, the dark reception
+ * banner), not because the buttons are different kinds of thing.
  */
+import PencilIcon from './PencilIcon.astro';
+
 export interface Props {
   /** Section name passed to openEditModal */
   section: string;
   /** Visible label, e.g. "Edit Hero" */
-  label: string;
-  /** Positioning classes (defaults to the common top-right placement) */
+  label?: string;
+  /** Positioning classes. Pass "" for a button that sits in normal flow. */
   positionClass?: string;
+  /** Colour treatment for the surface the button sits on. */
+  variant?: 'default' | 'blue' | 'green' | 'onDark';
+  /** Extra utilities, e.g. reveal-on-hover. */
+  class?: string;
 }
 
-const { section, label, positionClass = 'absolute top-8 right-8' } = Astro.props;
+const VARIANTS = {
+  default: 'bg-white/90 hover:bg-white text-indigo-600',
+  blue: 'bg-white hover:bg-blue-100 text-blue-600',
+  green: 'bg-white hover:bg-green-100 text-green-600',
+  onDark: 'bg-white/20 hover:bg-white/30 text-white',
+};
+
+const {
+  section,
+  label = 'Edit',
+  positionClass = 'absolute top-8 right-8',
+  variant = 'default',
+  class: className = '',
+} = Astro.props;
 ---
 
 <button
   type="button"
   data-edit-section={section}
-  class={`${positionClass} inline-flex items-center gap-1.5 bg-white/90 hover:bg-white text-indigo-600 px-3 py-2 rounded-lg shadow-md text-sm font-medium transition-all edit-button`}
+  class:list={[
+    positionClass,
+    VARIANTS[variant],
+    className,
+    'inline-flex items-center gap-1.5 px-3 py-2 rounded-lg shadow-md text-sm font-medium transition-all edit-button',
+  ]}
 >
-  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-    <path
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      stroke-width="2"
-      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-    ></path>
-  </svg>
+  <PencilIcon />
   {label}
 </button>

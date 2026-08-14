@@ -60,8 +60,18 @@ describe('optimizeCloudinaryUrl', () => {
 });
 
 describe('optimizeCloudinaryPdf', () => {
-  test('adds compression flags', () => {
-    const result = optimizeCloudinaryPdf('https://res.cloudinary.com/demo/raw/upload/v1/a.pdf');
+  // Uploaded PDFs are raw assets, and Cloudinary's raw delivery ignores
+  // transformations rather than applying or rejecting them. The old version of
+  // this test asserted the flags were present on a raw URL, which was true and
+  // meaningless: it locked in a segment the CDN throws away.
+  test('leaves a raw delivery url untouched, since raw ignores transformations', () => {
+    const raw = 'https://res.cloudinary.com/demo/raw/upload/v1/a.pdf';
+
+    expect(optimizeCloudinaryPdf(raw)).toBe(raw);
+  });
+
+  test('still optimizes a PDF stored as an image asset, where transformations do apply', () => {
+    const result = optimizeCloudinaryPdf('https://res.cloudinary.com/demo/image/upload/v1/a.pdf');
 
     expect(result).toContain('fl_lossy');
     expect(result).toContain('fl_progressive');

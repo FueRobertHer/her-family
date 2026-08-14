@@ -3,6 +3,7 @@ import { MediaService } from '../../lib/services/media.service.ts';
 import { isAuthenticated as checkAuth } from '../../lib/auth';
 import { checkRateLimit, getClientIdentifier } from '../../lib/rate-limiter';
 import { getMemorialBySlug } from '../../lib/memorial-context';
+import { MAX_UPLOAD_BYTES, MAX_UPLOAD_LABEL, TOO_LARGE_MESSAGE } from '../../lib/upload-limits';
 
 export const prerender = false;
 
@@ -61,12 +62,11 @@ export const POST: APIRoute = async (context) => {
       }
     }
 
-    // Validate file size (max 5MB for images, 100MB for videos — videos are admin-only)
-    const isVideo = isAdmin && file.type.startsWith('video/');
-    const maxSize = isVideo ? 100 * 1024 * 1024 : 5 * 1024 * 1024;
-
-    if (file.size > maxSize) {
-      return jsonError(`File size too large (max ${isVideo ? '100MB' : '5MB'})`, 400);
+    // One limit for everything, because the platform enforces one limit for
+    // everything: a body over 4.5MB never reaches this handler. The old
+    // 100MB video allowance was unreachable in production.
+    if (file.size > MAX_UPLOAD_BYTES) {
+      return jsonError(`File size too large (max ${MAX_UPLOAD_LABEL})`, 413, TOO_LARGE_MESSAGE);
     }
 
     // Check if Cloudinary is configured

@@ -1,4 +1,6 @@
 ---
+import EditButton from './EditButton.astro';
+
 export interface Props {
   content: string;
   title: string;
@@ -90,15 +92,7 @@ const { content, title, highlights = [], highlightsVisible = true, isAdmin = fal
               </div>
             ))}
           </div>
-          {isAdmin && (
-            <button
-              type="button"
-              data-edit-section="highlights"
-              class="absolute top-4 right-4 bg-white hover:bg-warm-gray-100 text-indigo-600 px-3 py-2 rounded-lg shadow-md text-sm font-medium transition-all edit-button"
-            >
-              ✏️ Edit
-            </button>
-          )}
+          {isAdmin && <EditButton section="highlights" positionClass="absolute top-4 right-4" />}
         </div>
       )
     }

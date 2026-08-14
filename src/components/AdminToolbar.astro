@@ -1,4 +1,6 @@
 ---
+import PencilIcon from './PencilIcon.astro';
+
 export interface Props {
   toolbarId?: string;
   contentId?: string;
@@ -36,7 +38,7 @@ const {
       class={`p-3 flex items-center justify-center hover:bg-indigo-700 ${draggable ? 'cursor-move' : ''}`}
       title={draggable ? 'Drag to move' : 'Admin controls'}
     >
-      <span class="text-lg">✏️</span>
+      <PencilIcon class="w-5 h-5" />
     </div>
 
     <div

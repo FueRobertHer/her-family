@@ -2,6 +2,8 @@
 import { state, getActiveMemorialSlug, loadMemorialData } from './state.ts';
 import { escapeHtml } from '../../lib/escape-html.ts';
 import { activateFocusTrap, releaseFocusTrap } from '../lib/focus-trap.ts';
+import { describeUploadError, uploadToMediaLibrary } from '../lib/upload.ts';
+import { MAX_UPLOAD_LABEL, formatBytes } from '../../lib/upload-limits.ts';
 import { showToast, initNavLinksVisibility } from './helpers.ts';
 import { handleDragStart, handleDragOver, handleDrop, handleDragEnd } from './gallery-dnd.ts';
 import {
@@ -192,8 +194,8 @@ function renderField(sectionKey: string, field: SectionField): string {
           <p class="mt-1 text-xs text-gray-500">
             ${
               isVideo
-                ? 'You can paste a Cloudinary URL or upload a new video (max 100MB recommended)'
-                : 'You can paste a Cloudinary URL or upload a new image'
+                ? `You can upload a video under ${MAX_UPLOAD_LABEL}, or upload a larger one to Cloudinary and paste its URL here`
+                : `You can paste a Cloudinary URL or upload a new image (max ${MAX_UPLOAD_LABEL})`
             }
           </p>
         </div>
@@ -351,7 +353,7 @@ export function renderModalContent(section: string) {
             </button>
           </div>
           <input type="file" id="service-agendaUrl-file" accept="image/*,application/pdf" class="hidden" />
-          <p class="mt-1 text-xs text-gray-500">You can paste a URL directly or upload an image/PDF file (max 5MB).</p>
+          <p class="mt-1 text-xs text-gray-500">You can paste a URL directly or upload an image/PDF file (max ${MAX_UPLOAD_LABEL}).</p>
         </div>
       </div>
     `;
@@ -376,10 +378,16 @@ export function renderModalContent(section: string) {
   });
 }
 
-export async function uploadImageForField(inputId: string) {
-  // ... (keep existing implementation)
-  const fileInputId = `${inputId}-file`;
-  const fileInput = document.getElementById(fileInputId) as HTMLInputElement | null;
+/**
+ * Wires the hidden file input next to `inputId` so picking a file uploads it
+ * and drops the resulting URL into the text field.
+ *
+ * All three upload buttons (portrait, video, service agenda) share this, so
+ * they report failures the same way instead of the previous mix of toasts,
+ * alerts, and swallowed error details.
+ */
+function wireUploadForField(inputId: string, options: { folder: string; noun: string }) {
+  const fileInput = document.getElementById(`${inputId}-file`) as HTMLInputElement | null;
   const textInput = document.getElementById(inputId) as HTMLInputElement | null;
 
   if (!fileInput || !textInput) return;
@@ -391,33 +399,21 @@ export async function uploadImageForField(inputId: string) {
     if (!file) return;
 
     const originalValue = textInput.value;
-    textInput.value = 'Uploading...';
+    textInput.value = `Uploading ${formatBytes(file.size)}...`;
     textInput.disabled = true;
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('folder', `memorials/${getActiveMemorialSlug()}/portraits`);
-
-      const response = await fetch('/api/upload-image', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        textInput.value = result.url;
-        showToast('Image uploaded successfully! Click "Save Changes" to apply it.', 'success');
-      } else {
-        const errorMsg = result.error + (result.details ? ': ' + result.details : '');
-        showToast('Upload failed: ' + errorMsg, 'error');
-        textInput.value = originalValue;
-      }
-    } catch (error: any) {
-      console.error('Upload error:', error);
-      window.showToast('Failed to upload image: ' + error.message, 'error');
+      const { url } = await uploadToMediaLibrary(file, options.folder);
+      textInput.value = url;
+      showToast(
+        `${options.noun} uploaded successfully! Click "Save Changes" to apply it.`,
+        'success'
+      );
+    } catch (error) {
+      console.error(`${options.noun} upload failed:`, error);
       textInput.value = originalValue;
+      // Admin surface: include the server's diagnostic detail.
+      showToast(describeUploadError(error), 'error');
     } finally {
       textInput.disabled = false;
       fileInput.value = '';
@@ -425,66 +421,18 @@ export async function uploadImageForField(inputId: string) {
   };
 }
 
-export async function uploadVideoForField(inputId: string) {
-  // ... (keep existing implementation)
-  const fileInputId = `${inputId}-file`;
-  const fileInput = document.getElementById(fileInputId) as HTMLInputElement | null;
-  const textInput = document.getElementById(inputId) as HTMLInputElement | null;
+export function uploadImageForField(inputId: string) {
+  wireUploadForField(inputId, {
+    folder: `memorials/${getActiveMemorialSlug()}/portraits`,
+    noun: 'Image',
+  });
+}
 
-  if (!fileInput || !textInput) return;
-
-  fileInput.click();
-
-  fileInput.onchange = async (e: Event) => {
-    const file = (e.target as HTMLInputElement).files?.[0];
-    if (!file) return;
-
-    const sizeMB = file.size / (1024 * 1024);
-    if (sizeMB > 100) {
-      if (
-        !confirm(
-          `This video is ${sizeMB.toFixed(1)}MB. Large videos may take a while to upload. Continue?`
-        )
-      ) {
-        fileInput.value = '';
-        return;
-      }
-    }
-
-    const originalValue = textInput.value;
-    textInput.value = `Uploading video (${sizeMB.toFixed(1)}MB)...`;
-    textInput.disabled = true;
-
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('folder', `memorials/${getActiveMemorialSlug()}/videos`);
-
-      const response = await fetch('/api/upload-image', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        textInput.value = result.url;
-        showToast('Video uploaded successfully! Click "Save Changes" to apply it.', 'success');
-      } else {
-        alert(
-          '❌ Upload failed: ' + result.error + (result.details ? '\n\n' + result.details : '')
-        );
-        textInput.value = originalValue;
-      }
-    } catch (error: any) {
-      console.error('Upload error:', error);
-      alert('❌ Failed to upload video: ' + error.message);
-      textInput.value = originalValue;
-    } finally {
-      textInput.disabled = false;
-      fileInput.value = '';
-    }
-  };
+export function uploadVideoForField(inputId: string) {
+  wireUploadForField(inputId, {
+    folder: `memorials/${getActiveMemorialSlug()}/videos`,
+    noun: 'Video',
+  });
 }
 
 export async function saveAllModalContent() {
@@ -631,53 +579,9 @@ export async function saveAllModalContent() {
   }
 }
 
-export async function uploadAgendaForField(inputId: string) {
-  const fileInputId = `${inputId}-file`;
-  const fileInput = document.getElementById(fileInputId) as HTMLInputElement | null;
-  const textInput = document.getElementById(inputId) as HTMLInputElement | null;
-
-  if (!fileInput || !textInput) return;
-
-  fileInput.click();
-
-  fileInput.onchange = async (e: Event) => {
-    const file = (e.target as HTMLInputElement).files?.[0];
-    if (!file) return;
-
-    // Simple validation
-    if (file.size > 5 * 1024 * 1024) {
-      alert('File is too large (max 5MB)');
-      return;
-    }
-
-    const originalValue = textInput.value;
-    textInput.value = 'Uploading...';
-
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('folder', `memorials/${getActiveMemorialSlug()}/agendas`); // Separate folder for organization
-
-      const response = await fetch('/api/upload-image', {
-        // Re-using your existing upload endpoint
-        method: 'POST',
-        body: formData,
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        textInput.value = result.url;
-        showToast('Agenda uploaded successfully!', 'success');
-      } else {
-        throw new Error(result.error || 'Upload failed');
-      }
-    } catch (error: any) {
-      console.error(error);
-      alert('❌ Upload failed: ' + error.message);
-      textInput.value = originalValue;
-    } finally {
-      fileInput.value = '';
-    }
-  };
+export function uploadAgendaForField(inputId: string) {
+  wireUploadForField(inputId, {
+    folder: `memorials/${getActiveMemorialSlug()}/agendas`,
+    noun: 'Agenda',
+  });
 }

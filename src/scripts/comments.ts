@@ -6,6 +6,8 @@
 // src/lib/comment-card.ts so both paths produce identical HTML.
 import { activateFocusTrap, releaseFocusTrap } from './lib/focus-trap.ts';
 import { renderCommentSlide, renderEmptyState, type CommentCardData } from '../lib/comment-card.ts';
+import { uploadToMediaLibrary } from './lib/upload.ts';
+import { MAX_UPLOAD_BYTES, MAX_UPLOAD_LABEL } from '../lib/upload-limits.ts';
 
 // State
 let loadedCount = 0;
@@ -270,8 +272,8 @@ form?.addEventListener('submit', async (e) => {
     return;
   }
 
-  if (imageFile && imageFile.size > 5 * 1024 * 1024) {
-    showMessage('Image size must be less than 5MB.', true);
+  if (imageFile && imageFile.size > MAX_UPLOAD_BYTES) {
+    showMessage(`Image size must be less than ${MAX_UPLOAD_LABEL}.`, true);
     return;
   }
 
@@ -282,21 +284,11 @@ form?.addEventListener('submit', async (e) => {
   try {
     if (imageFile) {
       submitBtn.textContent = 'Uploading Image...';
-      const imageFormData = new FormData();
-      imageFormData.append('file', imageFile);
-      imageFormData.append('folder', `memorials/${memorialSlug || 'default'}/comments`);
-
-      const uploadResponse = await fetch('/api/upload-image', {
-        method: 'POST',
-        body: imageFormData,
-      });
-      const uploadResult = await uploadResponse.json();
-
-      if (uploadResult.success) {
-        data.imageUrl = uploadResult.url;
-      } else {
-        throw new Error('Failed to upload image');
-      }
+      const { url } = await uploadToMediaLibrary(
+        imageFile,
+        `memorials/${memorialSlug || 'default'}/comments`
+      );
+      data.imageUrl = url;
     }
 
     submitBtn.textContent = 'Saving Memory...';
@@ -332,7 +324,15 @@ form?.addEventListener('submit', async (e) => {
     }
   } catch (error) {
     console.error('Submit error:', error);
-    showMessage('Failed to submit comment. Please try again.', true);
+    // The upload and comment endpoints both produce messages meant for the
+    // person reading them ("too large", "already submitted"), so pass them
+    // through rather than replacing every failure with the same sentence.
+    showMessage(
+      error instanceof Error && error.message
+        ? error.message
+        : 'Failed to submit comment. Please try again.',
+      true
+    );
   } finally {
     submitBtn.disabled = false;
     submitBtn.textContent = originalBtnText;
